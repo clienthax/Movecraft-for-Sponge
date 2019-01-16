@@ -1,7 +1,6 @@
 package io.github.pulverizer.movecraft.mapUpdater.update;
 
 import io.github.pulverizer.movecraft.Movecraft;
-import org.bukkit.scheduler.BukkitRunnable;
 import org.spongepowered.api.item.inventory.ItemStack;
 import org.spongepowered.api.world.Location;
 import org.spongepowered.api.world.World;
@@ -10,10 +9,10 @@ import java.util.Objects;
 
 /**   Class that stores the data about a item drops to the map in an unspecified world. The world is retrieved contextually from the submitting craft.   */
 public class ItemDropUpdateCommand extends UpdateCommand {
-    private final Location location;
+    private final Location<World> location;
     private final ItemStack itemStack;
 
-    public ItemDropUpdateCommand(Location location, ItemStack itemStack) {
+    public ItemDropUpdateCommand(Location<World> location, ItemStack itemStack) {
         this.location = location;
         this.itemStack = itemStack;
     }
@@ -29,7 +28,7 @@ public class ItemDropUpdateCommand extends UpdateCommand {
     @Override
     public void doUpdate() {
         if (itemStack != null) {
-            final World world = location.getWorld();
+            final World world = location.getExtent();
             // drop Item
             new BukkitRunnable() {
                 @Override

@@ -35,7 +35,7 @@ public class EntityUpdateCommand extends UpdateCommand {
     public void doUpdate() {
         if (!(entity instanceof Player)) {
             Location playerLoc = entity.getLocation();
-            entity.teleport(new Location(entity.getWorld(), x + playerLoc.getX(),y + playerLoc.getY(),z + playerLoc.getZ(),yaw + playerLoc.getYaw(),pitch + playerLoc.getPitch()));
+            entity.setLocationAndRotation(playerLoc.add(x, y, z), entity.getRotation().add(pitch, yaw , 0));
             return;
         }
         Movecraft.getInstance().getWorldHandler().addPlayerLocation((Player) entity,x,y,z,yaw,pitch);

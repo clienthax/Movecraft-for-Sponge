@@ -1,15 +1,19 @@
 package io.github.pulverizer.movecraft.mapUpdater.update;
 
 import io.github.pulverizer.movecraft.Movecraft;
+import org.spongepowered.api.entity.explosive.Explosive;
+import org.spongepowered.api.entity.explosive.PrimedTNT;
 import org.spongepowered.api.world.Location;
+import org.spongepowered.api.world.World;
+import org.spongepowered.api.world.explosion.Explosion;
 
 import java.util.Objects;
 
 public class ExplosionUpdateCommand extends UpdateCommand {
-    private final Location explosionLocation;
+    private final Location<World> explosionLocation;
     private final float explosionStrength;
 
-    public ExplosionUpdateCommand(Location explosionLocation, float explosionStrength) throws IllegalArgumentException {
+    public ExplosionUpdateCommand(Location<World> explosionLocation, float explosionStrength) throws IllegalArgumentException {
         if(explosionStrength < 0){
             throw new IllegalArgumentException("Explosion strength cannot be negative");
         }
@@ -17,7 +21,7 @@ public class ExplosionUpdateCommand extends UpdateCommand {
         this.explosionStrength = explosionStrength;
     }
 
-    public Location getLocation() {
+    public Location<World> getLocation() {
         return explosionLocation;
     }
 
@@ -28,14 +32,22 @@ public class ExplosionUpdateCommand extends UpdateCommand {
     @Override
     public void doUpdate() {
         //if (explosionStrength > 0) { // don't bother with tiny explosions
-        //Location loc = new Lo cation(explosionLocation.getWorld(), explosionLocation.getX() + 0.5, explosionLocation.getY() + 0.5, explosionLocation.getZ());
+        //Location loc = new Location(explosionLocation.getWorld(), explosionLocation.getX() + 0.5, explosionLocation.getY() + 0.5, explosionLocation.getZ());
         this.createExplosion(explosionLocation.add(.5,.5,.5), explosionStrength);
         //}
 
     }
 
-    private void createExplosion(Location loc, float explosionPower) {
-        loc.getWorld().createExplosion(loc.getX() + 0.5, loc.getY() + 0.5, loc.getZ() + 0.5, explosionPower);
+    private void createExplosion(Location<World> loc, float explosionPower) {
+
+        Explosion.builder()
+                .location(loc)
+                .shouldBreakBlocks(true)
+                .shouldDamageEntities(true)
+                .shouldPlaySmoke(true)
+                .radius(explosionPower)
+                .canCauseFire(false)
+                .build();
     }
 
     @Override

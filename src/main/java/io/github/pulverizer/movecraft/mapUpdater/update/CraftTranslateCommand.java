@@ -13,6 +13,7 @@ import io.github.pulverizer.movecraft.utils.HashHitBox;
 import io.github.pulverizer.movecraft.utils.HitBox;
 import io.github.pulverizer.movecraft.utils.MutableHitBox;
 import io.github.pulverizer.movecraft.utils.SolidHitBox;
+import org.spongepowered.api.block.BlockSnapshot;
 import org.spongepowered.api.block.BlockType;
 import org.spongepowered.api.block.BlockTypes;
 import org.spongepowered.api.block.tileentity.Sign;
@@ -57,8 +58,8 @@ public class CraftTranslateCommand extends UpdateCommand {
             Movecraft.getInstance().getWorldHandler().translateCraft(craft,displacement);
             //trigger sign events
             for(MovecraftLocation location : craft.getHitBox()){
-                Block block = location.toBukkit(craft.getW()).getBlock();
-                if(block.getType() == BlockTypes.WALL_SIGN || block.getType() == BlockTypes.SIGN_POST){
+                BlockSnapshot block = location.toSponge(craft.getW()).createSnapshot();
+                if(block.getState().getType() == BlockTypes.WALL_SIGN || block.getState().getType() == BlockTypes.STANDING_SIGN){
                     Sign sign = (Sign) block.getState();
                     Bukkit.getServer().getPluginManager().callEvent(new SignTranslateEvent(block, craft, sign.getLines()));
                     sign.update();
@@ -71,8 +72,8 @@ public class CraftTranslateCommand extends UpdateCommand {
             }
             final HitBox to = CollectionUtils.filter(craft.getHitBox(), originalLocations);
             for (MovecraftLocation location : to) {
-                BlockType material = location.toBukkit(craft.getW()).getBlock().getType();
-                if (passthroughBlocks.contains(material)) {
+                BlockSnapshot material = location.toSponge(craft.getW()).createSnapshot();
+                if (passthroughBlocks.contains(material.getState().getType())) {
                     craft.getPhaseBlocks().put(location, material);
                 }
             }
@@ -130,8 +131,8 @@ public class CraftTranslateCommand extends UpdateCommand {
 
             final WorldHandler handler = Movecraft.getInstance().getWorldHandler();
             for (MovecraftLocation location : CollectionUtils.filter(invertedHitBox, confirmed)) {
-                Material material = location.toBukkit(craft.getW()).getBlock().getType();
-                if (!passthroughBlocks.contains(material)) {
+                BlockSnapshot material = location.toSponge(craft.getW()).createSnapshot();
+                if (!passthroughBlocks.contains(material.getState().getType())) {
                     continue;
                 }
                 craft.getPhaseBlocks().put(location, material);
@@ -140,8 +141,8 @@ public class CraftTranslateCommand extends UpdateCommand {
             handler.translateCraft(craft, displacement);
             //trigger sign events
             for (MovecraftLocation location : craft.getHitBox()) {
-                Block block = location.toBukkit(craft.getW()).getBlock();
-                if (block.getType() == BlockTypes.WALL_SIGN || block.getType() == BlockTypes.SIGN_POST) {
+                BlockSnapshot block = location.toSponge(craft.getW()).createSnapshot();
+                if (block.getState().getType() == BlockTypes.WALL_SIGN || block.getState().getType() == BlockTypes.STANDING_SIGN) {
                     Sign sign = (Sign) block.getState();
                     Bukkit.getServer().getPluginManager().callEvent(new SignTranslateEvent(block, craft, sign.getLines()));
                     sign.update();
@@ -153,21 +154,21 @@ public class CraftTranslateCommand extends UpdateCommand {
                 if (!craft.getPhaseBlocks().containsKey(location)) {
                     continue;
                 }
-                handler.setBlockFast(location.toBukkit(craft.getW()), craft.getPhaseBlocks().get(location), (byte) 0);
+                handler.setBlockFast(location.toSponge(craft.getW()), craft.getPhaseBlocks().get(location), (byte) 0);
                 craft.getPhaseBlocks().remove(location);
             }
 
             for(MovecraftLocation location : originalLocations){
                 if(!craft.getHitBox().inBounds(location) && craft.getPhaseBlocks().containsKey(location)){
-                    handler.setBlockFast(location.toBukkit(craft.getW()), craft.getPhaseBlocks().remove(location), (byte) 0);
+                    handler.setBlockFast(location.toSponge(craft.getW()), craft.getPhaseBlocks().remove(location), (byte) 0);
                 }
             }
 
             for (MovecraftLocation location : failed) {
-                final Material material = location.toBukkit(craft.getW()).getBlock().getType();
-                if (passthroughBlocks.contains(material)) {
+                final BlockSnapshot material = location.toSponge(craft.getW()).createSnapshot();
+                if (passthroughBlocks.contains(material.getState().getType())) {
                     craft.getPhaseBlocks().put(location, material);
-                    handler.setBlockFast(location.toBukkit(craft.getW()), BlockTypes.AIR, (byte) 0);
+                    handler.setBlockFast(location.toSponge(craft.getW()), BlockSnapshot.builder().blockState(BlockTypes.AIR.getDefaultState()).build());
 
                 }
             }

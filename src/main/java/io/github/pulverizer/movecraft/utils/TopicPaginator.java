@@ -4,8 +4,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import org.spongepowered.api.
-
 public class TopicPaginator {
     private String title;
     private List<String> lines = new ArrayList<>();

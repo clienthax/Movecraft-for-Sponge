@@ -60,8 +60,8 @@ public class CraftRotateCommand extends UpdateCommand {
             final HitBox to = CollectionUtils.filter(craft.getHitBox(), originalLocations);
 
             for (MovecraftLocation location : to) {
-                BlockType material = location.toSponge(craft.getW()).getBlock().getType();
-                if (passthroughBlocks.contains(material)) {
+                BlockSnapshot material = location.toSponge(craft.getW()).createSnapshot();
+                if (passthroughBlocks.contains(material.getState().getType())) {
                     craft.getPhaseBlocks().put(location, material);
                 }
             }

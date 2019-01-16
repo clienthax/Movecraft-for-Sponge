@@ -11,9 +11,11 @@ import org.spongepowered.api.block.BlockSnapshot;
 import org.spongepowered.api.block.BlockTypes;
 import org.spongepowered.api.data.Transaction;
 import org.spongepowered.api.entity.EntityTypes;
+import org.spongepowered.api.entity.Item;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.event.Listener;
 import org.spongepowered.api.event.block.ChangeBlockEvent;
+import org.spongepowered.api.event.entity.SpawnEntityEvent;
 import org.spongepowered.api.text.Text;
 import org.spongepowered.api.world.Location;
 import org.spongepowered.api.world.World;
@@ -61,10 +63,10 @@ public class BlockListener {
 
     // prevent items from dropping from moving crafts
     @Listener(order = FIRST)
-    public void onItemSpawn(final SpawnItemEvent e) {
-        if (e.isCancelled()) {
-            return;
-        }
+    public void onItemSpawn(final SpawnEntityEvent e) {
+
+        e.filterEntities(entity -> entity instanceof Item);
+
         for (Craft tcraft : CraftManager.getInstance().getCraftsInWorld(e.getLocation().getWorld())) {
             if ((!tcraft.isNotProcessing()) && MathUtils.locationInHitbox(tcraft.getHitBox(), e.getLocation())) {
                 e.setCancelled(true);

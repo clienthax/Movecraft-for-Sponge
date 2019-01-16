@@ -22,7 +22,7 @@ public class ParticleUpdateCommand extends UpdateCommand {
     public void doUpdate() {
         // put in smoke or effects
         if (smokeStrength == 1) {
-            location.getWorld().playEffect(location, ParticleTypes.SMOKE, 4);
+            location.playEffect(location, ParticleTypes.SMOKE, 4);
         }
         if (Settings.SilhouetteViewDistance > 0 && silhouetteBlocksSent < Settings.SilhouetteBlockCount) {
             if (sendSilhouetteToPlayers())
@@ -34,7 +34,7 @@ public class ParticleUpdateCommand extends UpdateCommand {
     private boolean sendSilhouetteToPlayers() {
         if (rand.nextInt(100) < 15) {
 
-            for (Player p : location.getWorld().getPlayers()) { // this is necessary because signs do not get updated client side correctly without refreshing the chunks, which causes a memory leak in the clients
+            for (Player p : location.getExtent().getPlayers()) { // this is necessary because signs do not get updated client side correctly without refreshing the chunks, which causes a memory leak in the clients
                 double distSquared = location.distanceSquared(p.getLocation());
                 if ((distSquared < Settings.SilhouetteViewDistance * Settings.SilhouetteViewDistance) && (distSquared > 32 * 32)) {
                     p.spawnParticle(ParticleTypes.HAPPY_VILLAGER, location, 9);

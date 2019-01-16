@@ -6,6 +6,8 @@ import io.github.pulverizer.movecraft.config.Settings;
 import io.github.pulverizer.movecraft.mapUpdater.update.CraftRotateCommand;
 import io.github.pulverizer.movecraft.mapUpdater.update.CraftTranslateCommand;
 import io.github.pulverizer.movecraft.mapUpdater.update.UpdateCommand;
+import org.spongepowered.api.Sponge;
+import org.spongepowered.api.text.Text;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -37,7 +39,8 @@ public class MapUpdateManager {
 
         if (Settings.Debug) {
             long endTime = System.currentTimeMillis();
-            Movecraft.getInstance().getServer().broadcastMessage("Map update took (ms): " + (endTime - startTime));
+            Movecraft.getInstance();
+            Sponge.getServer().getBroadcastChannel().send(Text.of("Map update took (ms): " + (endTime - startTime)));
         }
     }
 
