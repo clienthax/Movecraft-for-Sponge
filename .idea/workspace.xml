@@ -59,29 +59,13 @@
   </component>
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-      <file leaf-file-name="TranslationTask.java" pinned="false" current-in-tab="true">
-        <entry file="file://$PROJECT_DIR$/src/main/java/io/github/pulverizer/movecraft/async/translation/TranslationTask.java">
+      <file leaf-file-name="ConfigManager.java" pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/src/main/java/io/github/pulverizer/movecraft/config/ConfigManager.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="533">
-              <caret line="327" column="200" selection-start-line="327" selection-start-column="200" selection-end-line="327" selection-end-column="200" />
+            <state relative-caret-position="561">
+              <caret line="35" column="44" lean-forward="true" selection-start-line="35" selection-start-column="44" selection-end-line="35" selection-end-column="44" />
               <folding>
-                <element signature="e#15661#15667#0" expanded="true" />
-                <element signature="e#18820#18821#0" expanded="true" />
-                <element signature="e#18849#18850#0" expanded="true" />
-                <element signature="e#18887#18888#0" expanded="true" />
-                <element signature="e#18921#18922#0" expanded="true" />
-                <element signature="e#18961#18962#0" expanded="true" />
-                <element signature="e#18993#18994#0" expanded="true" />
-                <element signature="e#19046#19047#0" expanded="true" />
-                <element signature="e#19076#19077#0" expanded="true" />
-                <element signature="e#19101#19102#0" expanded="true" />
-                <element signature="e#19126#19127#0" expanded="true" />
-                <element signature="e#19152#19153#0" expanded="true" />
-                <element signature="e#19177#19178#0" expanded="true" />
-                <element signature="e#19203#19204#0" expanded="true" />
-                <element signature="e#19228#19229#0" expanded="true" />
-                <element signature="e#19273#19274#0" expanded="true" />
-                <element signature="e#19314#19315#0" expanded="true" />
+                <element signature="imports" expanded="true" />
               </folding>
             </state>
           </provider>
@@ -110,6 +94,9 @@
       <find>vector</find>
       <find>getNotificationPlayer</find>
     </findStrings>
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
   <component name="GradleLocalSettings">
     <option name="myGradleHomes">
@@ -543,7 +530,6 @@
         <option value="$PROJECT_DIR$/src/main/java/io/github/pulverizer/movecraft/mapUpdater/MapUpdateManager.java" />
         <option value="$PROJECT_DIR$/src/main/java/io/github/pulverizer/movecraft/localisation/I18nSupport.java" />
         <option value="$PROJECT_DIR$/src/main/java/io/github/pulverizer/movecraft/craft/CraftType.java" />
-        <option value="$PROJECT_DIR$/src/main/java/io/github/pulverizer/movecraft/config/ConfigManager.java" />
         <option value="$PROJECT_DIR$/src/main/java/io/github/pulverizer/movecraft/WorldHandler.java" />
         <option value="$PROJECT_DIR$/src/main/java/io/github/pulverizer/movecraft/utils/MathUtils.java" />
         <option value="$PROJECT_DIR$/src/main/java/io/github/pulverizer/movecraft/sign/CannonDirectorSign.java" />
@@ -577,9 +563,10 @@
         <option value="$PROJECT_DIR$/src/main/java/io/github/pulverizer/movecraft/sign/AscendSign.java" />
         <option value="$PROJECT_DIR$/src/main/java/io/github/pulverizer/movecraft/listener/BlockListener.java" />
         <option value="$PROJECT_DIR$/src/main/java/io/github/pulverizer/movecraft/async/rotation/RotationTask.java" />
-        <option value="$PROJECT_DIR$/src/main/java/io/github/pulverizer/movecraft/async/translation/TranslationTask.java" />
         <option value="$PROJECT_DIR$/src/main/java/io/github/pulverizer/movecraft/async/AsyncManager.java" />
         <option value="$PROJECT_DIR$/src/main/java/io/github/pulverizer/movecraft/async/AsyncTask.java" />
+        <option value="$PROJECT_DIR$/src/main/java/io/github/pulverizer/movecraft/async/translation/TranslationTask.java" />
+        <option value="$PROJECT_DIR$/src/main/java/io/github/pulverizer/movecraft/config/ConfigManager.java" />
       </list>
     </option>
   </component>
@@ -587,6 +574,7 @@
     <option name="width" value="1950" />
     <option name="height" value="1400" />
   </component>
+  <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
   <component name="ProjectView">
     <navigator proportions="" version="1">
       <foldersAlwaysOnTop value="true" />
@@ -743,7 +731,7 @@
     <property name="project.structure.last.edited" value="Modules" />
     <property name="project.structure.proportion" value="0.15" />
     <property name="project.structure.side.proportion" value="0.2" />
-    <property name="settings.editor.selected.configurable" value="preferences.pluginManager" />
+    <property name="settings.editor.selected.configurable" value="project.propVCSSupport.Mappings" />
   </component>
   <component name="RecentsManager">
     <key name="CopyClassDialog.RECENTS_KEY">
@@ -925,6 +913,11 @@
   </component>
   <component name="VcsContentAnnotationSettings">
     <option name="myLimit" value="2678400000" />
+  </component>
+  <component name="VcsManagerConfiguration">
+    <ignored-roots>
+      <path value="$PROJECT_DIR$" />
+    </ignored-roots>
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
@@ -1237,13 +1230,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/io/github/pulverizer/movecraft/config/ConfigManager.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="102">
-          <caret line="9" column="39" lean-forward="true" selection-start-line="9" selection-start-column="39" selection-end-line="9" selection-end-column="39" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/src/main/java/io/github/pulverizer/movecraft/config/Settings.java">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="170">
@@ -1309,26 +1295,35 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/src/main/java/io/github/pulverizer/movecraft/async/translation/TranslationTask.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="533">
-          <caret line="327" column="200" selection-start-line="327" selection-start-column="200" selection-end-line="327" selection-end-column="200" />
+        <state relative-caret-position="748">
+          <caret line="140" column="53" lean-forward="true" selection-start-line="140" selection-start-column="53" selection-end-line="140" selection-end-column="53" />
           <folding>
-            <element signature="e#15661#15667#0" expanded="true" />
-            <element signature="e#18820#18821#0" expanded="true" />
-            <element signature="e#18849#18850#0" expanded="true" />
-            <element signature="e#18887#18888#0" expanded="true" />
-            <element signature="e#18921#18922#0" expanded="true" />
-            <element signature="e#18961#18962#0" expanded="true" />
-            <element signature="e#18993#18994#0" expanded="true" />
+            <element signature="e#18790#18791#0" expanded="true" />
+            <element signature="e#18819#18820#0" expanded="true" />
+            <element signature="e#18857#18858#0" expanded="true" />
+            <element signature="e#18891#18892#0" expanded="true" />
+            <element signature="e#18931#18932#0" expanded="true" />
+            <element signature="e#18963#18964#0" expanded="true" />
+            <element signature="e#19016#19017#0" expanded="true" />
             <element signature="e#19046#19047#0" expanded="true" />
-            <element signature="e#19076#19077#0" expanded="true" />
-            <element signature="e#19101#19102#0" expanded="true" />
-            <element signature="e#19126#19127#0" expanded="true" />
-            <element signature="e#19152#19153#0" expanded="true" />
-            <element signature="e#19177#19178#0" expanded="true" />
-            <element signature="e#19203#19204#0" expanded="true" />
-            <element signature="e#19228#19229#0" expanded="true" />
-            <element signature="e#19273#19274#0" expanded="true" />
-            <element signature="e#19314#19315#0" expanded="true" />
+            <element signature="e#19071#19072#0" expanded="true" />
+            <element signature="e#19096#19097#0" expanded="true" />
+            <element signature="e#19122#19123#0" expanded="true" />
+            <element signature="e#19147#19148#0" expanded="true" />
+            <element signature="e#19173#19174#0" expanded="true" />
+            <element signature="e#19198#19199#0" expanded="true" />
+            <element signature="e#19243#19244#0" expanded="true" />
+            <element signature="e#19284#19285#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/io/github/pulverizer/movecraft/config/ConfigManager.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="561">
+          <caret line="35" column="44" lean-forward="true" selection-start-line="35" selection-start-column="44" selection-end-line="35" selection-end-column="44" />
+          <folding>
+            <element signature="imports" expanded="true" />
           </folding>
         </state>
       </provider>

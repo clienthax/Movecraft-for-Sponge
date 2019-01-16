@@ -1,5 +1,7 @@
 package io.github.pulverizer.movecraft.config;
 
+import org.spongepowered.api.block.BlockType;
+import org.spongepowered.api.block.BlockTypes;
 import org.spongepowered.api.config.ConfigDir;
 
 import java.util.ArrayList;
@@ -24,20 +26,20 @@ class ConfigManager {
     private void setupDefaults() {
         configFile.addDefault("ThreadPoolSize", 5);
         configFile.addDefault("safeReload", false);
-        List<Integer> dataBlockList = new ArrayList<>();
-        dataBlockList.add(23);
-        dataBlockList.add(25);
-        dataBlockList.add(33);
-        dataBlockList.add(44);
-        dataBlockList.add(50);
-        dataBlockList.add(53);
-        dataBlockList.add(54);
-        dataBlockList.add(55);
-        dataBlockList.add(61);
-        dataBlockList.add(62);
-        dataBlockList.add(63);
-        dataBlockList.add(64);
-        dataBlockList.add(65);
+        List<BlockType> dataBlockList = new ArrayList<>();
+        dataBlockList.add(BlockTypes.DISPENSER);
+        dataBlockList.add(BlockTypes.NOTEBLOCK);
+        dataBlockList.add(BlockTypes.PISTON);
+        dataBlockList.add(BlockTypes.STONE_SLAB);
+        dataBlockList.add(BlockTypes.TORCH);
+        dataBlockList.add(BlockTypes.OAK_STAIRS);
+        dataBlockList.add(BlockTypes.CHEST);
+        dataBlockList.add(BlockTypes.REDSTONE_WIRE);
+        dataBlockList.add(BlockTypes.FURNACE);
+        dataBlockList.add(BlockTypes.LIT_FURNACE);
+        dataBlockList.add(BlockTypes.STANDING_SIGN);
+        dataBlockList.add(BlockTypes.WOODEN_DOOR);
+        dataBlockList.add(BlockTypes.LADDER);
         configFile.addDefault("dataBlocks", dataBlockList);
         configFile.options().copyDefaults(true);
         //Movecraft.getInstance().saveConfig();
