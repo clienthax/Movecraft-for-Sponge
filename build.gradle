@@ -1,0 +1,11 @@
+plugins {
+    id 'org.spongepowered.plugin' version '0.8.1'
+}
+
+group = 'io.github.pulverizer.movecraft'
+version = '0.0.1'
+description = 'Movecraft for Sponge'
+
+dependencies {
+    compile 'org.spongepowered:spongeapi:7.0.0'
+}
