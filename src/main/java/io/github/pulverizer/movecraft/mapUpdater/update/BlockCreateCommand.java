@@ -3,6 +3,7 @@ package io.github.pulverizer.movecraft.mapUpdater.update;
 import io.github.pulverizer.movecraft.Movecraft;
 import io.github.pulverizer.movecraft.MovecraftLocation;
 import io.github.pulverizer.movecraft.craft.Craft;
+import org.spongepowered.api.block.BlockSnapshot;
 import org.spongepowered.api.block.BlockState;
 import org.spongepowered.api.block.BlockType;
 import org.spongepowered.api.block.BlockTypes;
@@ -48,8 +49,8 @@ public class BlockCreateCommand extends UpdateCommand {
             }
         }
         if (type == BlockTypes.POWERED_COMPARATOR) { // for some reason comparators are flakey, have to do it twice sometimes
-            BlockState b = newBlockLocation.toSponge(world).getBlock();
-            if (b.getType() != BlockTypes.POWERED_COMPARATOR) {
+            BlockSnapshot b = newBlockLocation.toSponge(world).createSnapshot();
+            if (b.getState().getType() != BlockTypes.POWERED_COMPARATOR) {
                 b.setTypeIdAndData(type, false);
             }
         }

@@ -2,8 +2,12 @@ package io.github.pulverizer.movecraft;
 
 import com.google.inject.Inject;
 import org.slf4j.Logger;
+import org.spongepowered.api.Sponge;
 import org.spongepowered.api.block.BlockType;
 import org.spongepowered.api.config.ConfigDir;
+import org.spongepowered.api.event.Listener;
+import org.spongepowered.api.event.game.state.GamePreInitializationEvent;
+import org.spongepowered.api.event.game.state.GameStoppingEvent;
 import org.spongepowered.api.plugin.Plugin;
 
 import io.github.pulverizer.movecraft.async.AsyncManager;
@@ -34,6 +38,7 @@ import io.github.pulverizer.movecraft.sign.StatusSign;
 import io.github.pulverizer.movecraft.sign.SubcraftRotateSign;
 import io.github.pulverizer.movecraft.sign.TeleportSign;
 
+import org.spongepowered.api.plugin.PluginContainer;
 import org.yaml.snakeyaml.Yaml;
 
 import java.io.File;
@@ -44,6 +49,8 @@ import java.io.InputStream;
 import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
+import java.util.Optional;
 
 @Plugin(id = "movecraft", name = "Movecraft for Sponge", description = "Movecraft for Sponge", version = "0.0.0")
 public class Movecraft {
@@ -65,7 +72,8 @@ public class Movecraft {
 
     private static Movecraft instance;
     private boolean shuttingDown;
-    private WorldHandler worldHandler;
+    //Remove?
+    //private WorldHandler worldHandler;
 
 
     private AsyncManager asyncManager;
@@ -74,13 +82,13 @@ public class Movecraft {
         return instance;
     }
 
-    @Override
-    public void onDisable() {
+    @Listener
+    public void onDisable(GameStoppingEvent event) {
         shuttingDown = true;
     }
 
-    @Override
-    public void onEnable() {
+    @Listener
+    public void onEnable(GamePreInitializationEvent event) {
         // Read in config
         this.saveDefaultConfig();
 
@@ -96,7 +104,8 @@ public class Movecraft {
             logger.info("No PilotTool setting, using default of minecraft:stick");
         }
 
-        //Switch to interfaces
+        //Remove?
+        /*//Switch to interfaces
         String packageName = this.getServer().getClass().getPackage().getName();
         String version = packageName.substring(packageName.lastIndexOf('.') + 1);
         try {
@@ -111,7 +120,7 @@ public class Movecraft {
             this.setEnabled(false);
             return;
         }
-        this.getLogger().info("Loading support for " + version);
+        this.getLogger().info("Loading support for " + version);*/
 
 
         Settings.SinkCheckTicks = getConfig().getDouble("SinkCheckTicks", 100.0);
@@ -131,7 +140,10 @@ public class Movecraft {
             Map<String, Object> temp = getConfig().getConfigurationSection("DurabilityOverride").getValues(false);
             Settings.DurabilityOverride = new HashMap<>();
             for (String str : temp.keySet()) {
-                Settings.DurabilityOverride.put(Integer.parseInt(str), (Integer) temp.get(str));
+                Optional<BlockType> block = Sponge.getRegistry().getType(BlockType.class, str);
+                if(block.isPresent()) {
+                    Settings.DurabilityOverride.put(block.get(), (Integer) temp.get(str));
+                }
             }
 
         }
@@ -139,12 +151,12 @@ public class Movecraft {
 
 
 
-
-        if (!Settings.CompatibilityMode) {
+        //Remove WorldHandler?
+        /*if (!Settings.CompatibilityMode) {
             for (BlockType typ : Settings.DisableShadowBlocks) {
                 worldHandler.disableShadow(typ);
             }
-        }
+        }*/
 
         String[] localisations = {"en", "cz", "nl"};
         for (String s : localisations) {
@@ -158,7 +170,6 @@ public class Movecraft {
         if (shuttingDown && Settings.IGNORE_RESET) {
             logger.error(I18nSupport.getInternationalisedString("Startup - Error - Reload error"));
             logger.info(I18nSupport.getInternationalisedString("Startup - Error - Disable warning for reload"));
-            getPluginLoader().disablePlugin(this);
         } else {
 
             // Startup procedure
@@ -168,8 +179,8 @@ public class Movecraft {
 
             CraftManager.initialize();
 
-            getServer().getPluginManager().registerEvents(new InteractListener(), this);
-            }
+            //TODO: Re-add this good stuff!
+            /*
             this.getCommand("movecraft").setExecutor(new MovecraftCommand());
             this.getCommand("release").setExecutor(new ReleaseCommand());
             this.getCommand("pilot").setExecutor(new PilotCommand());
@@ -179,43 +190,45 @@ public class Movecraft {
             this.getCommand("manoverboard").setExecutor(new ManOverboardCommand());
             this.getCommand("contacts").setExecutor(new ContactsCommand());
             this.getCommand("scuttle").setExecutor(new ScuttleCommand());
+            */
 
-            getServer().getPluginManager().registerEvents(new BlockListener(), this);
-            getServer().getPluginManager().registerEvents(new PlayerListener(), this);
-            getServer().getPluginManager().registerEvents(new AntiAircraftDirectorSign(), this);
-            getServer().getPluginManager().registerEvents(new AscendSign(), this);
-            getServer().getPluginManager().registerEvents(new CannonDirectorSign(), this);
-            getServer().getPluginManager().registerEvents(new ContactsSign(), this);
-            getServer().getPluginManager().registerEvents(new CraftSign(), this);
-            getServer().getPluginManager().registerEvents(new CrewSign(), this);
-            getServer().getPluginManager().registerEvents(new CruiseSign(), this);
-            getServer().getPluginManager().registerEvents(new DescendSign(), this);
-            getServer().getPluginManager().registerEvents(new HelmSign(), this);
-            getServer().getPluginManager().registerEvents(new MoveSign(), this);
-            getServer().getPluginManager().registerEvents(new PilotSign(), this);
-            getServer().getPluginManager().registerEvents(new RelativeMoveSign(), this);
-            getServer().getPluginManager().registerEvents(new ReleaseSign(), this);
-            getServer().getPluginManager().registerEvents(new RemoteSign(), this);
-            //getServer().getPluginManager().registerEvents(new RepairSign(), this);
-            getServer().getPluginManager().registerEvents(new SpeedSign(), this);
-            getServer().getPluginManager().registerEvents(new StatusSign(), this);
-            getServer().getPluginManager().registerEvents(new SubcraftRotateSign(), this);
-            getServer().getPluginManager().registerEvents(new TeleportSign(), this);
+            Sponge.getEventManager().registerListeners(this, new InteractListener());
+            Sponge.getEventManager().registerListeners(this, new BlockListener());
+            Sponge.getEventManager().registerListeners(this, new PlayerListener());
+            Sponge.getEventManager().registerListeners(this, new AntiAircraftDirectorSign());
+            Sponge.getEventManager().registerListeners(this, new AscendSign());
+            Sponge.getEventManager().registerListeners(this, new CannonDirectorSign());
+            Sponge.getEventManager().registerListeners(this, new ContactsSign());
+            Sponge.getEventManager().registerListeners(this, new CraftSign());
+            Sponge.getEventManager().registerListeners(this, new CrewSign());
+            Sponge.getEventManager().registerListeners(this, new CruiseSign());
+            Sponge.getEventManager().registerListeners(this, new DescendSign());
+            Sponge.getEventManager().registerListeners(this, new HelmSign());
+            Sponge.getEventManager().registerListeners(this, new MoveSign());
+            Sponge.getEventManager().registerListeners(this, new PilotSign());
+            Sponge.getEventManager().registerListeners(this, new RelativeMoveSign());
+            Sponge.getEventManager().registerListeners(this, new ReleaseSign());
+            Sponge.getEventManager().registerListeners(this, new RemoteSign());
+            //Sponge.getEventManager().registerListeners(this, new RepairSign());
+            Sponge.getEventManager().registerListeners(this, new SpeedSign());
+            Sponge.getEventManager().registerListeners(this, new StatusSign());
+            Sponge.getEventManager().registerListeners(this, new SubcraftRotateSign());
+            Sponge.getEventManager().registerListeners(this, new TeleportSign());
 
-            logger.info(String.format(I18nSupport.getInternationalisedString("Startup - Enabled message"), getDescription().getVersion()));
+            logger.info(String.format(I18nSupport.getInternationalisedString("Startup - Enabled message"), "0.0.0"));
         }
     }
 
-    @Override
-    public void onLoad() {
-        super.onLoad();
+    @Listener
+    public void onLoad(GamePreInitializationEvent event) {
         instance = this;
         logger = getLogger();
     }
 
-    public WorldHandler getWorldHandler(){
+    //Remove?
+    /*public WorldHandler getWorldHandler(){
         return worldHandler;
-    }
+    }*/
 
     public AsyncManager getAsyncManager(){return asyncManager;}
 
