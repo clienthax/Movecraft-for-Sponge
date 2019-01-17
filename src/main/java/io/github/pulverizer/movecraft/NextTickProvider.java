@@ -22,7 +22,7 @@ public class NextTickProvider {
     }
 
     @SuppressWarnings("unchecked")
-    private void registerWorld(@NotNull WorldServer world){
+    private void registerWorld(WorldServer world){
         List<NextTickListEntry> W = new ArrayList<>();
         HashTreeSet<NextTickListEntry> nextTickList = new HashTreeSet<>();
 
