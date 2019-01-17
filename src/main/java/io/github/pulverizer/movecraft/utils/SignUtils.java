@@ -18,9 +18,7 @@ public class SignUtils {
         Rotation rotation = null;
         Logger logger = Movecraft.getInstance().getLogger();
 
-        if (block.getExtendedState().supports(Keys.ROTATION)) {
-            rotation = block.getExtendedState().get(Keys.ROTATION).get();
-        }
+        rotation = block.get(Keys.ROTATION).orElse(null);
 
         if (rotation == null) {
             logger.error("Fatal Exception - Sign Rotation Not Found!");
