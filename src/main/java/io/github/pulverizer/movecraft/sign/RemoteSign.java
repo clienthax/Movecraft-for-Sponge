@@ -40,7 +40,7 @@ public final class RemoteSign {
         Craft foundCraft = null;
         World blockWorld = block.getLocation().get().getExtent();
         for (Craft tcraft : CraftManager.getInstance().getCraftsInWorld(blockWorld)) {
-            if (MathUtils.locationInHitbox(tcraft.getHitBox(), block.getLocation())) {
+            if (MathUtils.locationInHitbox(tcraft.getHitBox(), block.getLocation().get())) {
                 // don't use a craft with a null player. This is
                 // mostly to avoid trying to use subcrafts
                 if (CraftManager.getInstance().getPlayerFromCraft(tcraft) != null) {
@@ -70,6 +70,14 @@ public final class RemoteSign {
         }
 
         String targetText = sign.lines().get(1).toPlain();
+
+        if (targetText.equalsIgnoreCase("")) {
+            if (player != null) {
+                player.sendMessage(Text.of("ERROR: Remote Sign can't remote blank signs!"));
+            }
+            return;
+        }
+
         if (targetText.equalsIgnoreCase(HEADER)) {
             if (player != null) {
                 player.sendMessage(Text.of("ERROR: Remote Sign can't remote another Remote Sign!"));
@@ -78,7 +86,7 @@ public final class RemoteSign {
         }
         LinkedList<MovecraftLocation> foundLocations = new LinkedList<MovecraftLocation>();
         for (MovecraftLocation tloc : foundCraft.getHitBox()) {
-            BlockSnapshot tb = blockWorld.getBlock(tloc.getX(), tloc.getY(), tloc.getZ());
+            BlockSnapshot tb = blockWorld.createSnapshot(tloc.getX(), tloc.getY(), tloc.getZ());
             if (!tb.getState().getType().equals(BlockTypes.STANDING_SIGN) && !tb.getState().getType().equals(BlockTypes.WALL_SIGN)) {
                 continue;
             }
@@ -111,7 +119,7 @@ public final class RemoteSign {
         }
 
         for (MovecraftLocation foundLoc : foundLocations) {
-            BlockSnapshot newBlock = blockWorld.getBlock(foundLoc.getX(), foundLoc.getY(), foundLoc.getZ());
+            BlockSnapshot newBlock = blockWorld.createSnapshot(foundLoc.getX(), foundLoc.getY(), foundLoc.getZ());
 
             InteractBlockEvent interact = null;
 

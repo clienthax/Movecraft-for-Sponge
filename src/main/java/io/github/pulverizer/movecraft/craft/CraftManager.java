@@ -3,6 +3,7 @@ package io.github.pulverizer.movecraft.craft;
 import io.github.pulverizer.movecraft.Movecraft;
 import io.github.pulverizer.movecraft.localisation.I18nSupport;
 import org.spongepowered.api.entity.living.player.Player;
+import org.spongepowered.api.scheduler.Task;
 import org.spongepowered.api.text.Text;
 import org.spongepowered.api.world.World;
 
@@ -15,7 +16,7 @@ public class CraftManager implements Iterable<Craft>{
     private static CraftManager ourInstance;
     private final Set<Craft> craftList = ConcurrentHashMap.newKeySet();
     private final ConcurrentMap<Player, Craft> craftPlayerIndex = new ConcurrentHashMap<>();
-    private final ConcurrentMap<Craft, BukkitTask> releaseEvents = new ConcurrentHashMap<>();
+    private final ConcurrentMap<Craft, Task> releaseEvents = new ConcurrentHashMap<>();
     private Set<CraftType> craftTypes;
 
     public static void initialize(){
@@ -173,12 +174,8 @@ public class CraftManager implements Iterable<Craft>{
         if (p!=null) {
             p.sendMessage(Text.of(I18nSupport.getInternationalisedString("Release - Player has left craft")));
         }
-        BukkitTask releaseTask = new BukkitRunnable() {
-            @Override
-            public void run() {
-                removeCraft(c);
-            }
-        }.runTaskLater(Movecraft.getInstance(), (20 * 15));
+
+        Task releaseTask = Task.builder().delayTicks(20*15).execute(() -> removeCraft(c)).submit(Movecraft.getInstance());
         releaseEvents.put(c, releaseTask);
 
     }

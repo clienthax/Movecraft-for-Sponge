@@ -35,7 +35,7 @@ public class BlockCreateCommand extends UpdateCommand {
     @SuppressWarnings("deprecation")
     public void doUpdate() {
         // now do the block updates, move entities when you set the block they are on
-        Movecraft.getInstance().getWorldHandler().setBlockFast(newBlockLocation.toSponge(world),type);
+        Movecraft.getInstance().getWorldHandler().setBlockFast(newBlockLocation.toSponge(world), type);
         //craft.incrementBlockUpdates();
         newBlockLocation.toSponge(world).getBlock().getState().update(false, false);
 

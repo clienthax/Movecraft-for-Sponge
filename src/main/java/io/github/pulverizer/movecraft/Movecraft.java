@@ -72,8 +72,7 @@ public class Movecraft {
 
     private static Movecraft instance;
     private boolean shuttingDown;
-    //Remove?
-    //private WorldHandler worldHandler;
+    private WorldHandler worldHandler;
 
 
     private AsyncManager asyncManager;
@@ -104,23 +103,9 @@ public class Movecraft {
             logger.info("No PilotTool setting, using default of minecraft:stick");
         }
 
-        //Remove?
-        /*//Switch to interfaces
-        String packageName = this.getServer().getClass().getPackage().getName();
-        String version = packageName.substring(packageName.lastIndexOf('.') + 1);
-        try {
-            final Class<?> clazz = Class.forName("net.countercraft.movecraft.compat." + version + ".IWorldHandler");
-            // Check if we have a NMSHandler class at that location.
-            if (WorldHandler.class.isAssignableFrom(clazz)) { // Make sure it actually implements NMS
-                this.worldHandler = (WorldHandler) clazz.getConstructor().newInstance(); // Set our handler
-            }
-        } catch (final Exception e) {
-            e.printStackTrace();
-            this.getLogger().error("Could not find support for this version.");
-            this.setEnabled(false);
-            return;
-        }
-        this.getLogger().info("Loading support for " + version);*/
+        worldHandler = new WorldHandler();
+
+        this.getLogger().info("Loading support for 1.12!");
 
 
         Settings.SinkCheckTicks = getConfig().getDouble("SinkCheckTicks", 100.0);
@@ -151,12 +136,11 @@ public class Movecraft {
 
 
 
-        //Remove WorldHandler?
-        /*if (!Settings.CompatibilityMode) {
+        if (!Settings.CompatibilityMode) {
             for (BlockType typ : Settings.DisableShadowBlocks) {
                 worldHandler.disableShadow(typ);
             }
-        }*/
+        }
 
         String[] localisations = {"en", "cz", "nl"};
         for (String s : localisations) {
@@ -225,10 +209,9 @@ public class Movecraft {
         logger = getLogger();
     }
 
-    //Remove?
-    /*public WorldHandler getWorldHandler(){
+    public WorldHandler getWorldHandler(){
         return worldHandler;
-    }*/
+    }
 
     public AsyncManager getAsyncManager(){return asyncManager;}
 

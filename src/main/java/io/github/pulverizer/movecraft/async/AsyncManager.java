@@ -98,7 +98,7 @@ public class AsyncManager {
         if (c.isNotProcessing()) {
             c.setProcessing(true);
             ownershipMap.put(task, c);
-            task.runTaskAsynchronously(Movecraft.getInstance());
+            task.run(Movecraft.getInstance(), true);
         }
     }
 
