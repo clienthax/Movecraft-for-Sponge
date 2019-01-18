@@ -6,6 +6,7 @@ import org.spongepowered.api.block.BlockType;
 import org.spongepowered.api.block.BlockTypes;
 import org.spongepowered.api.block.tileentity.TileEntity;
 import org.spongepowered.api.entity.living.player.Player;
+import org.spongepowered.api.network.PlayerConnection;
 import org.spongepowered.api.world.Chunk;
 import org.spongepowered.api.world.Location;
 import io.github.pulverizer.movecraft.config.Settings;
@@ -198,7 +199,7 @@ public class WorldHandler {
         //get the blocks
         List<IBlockData> blockData = new ArrayList<>();
         for(Vector3i blockPosition : blockPositions){
-            blockData.add(nativeWorld.getType(blockPosition));
+            blockData.add(nativeWorld.getBlockType(blockPosition));
         }
         //translate the blockPositions
         List<Vector3i> newBlockPositions = new ArrayList<>();
@@ -242,13 +243,13 @@ public class WorldHandler {
         //*******************************************
         List<Chunk> chunks = new ArrayList<>();
         for(Vector3i blockPosition : newBlockPositions){
-            Chunk chunk = nativeWorld.getChunkAtWorldCoords(blockPosition);
+            Chunk chunk = nativeWorld.getChunkAtBlock(blockPosition);
             if(!chunks.contains(chunk)){
                 chunks.add(chunk);
             }
         }
         for(Vector3i blockPosition : deleteBlockPositions){
-            Chunk chunk = nativeWorld.getChunkAtWorldCoords(blockPosition);
+            Chunk chunk = nativeWorld.getChunkAtBlock(blockPosition);
             if(!chunks.contains(chunk)){
                 chunks.add(chunk);
             }
@@ -262,9 +263,9 @@ public class WorldHandler {
             return null;
         //cleanup
         world.capturedTileEntities.remove(blockPosition);
-        world.getChunkAtWorldCoords(blockPosition).getTileEntities().remove(blockPosition);
+        world.getChunkAtBlock(blockPosition).getTileEntities().remove(blockPosition);
         if(!Settings.IsPaper)
-            world.tileEntityList.remove(tile);
+            world.getTileEntities().remove(tile);
         world.tileEntityListTick.remove(tile);
         if(!bMap.containsKey(world)){
             try {
