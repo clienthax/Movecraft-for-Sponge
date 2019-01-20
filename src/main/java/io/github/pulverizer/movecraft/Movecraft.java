@@ -1,6 +1,12 @@
 package io.github.pulverizer.movecraft;
 
+import com.google.common.reflect.TypeToken;
 import com.google.inject.Inject;
+import ninja.leaping.configurate.ConfigurationNode;
+import ninja.leaping.configurate.ConfigurationOptions;
+import ninja.leaping.configurate.loader.ConfigurationLoader;
+import ninja.leaping.configurate.objectmapping.ObjectMappingException;
+import ninja.leaping.configurate.yaml.YAMLConfigurationLoader;
 import org.slf4j.Logger;
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.block.BlockType;
@@ -8,6 +14,8 @@ import org.spongepowered.api.config.ConfigDir;
 import org.spongepowered.api.event.Listener;
 import org.spongepowered.api.event.game.state.GamePreInitializationEvent;
 import org.spongepowered.api.event.game.state.GameStoppingEvent;
+import org.spongepowered.api.item.ItemType;
+import org.spongepowered.api.item.ItemTypes;
 import org.spongepowered.api.plugin.Plugin;
 
 import io.github.pulverizer.movecraft.async.AsyncManager;
@@ -38,22 +46,23 @@ import io.github.pulverizer.movecraft.sign.StatusSign;
 import io.github.pulverizer.movecraft.sign.SubcraftRotateSign;
 import io.github.pulverizer.movecraft.sign.TeleportSign;
 
-import org.spongepowered.api.plugin.PluginContainer;
-import org.yaml.snakeyaml.Yaml;
-
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.InputStream;
 
+import java.io.IOException;
 import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.Optional;
 
 @Plugin(id = "movecraft", name = "Movecraft for Sponge", description = "Movecraft for Sponge", version = "0.0.0")
 public class Movecraft {
+
+    private static Movecraft instance;
+    private boolean shuttingDown;
+    private WorldHandler worldHandler;
+    private AsyncManager asyncManager;
+
+    private ConfigurationNode mainConfigNode;
 
     @Inject
     private Logger logger;
@@ -70,15 +79,23 @@ public class Movecraft {
         return this.logger;
     }
 
-    private static Movecraft instance;
-    private boolean shuttingDown;
-    private WorldHandler worldHandler;
-
-
-    private AsyncManager asyncManager;
-
     public static synchronized Movecraft getInstance() {
         return instance;
+    }
+
+    public ConfigurationNode getMainConfigNode() {
+        return mainConfigNode;
+    }
+
+    public ConfigurationNode createConfigNode(Path file) {
+        ConfigurationLoader<ConfigurationNode> loader = YAMLConfigurationLoader.builder().setPath(file).build();
+        try {
+            return loader.load(ConfigurationOptions.defaults());
+        } catch (IOException e) {
+            e.printStackTrace();
+            getLogger().error("Fatal Error: Config Handler failed to load!" + e);
+            return null;
+        }
     }
 
     @Listener
@@ -87,64 +104,88 @@ public class Movecraft {
     }
 
     @Listener
-    public void onEnable(GamePreInitializationEvent event) {
+    public void onLoad(GamePreInitializationEvent event) {
+
+        instance = this;
+        logger = getLogger();
+
+        Path mainConfigPath = getConfigDir().resolve("movecraft.cfg");
+        mainConfigNode = createConfigNode(mainConfigPath);
+
         // Read in config
         this.saveDefaultConfig();
 
-        Settings.LOCALE = getConfig().getString("Locale");
-        Settings.Debug = getConfig().getBoolean("Debug", false);
-        Settings.DisableSpillProtection = getConfig().getBoolean("DisableSpillProtection", false);
-        // if the PilotTool is specified in the config.yml file, use it
-        if (getConfig().getInt("PilotTool") != 0) {
-            logger.info("Recognized PilotTool setting of: "
-                    + getConfig().getInt("PilotTool"));
-            Settings.PilotTool = getConfig().getInt("PilotTool");
-        } else {
+        Settings.LOCALE = mainConfigNode.getNode("Locale").getString();
+        Settings.Debug = mainConfigNode.getNode("Debug").getBoolean(false);
+        Settings.DisableSpillProtection = mainConfigNode.getNode("DisableSpillProtection").getBoolean(false);
+
+        ItemType pilotStick = ItemTypes.AIR;
+
+        try {
+            // if the PilotTool is specified in the config.yml file, use it
+            if (mainConfigNode.getNode("PilotTool").getValue(TypeToken.of(ItemType.class)) != null) {
+                logger.info("Recognized PilotTool setting of: " + mainConfigNode.getNode("PilotTool").getValue(TypeToken.of(ItemType.class)));
+                pilotStick = mainConfigNode.getNode("PilotTool").getValue(TypeToken.of(ItemType.class));
+            }
+        } catch (ObjectMappingException e) {
+            e.printStackTrace();
+        }
+
+        if (pilotStick == ItemTypes.AIR) {
             logger.info("No PilotTool setting, using default of minecraft:stick");
+            Settings.PilotTool = ItemTypes.STICK;
+        } else {
+            Settings.PilotTool = pilotStick;
         }
 
         worldHandler = new WorldHandler();
 
-        this.getLogger().info("Loading support for 1.12!");
 
+        Settings.SinkCheckTicks = mainConfigNode.getNode("SinkCheckTicks").getDouble(100.0);
+        Settings.TracerRateTicks = mainConfigNode.getNode("TracerRateTicks").getDouble(5.0);
+        Settings.ManOverBoardTimeout = mainConfigNode.getNode("ManOverBoardTimeout").getInt(30);
+        Settings.SilhouetteViewDistance = mainConfigNode.getNode("SilhouetteViewDistance").getInt(200);
+        Settings.SilhouetteBlockCount = mainConfigNode.getNode("SilhouetteBlockCount").getInt(20);
+        Settings.FireballLifespan = mainConfigNode.getNode("FireballLifespan").getInt(6);
+        Settings.FireballPenetration = mainConfigNode.getNode("FireballPenetration").getBoolean(true);
+        Settings.ProtectPilotedCrafts = mainConfigNode.getNode("ProtectPilotedCrafts").getBoolean(true);
+        Settings.AllowCrewSigns = mainConfigNode.getNode("AllowCrewSigns").getBoolean(true);
+        Settings.SetHomeToCrewSign = mainConfigNode.getNode("SetHomeToCrewSign").getBoolean(true);
+        Settings.RequireCreatePerm = mainConfigNode.getNode("RequireCreatePerm").getBoolean(false);
+        Settings.TNTContactExplosives = mainConfigNode.getNode("TNTContactExplosives").getBoolean(true);
+        Settings.FadeWrecksAfter = mainConfigNode.getNode("FadeWrecksAfter").getInt(0);
+        Settings.DurabilityOverride = new HashMap<>();
 
-        Settings.SinkCheckTicks = getConfig().getDouble("SinkCheckTicks", 100.0);
-        Settings.TracerRateTicks = getConfig().getDouble("TracerRateTicks", 5.0);
-        Settings.ManOverBoardTimeout = getConfig().getInt("ManOverBoardTimeout", 30);
-        Settings.SilhouetteViewDistance = getConfig().getInt("SilhouetteViewDistance", 200);
-        Settings.SilhouetteBlockCount = getConfig().getInt("SilhouetteBlockCount", 20);
-        Settings.FireballLifespan = getConfig().getInt("FireballLifespan", 6);
-        Settings.FireballPenetration = getConfig().getBoolean("FireballPenetration", true);
-        Settings.ProtectPilotedCrafts = getConfig().getBoolean("ProtectPilotedCrafts", false);
-        Settings.AllowCrewSigns = getConfig().getBoolean("AllowCrewSigns", true);
-        Settings.SetHomeToCrewSign = getConfig().getBoolean("SetHomeToCrewSign", true);
-        Settings.RequireCreatePerm = getConfig().getBoolean("RequireCreatePerm", false);
-        Settings.TNTContactExplosives = getConfig().getBoolean("TNTContactExplosives", true);
-        Settings.FadeWrecksAfter = getConfig().getInt("FadeWrecksAfter", 0);
-        if (getConfig().contains("DurabilityOverride")) {
-            Map<String, Object> temp = getConfig().getConfigurationSection("DurabilityOverride").getValues(false);
-            Settings.DurabilityOverride = new HashMap<>();
-            for (String str : temp.keySet()) {
-                Optional<BlockType> block = Sponge.getRegistry().getType(BlockType.class, str);
-                if(block.isPresent()) {
-                    Settings.DurabilityOverride.put(block.get(), (Integer) temp.get(str));
-                }
+        try {
+            Map<BlockType, Integer> tempMap = mainConfigNode.getNode("DurabilityOverride").getValue(new TypeToken<Map<BlockType, Integer>>() {});
+            for (BlockType blockType : tempMap.keySet()) {
+                Settings.DurabilityOverride.put(blockType, tempMap.get(blockType));
             }
 
+        } catch (ObjectMappingException e) {
+            e.printStackTrace();
         }
-        Settings.DisableShadowBlocks = new HashSet<BlockType>(getConfig().getIntegerList("DisableShadowBlocks"));  //REMOVE FOR PUBLIC VERSION
+
+        try {
+            Settings.DisableShadowBlocks = new HashSet<BlockType>(mainConfigNode.getNode("DisableShadowBlocks").getList(TypeToken.of(BlockType.class)));  //REMOVE FOR PUBLIC VERSION
+        } catch (ObjectMappingException e) {
+            e.printStackTrace();
+
+            Settings.DisableShadowBlocks = new HashSet<>();
+        }
 
 
-
+        /* TODO: Re-enable this?
         if (!Settings.CompatibilityMode) {
             for (BlockType typ : Settings.DisableShadowBlocks) {
                 worldHandler.disableShadow(typ);
             }
         }
+        */
 
         String[] localisations = {"en", "cz", "nl"};
         for (String s : localisations) {
-            if (!new File(getDataFolder()
+            if (!new File(getConfigDir()
                     + "/localisation/movecraftlang_" + s + ".properties").exists()) {
                 this.saveResource("localisation/movecraftlang_" + s + ".properties", false);
             }
@@ -193,7 +234,6 @@ public class Movecraft {
             Sponge.getEventManager().registerListeners(this, new RelativeMoveSign());
             Sponge.getEventManager().registerListeners(this, new ReleaseSign());
             Sponge.getEventManager().registerListeners(this, new RemoteSign());
-            //Sponge.getEventManager().registerListeners(this, new RepairSign());
             Sponge.getEventManager().registerListeners(this, new SpeedSign());
             Sponge.getEventManager().registerListeners(this, new StatusSign());
             Sponge.getEventManager().registerListeners(this, new SubcraftRotateSign());
@@ -203,16 +243,12 @@ public class Movecraft {
         }
     }
 
-    @Listener
-    public void onLoad(GamePreInitializationEvent event) {
-        instance = this;
-        logger = getLogger();
-    }
-
     public WorldHandler getWorldHandler(){
         return worldHandler;
     }
 
-    public AsyncManager getAsyncManager(){return asyncManager;}
+    public AsyncManager getAsyncManager(){
+        return asyncManager;
+    }
 
 }

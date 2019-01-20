@@ -131,9 +131,7 @@ public class CraftRotateCommand extends UpdateCommand {
             for (MovecraftLocation location : craft.getHitBox()) {
                 BlockSnapshot block = location.toSponge(craft.getW()).createSnapshot();
                 if (block.getState().getType() == BlockTypes.WALL_SIGN || block.getState().getType() == BlockTypes.STANDING_SIGN) {
-                    Sign sign = (Sign) block.getState();
-                    Sponge.getEventManager().post(new SignTranslateEvent(block, craft, sign.getLines()));
-                    sign.update();
+                    Sponge.getEventManager().post(new SignTranslateEvent(block, craft));
                 }
             }
 
@@ -167,9 +165,7 @@ public class CraftRotateCommand extends UpdateCommand {
             for (MovecraftLocation location : craft.getHitBox()) {
                 BlockSnapshot block = location.toSponge(craft.getW()).createSnapshot();
                 if (block.getState().getType() == BlockTypes.WALL_SIGN || block.getState().getType() == BlockTypes.STANDING_SIGN) {
-                    Sign sign = (Sign) block.getState();
-                    Bukkit.getServer().getPluginManager().callEvent(new SignTranslateEvent(block, craft, sign.getLines()));
-                    sign.update();
+                    Sponge.getEventManager().post(new SignTranslateEvent(block, craft));
                 }
             }
         }

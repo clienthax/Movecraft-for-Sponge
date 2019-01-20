@@ -12,7 +12,9 @@ import org.spongepowered.api.data.type.HandTypes;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.event.Listener;
 import org.spongepowered.api.event.block.InteractBlockEvent;
+import org.spongepowered.api.event.filter.cause.Root;
 import org.spongepowered.api.text.Text;
+import org.spongepowered.api.world.BlockChangeFlags;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -21,10 +23,8 @@ public final class InteractListener {
     private static final Map<Player, Long> timeMap = new HashMap<>();
 
     @Listener
-    public final void onPlayerInteract(InteractBlockEvent event) {
-        if (!(event instanceof InteractBlockEvent.Primary)) {
-            return;
-        }
+    public final void onPlayerInteract(InteractBlockEvent.Primary event, @Root Player player) {
+
         BlockSnapshot block = event.getTargetBlock();
         if (!block.getState().getType().equals(BlockTypes.WOODEN_BUTTON) && !block.getState().getType().equals(BlockTypes.STONE_BUTTON)) {
             return;
@@ -32,20 +32,12 @@ public final class InteractListener {
         // if they left click a button which is pressed, unpress it
         if (block.get(Keys.POWERED).orElse(false)) {
             block = block.with(Keys.POWERED, false).get();
-            block.getLocation().get().setBlock(block.getState());
+            block.getLocation().get().restoreSnapshot(block, true, BlockChangeFlags.ALL);
         }
     }
 
     @Listener
-    public void onPlayerInteractStick(InteractBlockEvent event) {
-
-        Player player = null;
-        if (event.getSource() instanceof Player) {
-            player = ((Player) event.getSource()).getPlayer().orElse(null);
-        }
-        if (player == null) {
-            return;
-        }
+    public void onPlayerInteractStick(InteractBlockEvent event, @Root Player player) {
 
         Craft c = CraftManager.getInstance().getCraftByPlayer(player);
         // if not in command of craft, don't process pilot tool clicks
@@ -93,7 +85,7 @@ public final class InteractListener {
 
                 craft.translate(0, DY, 0);
                 timeMap.put(player, System.currentTimeMillis());
-                craft.setLastCruisUpdate(System.currentTimeMillis());
+                craft.setLastCruiseUpdate(System.currentTimeMillis());
                 return;
             }
             // Player is onboard craft and right clicking
@@ -117,7 +109,7 @@ public final class InteractListener {
 
             craft.translate(dx, dy, dz);
             timeMap.put(player, System.currentTimeMillis());
-            craft.setLastCruisUpdate(System.currentTimeMillis());
+            craft.setLastCruiseUpdate(System.currentTimeMillis());
             return;
         }
         if (event instanceof InteractBlockEvent.Primary) {

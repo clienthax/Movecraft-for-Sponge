@@ -186,7 +186,7 @@ public class WorldHandler {
 
     public BlockSnapshot rotateBlock(Rotation rotation, BlockSnapshot block) {
 
-        if (rotation == Rotation.NONE || !block.supports(Keys.DIRECTION))
+        if (rotation == Rotation.NONE || !block.supports(Keys.DIRECTION) || !block.get(Keys.DIRECTION).isPresent())
             return block;
 
         BlockSnapshot rotatedBlock = block;
@@ -196,26 +196,98 @@ public class WorldHandler {
         if (rotation == Rotation.CLOCKWISE && oldBlockDirection == Direction.NORTH)
             newBlockDirection = Direction.EAST;
 
+        if (rotation == Rotation.CLOCKWISE && oldBlockDirection == Direction.NORTH_NORTHEAST)
+            newBlockDirection = Direction.EAST_SOUTHEAST;
+
+        if (rotation == Rotation.CLOCKWISE && oldBlockDirection == Direction.NORTHEAST)
+            newBlockDirection = Direction.SOUTHEAST;
+
+        if (rotation == Rotation.CLOCKWISE && oldBlockDirection == Direction.EAST_NORTHEAST)
+            newBlockDirection = Direction.SOUTH_SOUTHEAST;
+
         if (rotation == Rotation.CLOCKWISE && oldBlockDirection == Direction.EAST)
             newBlockDirection = Direction.SOUTH;
+
+        if (rotation == Rotation.CLOCKWISE && oldBlockDirection == Direction.EAST_SOUTHEAST)
+            newBlockDirection = Direction.SOUTH_SOUTHWEST;
+
+        if (rotation == Rotation.CLOCKWISE && oldBlockDirection == Direction.SOUTHEAST)
+            newBlockDirection = Direction.SOUTHWEST;
+
+        if (rotation == Rotation.CLOCKWISE && oldBlockDirection == Direction.SOUTH_SOUTHEAST)
+            newBlockDirection = Direction.WEST_SOUTHWEST;
 
         if (rotation == Rotation.CLOCKWISE && oldBlockDirection == Direction.SOUTH)
             newBlockDirection = Direction.WEST;
 
+        if (rotation == Rotation.CLOCKWISE && oldBlockDirection == Direction.SOUTH_SOUTHWEST)
+            newBlockDirection = Direction.WEST_NORTHWEST;
+
+        if (rotation == Rotation.CLOCKWISE && oldBlockDirection == Direction.SOUTHWEST)
+            newBlockDirection = Direction.NORTHWEST;
+
+        if (rotation == Rotation.CLOCKWISE && oldBlockDirection == Direction.WEST_SOUTHWEST)
+            newBlockDirection = Direction.NORTH_NORTHWEST;
+
         if (rotation == Rotation.CLOCKWISE && oldBlockDirection == Direction.WEST)
             newBlockDirection = Direction.NORTH;
+
+        if (rotation == Rotation.CLOCKWISE && oldBlockDirection == Direction.WEST_NORTHWEST)
+            newBlockDirection = Direction.NORTH_NORTHEAST;
+
+        if (rotation == Rotation.CLOCKWISE && oldBlockDirection == Direction.NORTHWEST)
+            newBlockDirection = Direction.NORTHEAST;
+
+        if (rotation == Rotation.CLOCKWISE && oldBlockDirection == Direction.NORTH_NORTHWEST)
+            newBlockDirection = Direction.EAST_NORTHEAST;
 
         if (rotation == Rotation.ANTICLOCKWISE && oldBlockDirection == Direction.NORTH)
             newBlockDirection = Direction.WEST;
 
+        if (rotation == Rotation.ANTICLOCKWISE && oldBlockDirection == Direction.NORTH_NORTHWEST)
+            newBlockDirection = Direction.WEST_SOUTHWEST;
+
+        if (rotation == Rotation.ANTICLOCKWISE && oldBlockDirection == Direction.NORTHWEST)
+            newBlockDirection = Direction.SOUTHWEST;
+
+        if (rotation == Rotation.ANTICLOCKWISE && oldBlockDirection == Direction.WEST_NORTHWEST)
+            newBlockDirection = Direction.SOUTH_SOUTHWEST;
+
         if (rotation == Rotation.ANTICLOCKWISE && oldBlockDirection == Direction.WEST)
             newBlockDirection = Direction.SOUTH;
+
+        if (rotation == Rotation.ANTICLOCKWISE && oldBlockDirection == Direction.WEST_SOUTHWEST)
+            newBlockDirection = Direction.SOUTH_SOUTHEAST;
+
+        if (rotation == Rotation.ANTICLOCKWISE && oldBlockDirection == Direction.SOUTHWEST)
+            newBlockDirection = Direction.SOUTHEAST;
+
+        if (rotation == Rotation.ANTICLOCKWISE && oldBlockDirection == Direction.SOUTH_SOUTHWEST)
+            newBlockDirection = Direction.EAST_SOUTHEAST;
 
         if (rotation == Rotation.ANTICLOCKWISE && oldBlockDirection == Direction.SOUTH)
             newBlockDirection = Direction.EAST;
 
+        if (rotation == Rotation.ANTICLOCKWISE && oldBlockDirection == Direction.SOUTH_SOUTHEAST)
+            newBlockDirection = Direction.EAST_NORTHEAST;
+
+        if (rotation == Rotation.ANTICLOCKWISE && oldBlockDirection == Direction.SOUTHEAST)
+            newBlockDirection = Direction.NORTHEAST;
+
+        if (rotation == Rotation.ANTICLOCKWISE && oldBlockDirection == Direction.EAST_SOUTHEAST)
+            newBlockDirection = Direction.NORTH_NORTHEAST;
+
         if (rotation == Rotation.ANTICLOCKWISE && oldBlockDirection == Direction.EAST)
             newBlockDirection = Direction.NORTH;
+
+        if (rotation == Rotation.ANTICLOCKWISE && oldBlockDirection == Direction.EAST_NORTHEAST)
+            newBlockDirection = Direction.NORTH_NORTHWEST;
+
+        if (rotation == Rotation.ANTICLOCKWISE && oldBlockDirection == Direction.NORTHEAST)
+            newBlockDirection = Direction.NORTHWEST;
+
+        if (rotation == Rotation.ANTICLOCKWISE && oldBlockDirection == Direction.NORTH_NORTHEAST)
+            newBlockDirection = Direction.WEST_NORTHWEST;
 
         if (newBlockDirection == Direction.NONE)
             return block;

@@ -15,6 +15,7 @@ import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.event.Listener;
 import org.spongepowered.api.event.SpongeEventFactory;
 import org.spongepowered.api.event.block.InteractBlockEvent;
+import org.spongepowered.api.event.filter.type.Include;
 import org.spongepowered.api.text.Text;
 import org.spongepowered.api.util.Tristate;
 import org.spongepowered.api.world.World;
@@ -25,15 +26,18 @@ public final class RemoteSign {
     private static final String HEADER = "Remote Sign";
 
     @Listener
+    @Include({InteractBlockEvent.Primary.class, InteractBlockEvent.Secondary.MainHand.class})
     public final void onSignClick(InteractBlockEvent event) {
-        if (!(event instanceof InteractBlockEvent.Primary) && !(event instanceof InteractBlockEvent.Secondary)) {
-            return;
-        }
+
         BlockSnapshot block = event.getTargetBlock();
         if (block.getState().getType() != BlockTypes.STANDING_SIGN && block.getState().getType() != BlockTypes.WALL_SIGN) {
             return;
         }
-        Sign sign = (Sign) block.getState();
+
+        if (!block.getLocation().isPresent() && !block.getLocation().get().getTileEntity().isPresent())
+            return;
+
+        Sign sign = (Sign) block.getLocation().get().getTileEntity().get();
         if (!sign.lines().get(0).toPlain().equalsIgnoreCase(HEADER)) {
             return;
         }
@@ -86,28 +90,32 @@ public final class RemoteSign {
         }
         LinkedList<MovecraftLocation> foundLocations = new LinkedList<MovecraftLocation>();
         for (MovecraftLocation tloc : foundCraft.getHitBox()) {
-            BlockSnapshot tb = blockWorld.createSnapshot(tloc.getX(), tloc.getY(), tloc.getZ());
-            if (!tb.getState().getType().equals(BlockTypes.STANDING_SIGN) && !tb.getState().getType().equals(BlockTypes.WALL_SIGN)) {
+            BlockSnapshot targetBlock = blockWorld.createSnapshot(tloc.getX(), tloc.getY(), tloc.getZ());
+            if (!targetBlock.getState().getType().equals(BlockTypes.STANDING_SIGN) && !targetBlock.getState().getType().equals(BlockTypes.WALL_SIGN)) {
                 continue;
             }
-            Sign ts = (Sign) tb.getState();
 
-            if (ts.lines().get(0).toPlain().equalsIgnoreCase(HEADER)) {
+            if (!targetBlock.getLocation().isPresent() && !targetBlock.getLocation().get().getTileEntity().isPresent())
+                continue;
+
+            Sign targetSign = (Sign) targetBlock.getLocation().get().getTileEntity().get();
+
+            if (targetSign.lines().get(0).toPlain().equalsIgnoreCase(HEADER)) {
                 continue;
             }
-            if (ts.lines().get(0).toPlain().equalsIgnoreCase(targetText)) {
+            if (targetSign.lines().get(0).toPlain().equalsIgnoreCase(targetText)) {
                 foundLocations.add(tloc);
                 continue;
             }
-            if (ts.lines().get(1).toPlain().equalsIgnoreCase(targetText)) {
+            if (targetSign.lines().get(1).toPlain().equalsIgnoreCase(targetText)) {
                 foundLocations.add(tloc);
                 continue;
             }
-            if (ts.lines().get(2).toPlain().equalsIgnoreCase(targetText)) {
+            if (targetSign.lines().get(2).toPlain().equalsIgnoreCase(targetText)) {
                 foundLocations.add(tloc);
                 continue;
             }
-            if (ts.lines().get(3).toPlain().equalsIgnoreCase(targetText)) {
+            if (targetSign.lines().get(3).toPlain().equalsIgnoreCase(targetText)) {
                 foundLocations.add(tloc);
             }
         }
@@ -131,7 +139,8 @@ public final class RemoteSign {
                 interact = SpongeEventFactory.createInteractBlockEventSecondaryMainHand(event.getCause(), Tristate.FALSE, Tristate.FALSE, Tristate.FALSE, Tristate.FALSE, HandTypes.MAIN_HAND, newBlock.getLocation(), newBlock, event.getTargetSide());
             }
 
-            Sponge.getEventManager().post(interact);
+            if (interact != null)
+                Sponge.getEventManager().post(interact);
         }
 
         event.setCancelled(true);

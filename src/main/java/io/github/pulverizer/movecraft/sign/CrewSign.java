@@ -13,80 +13,107 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
+import org.spongepowered.api.Sponge;
+import org.spongepowered.api.block.BlockSnapshot;
 import org.spongepowered.api.block.BlockTypes;
 import org.spongepowered.api.block.tileentity.Sign;
+import org.spongepowered.api.data.key.Keys;
+import org.spongepowered.api.data.value.mutable.ListValue;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.entity.living.player.User;
 import org.spongepowered.api.event.Listener;
+import org.spongepowered.api.event.Order;
+import org.spongepowered.api.event.block.InteractBlockEvent;
 import org.spongepowered.api.event.block.tileentity.ChangeSignEvent;
+import org.spongepowered.api.event.filter.cause.Root;
+import org.spongepowered.api.text.Text;
 import org.spongepowered.api.world.Location;
 import org.spongepowered.api.world.World;
 
-public class CrewSign implements Listener {
+public class CrewSign {
 
-    @EventHandler
-    public final void onSignChange(ChangeSignEvent event) {
-        if (!event.getLine(0).equalsIgnoreCase("Crew:")) {
+    @Listener
+    public final void onSignChange(ChangeSignEvent event, @Root Player player) {
+        if (!event.getText().lines().get(0).toPlain().equalsIgnoreCase("Crew:")) {
             return;
         }
-        Player player = event.getPlayer();
-        event.setLine(1, player.getName());
+        ListValue<Text> lines = event.getText().lines();
+        lines.set(1, Text.of(player.getName()));
+        event.getTargetTile().offer(lines);
     }
 
-    @EventHandler
+    @Listener
     public final void onSignTranslate(SignTranslateEvent event) {
         Craft craft = event.getCraft();
-        if (!Settings.AllowCrewSigns || !ChatColor.stripColor(event.getLine(0)).equalsIgnoreCase("Crew:")) {
+        BlockSnapshot block = event.getBlock();
+
+        if (!block.getLocation().isPresent() || !block.getLocation().get().getTileEntity().isPresent())
+            return;
+
+        Sign sign = (Sign) block.getLocation().get().getTileEntity().get();
+        ListValue<Text> lines = sign.lines();
+
+        if (!Settings.AllowCrewSigns || !lines.get(0).toPlain().equalsIgnoreCase("Crew:")) {
             return;
         }
-        String crewName = ChatColor.stripColor(event.getLine(1));
-        Player crewPlayer = Movecraft.getInstance().getServer().getPlayer(crewName);
-        if (crewPlayer == null) {
+
+        String crewName = lines.get(1).toPlain();
+        if (!Sponge.getServer().getPlayer(crewName).isPresent())
             return;
-        }
-        Location location = event.getBlock().getLocation().subtract(0,1,0);
-        if (!craft.getW().getBlockAt(location).getType().equals(BlockTypes.BED)) {
+
+        Player crewPlayer = Sponge.getServer().getPlayer(crewName).get();
+
+        Location<World> location = block.getLocation().get().sub(0,1,0);
+        if (!location.getBlockType().equals(BlockTypes.BED)) {
             return;
         }
         craft.getCrewSigns().put(crewPlayer.getUniqueId(), location);
     }
 
-    @EventHandler
-    public final void onSignRightClick(PlayerInteractEvent event) {
-        if (!Settings.AllowCrewSigns || !event.getAction().equals(Action.RIGHT_CLICK_BLOCK)) {
+    @Listener
+    public final void onSignRightClick(InteractBlockEvent.Secondary.MainHand event, @Root Player player) {
+
+        if (!Settings.AllowCrewSigns) {
             return;
         }
-        Player player = event.getPlayer();
-        if (!player.isSneaking() || !(event.getClickedBlock().getState() instanceof Sign)) {
+
+        if (!player.get(Keys.IS_SNEAKING).isPresent())
+            return;
+
+        BlockSnapshot block = event.getTargetBlock();
+
+        if (!block.getLocation().isPresent() || !block.getLocation().get().getTileEntity().isPresent())
+            return;
+
+        Sign sign = (Sign) block.getLocation().get().getTileEntity().get();
+        ListValue<Text> lines = sign.lines();
+
+        if (!player.get(Keys.IS_SNEAKING).get() || block.getState().getType() != BlockTypes.STANDING_SIGN || block.getState().getType() != BlockTypes.WALL_SIGN) {
             return;
         }
-        Sign sign = (Sign) event.getClickedBlock().getState();
-        if (!sign.getLine(0).equalsIgnoreCase("Crew:")) {
+
+        if (!lines.get(0).toPlain().equalsIgnoreCase("Crew:")) {
             return;
         }
-        if (!sign.getBlock().getRelative(0,-1,0).getType().equals(BlockTypes.BED)) {
-            player.sendMessage("You need to have a bed below your crew sign");
+        if (!block.getLocation().get().sub(0,-1,0).getBlockType().equals(BlockTypes.BED)) {
+            player.sendMessage(Text.of("You need to have a bed below your crew sign!"));
             return;
         }
-        if (!sign.getLine(1).equalsIgnoreCase(player.getName())) {
-            player.sendMessage("You don't own this crew sign");
+        if (!lines.get(1).toPlain().equalsIgnoreCase(player.getName())) {
+            player.sendMessage(Text.of("You don't own this crew sign!"));
             return;
         }
-        if(CraftManager.getInstance().getCraftByPlayer(player)!=null){
-            player.sendMessage("You can't set your priority crew sign to a piloted craft");
+        if(CraftManager.getInstance().getCraftByPlayer(player) != null){
+            player.sendMessage(Text.of("You can't set your priority crew sign to a piloted craft."));
             return;
         }
         Location location = sign.getLocation();
-        player.sendMessage("Priority crew bed set!");
-        player.setBedSpawnLocation(location, true);
-        if (!Settings.SetHomeToCrewSign || Movecraft.getInstance().getEssentialsPlugin() == null) {
-            return;
-        }
-        User u = Movecraft.getInstance().getEssentialsPlugin().getUser(player);
-        u.setHome("home", location);
+        player.sendMessage(Text.of("Priority crew bed set!"));
+        player.get(Keys.RESPAWN_LOCATIONS).get().
+        player.offer(Keys.RESPAWN_LOCATIONS, )setBedSpawnLocation(location, true);
     }
 
-    @EventHandler(priority = EventPriority.HIGHEST)
+    @Listener(Order.FIRST)
     public final void onPlayerRespawn(PlayerRespawnEvent event) {
         Player player = event.getPlayer();
         Craft craft = CraftManager.getInstance().getCraftByPlayer(player);
@@ -100,17 +127,25 @@ public class CrewSign implements Listener {
         event.setRespawnLocation(craft.getCrewSigns().get(player.getUniqueId()));
     }
 
-    @EventHandler
+    @Listener
     public void onCraftDetect(CraftDetectEvent event){
         World world = event.getCraft().getW();
         for(MovecraftLocation location: event.getCraft().getHitBox()){
-            Block block = location.toBukkit(world).getBlock();
-            if (block.getType() != BlockTypes.WALL_SIGN && block.getType() != BlockTypes.STANDING_SIGN) {
+            BlockSnapshot block = location.toSponge(world).createSnapshot();
+            if (block.getState().getType() != BlockTypes.WALL_SIGN && block.getState().getType() != BlockTypes.STANDING_SIGN) {
                 continue;
             }
-            Sign sign = (Sign) block.getState();
-            if (ChatColor.stripColor(sign.getLine(0)).equalsIgnoreCase("Crew:")) {
-                event.getCraft().getCrewSigns().put(Bukkit.getPlayer(sign.getLine(1)).getUniqueId(),block.getLocation());
+
+            if (!block.getLocation().isPresent() || !block.getLocation().get().getTileEntity().isPresent())
+                continue;
+
+            Sign sign = (Sign) block.getLocation().get().getTileEntity().get();
+            ListValue<Text> lines = sign.lines();
+
+            if (lines.get(0).toPlain().equalsIgnoreCase("Crew:")) {
+
+                if (Sponge.getServer().getPlayer(lines.get(1).toPlain()).isPresent())
+                    event.getCraft().getCrewSigns().put(Sponge.getServer().getPlayer(lines.get(1).toPlain()).get().getUniqueId(),block.getLocation().get());
             }
         }
     }

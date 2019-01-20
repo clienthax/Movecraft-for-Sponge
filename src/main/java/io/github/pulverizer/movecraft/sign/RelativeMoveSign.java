@@ -88,7 +88,7 @@ public final class RelativeMoveSign implements Listener {
         }
         if (CraftManager.getInstance().getCraftByPlayer(event.getPlayer()).getType().getCanStaticMove()) {
             CraftManager.getInstance().getCraftByPlayer(event.getPlayer()).translate(dx, dy, dz);
-            CraftManager.getInstance().getCraftByPlayer(event.getPlayer()).setLastCruisUpdate(System.currentTimeMillis());
+            CraftManager.getInstance().getCraftByPlayer(event.getPlayer()).setLastCruiseUpdate(System.currentTimeMillis());
         }
     }
 }

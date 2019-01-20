@@ -1,31 +1,21 @@
 package io.github.pulverizer.movecraft.config;
 
+import com.google.common.reflect.TypeToken;
+import io.github.pulverizer.movecraft.Movecraft;
+import ninja.leaping.configurate.ConfigurationNode;
+import ninja.leaping.configurate.objectmapping.ObjectMappingException;
 import org.spongepowered.api.block.BlockType;
 import org.spongepowered.api.block.BlockTypes;
-import org.spongepowered.api.config.ConfigDir;
 
 import java.util.ArrayList;
 import java.util.List;
 
 class ConfigManager {
-    @ConfigDir(sharedRoot = false)
-    private final ConfigDir configFile;
 
-    public ConfigManager(ConfigDir configFile) {
-        this.configFile = configFile;
-    }
+    private ConfigurationNode mainConfig = Movecraft.getInstance().getMainConfigNode();
 
     public void loadConfig() {
-        setupDefaults();
-        Settings.DATA_BLOCKS = configFile.getIntegerList("dataBlocks");
-        Settings.THREAD_POOL_SIZE = configFile.getInt("ThreadPoolSize");
-        Settings.IGNORE_RESET = configFile.getBoolean("safeReload");
 
-    }
-
-    private void setupDefaults() {
-        configFile.addDefault("ThreadPoolSize", 5);
-        configFile.addDefault("safeReload", false);
         List<BlockType> dataBlockList = new ArrayList<>();
         dataBlockList.add(BlockTypes.DISPENSER);
         dataBlockList.add(BlockTypes.NOTEBLOCK);
@@ -40,8 +30,14 @@ class ConfigManager {
         dataBlockList.add(BlockTypes.STANDING_SIGN);
         dataBlockList.add(BlockTypes.WOODEN_DOOR);
         dataBlockList.add(BlockTypes.LADDER);
-        configFile.addDefault("dataBlocks", dataBlockList);
-        configFile.options().copyDefaults(true);
+
+        try {
+            Settings.DATA_BLOCKS = mainConfig.getNode("dataBlocks").getList(TypeToken.of(BlockType.class), dataBlockList);
+        } catch (ObjectMappingException e) {
+            e.printStackTrace();
+        }
+        Settings.THREAD_POOL_SIZE = mainConfig.getNode("ThreadPoolSize").getInt(5);
+        Settings.IGNORE_RESET = mainConfig.getNode("safeReload").getBoolean(false);
         //Movecraft.getInstance().saveConfig();
     }
 }

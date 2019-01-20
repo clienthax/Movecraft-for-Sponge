@@ -5,43 +5,55 @@ import io.github.pulverizer.movecraft.craft.Craft;
 import io.github.pulverizer.movecraft.events.CraftDetectEvent;
 import io.github.pulverizer.movecraft.events.SignTranslateEvent;
 import io.github.pulverizer.movecraft.craft.CraftManager;
-import org.bukkit.block.Block;
-import org.bukkit.block.Sign;
-import org.bukkit.event.EventHandler;
+import org.spongepowered.api.block.BlockSnapshot;
 import org.spongepowered.api.block.BlockTypes;
 import org.spongepowered.api.block.tileentity.Sign;
+import org.spongepowered.api.data.value.mutable.ListValue;
 import org.spongepowered.api.event.Listener;
+import org.spongepowered.api.text.Text;
 import org.spongepowered.api.text.format.TextColors;
 import org.spongepowered.api.world.World;
 
-public class ContactsSign implements Listener {
+public class ContactsSign {
 
-    @EventHandler
+    @Listener
     public void onCraftDetect(CraftDetectEvent event){
         World world = event.getCraft().getW();
         for(MovecraftLocation location: event.getCraft().getHitBox()){
-            Block block = location.toSponge(world).getBlock();
-            if(block.getType() == BlockTypes.WALL_SIGN || block.getType() == BlockTypes.STANDING_SIGN){
-                Sign sign = (Sign) block.getState();
-                if (ChatColor.stripColor(sign.getLine(0)).equalsIgnoreCase("Contacts:")) {
-                    sign.setLine(1, "");
-                    sign.setLine(2, "");
-                    sign.setLine(3, "");
-                    sign.update();
+            BlockSnapshot block = location.toSponge(world).createSnapshot();
+            if(block.getState().getType() == BlockTypes.WALL_SIGN || block.getState().getType() == BlockTypes.STANDING_SIGN){
+
+                if (!location.toSponge(world).getTileEntity().isPresent())
+                    return;
+
+                Sign sign = (Sign) location.toSponge(world).getTileEntity().get();
+                ListValue<Text> lines = sign.lines();
+                if (lines.get(0).toPlain().equalsIgnoreCase("Contacts:")) {
+                    lines.set(1, Text.of(""));
+                    lines.set(2, Text.of(""));
+                    lines.set(3, Text.of(""));
+                    sign.offer(lines);
                 }
             }
         }
     }
 
-    @EventHandler
+    @Listener
     public final void onSignTranslateEvent(SignTranslateEvent event){
-        String[] lines = event.getLines();
+
+        BlockSnapshot block = event.getBlock();
+        if (!block.getLocation().isPresent() || !block.getLocation().get().getTileEntity().isPresent())
+            return;
+
+        Sign sign = (Sign) block.getLocation().get().getTileEntity().get();
+        ListValue<Text> lines = sign.lines();
         Craft craft = event.getCraft();
-        if (!ChatColor.stripColor(lines[0]).equalsIgnoreCase("Contacts:")) {
+        if (!lines.get(0).toPlain().equalsIgnoreCase("Contacts:")) {
             return;
         }
-        boolean foundContact=false;
-        int signLine=1;
+
+        boolean foundContact = false;
+        int signLine = 1;
         for(Craft tcraft : CraftManager.getInstance().getCraftsInWorld(craft.getW())) {
             long cposx=craft.getHitBox().getMaxX()+craft.getHitBox().getMinX();
             long cposy=craft.getHitBox().getMaxY()+craft.getHitBox().getMinY();
@@ -61,7 +73,7 @@ public class ContactsSign implements Listener {
             long distsquared= diffx * diffx;
             distsquared+= diffy * diffy;
             distsquared+= diffz * diffz;
-            long detectionRange=0;
+            long detectionRange = 0;
             if(tposy>tcraft.getW().getSeaLevel()) {
                 detectionRange=(long) (Math.sqrt(tcraft.getOrigBlockCount())*tcraft.getType().getDetectionMultiplier());
             } else {
@@ -69,7 +81,7 @@ public class ContactsSign implements Listener {
             }
             if(distsquared<detectionRange*detectionRange && tcraft.getNotificationPlayer()!=craft.getNotificationPlayer()) {
                 // craft has been detected
-                foundContact=true;
+                foundContact = true;
                 String notification = TextColors.BLUE + tcraft.getType().getCraftName();
                 if(notification.length()>9) {
                     notification = notification.substring(0, 7);
@@ -88,7 +100,7 @@ public class ContactsSign implements Listener {
                         notification+=" N";
                     }
                 }
-                lines[signLine++] = notification;
+                lines.set(signLine++, Text.of(notification));
                 if (signLine >= 4) {
                     break;
                 }
@@ -96,9 +108,11 @@ public class ContactsSign implements Listener {
         }
         if(signLine<4) {
             for(int i=signLine; i<4; i++) {
-                lines[signLine]="";
+                lines.set(signLine, Text.of(""));
             }
         }
+
+        sign.offer(lines);
     }
 
 

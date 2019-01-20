@@ -6,85 +6,118 @@ import io.github.pulverizer.movecraft.craft.Craft;
 import io.github.pulverizer.movecraft.craft.CraftManager;
 import io.github.pulverizer.movecraft.events.CraftDetectEvent;
 import io.github.pulverizer.movecraft.localisation.I18nSupport;
-import org.bukkit.ChatColor;
-import org.bukkit.block.Block;
-import org.bukkit.event.EventHandler;
-import org.bukkit.event.EventPriority;
-import org.bukkit.event.block.Action;
-import org.bukkit.event.player.PlayerInteractEvent;
+import org.spongepowered.api.block.BlockSnapshot;
 import org.spongepowered.api.block.BlockTypes;
 import org.spongepowered.api.block.tileentity.Sign;
+import org.spongepowered.api.data.key.Keys;
+import org.spongepowered.api.data.value.mutable.ListValue;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.event.Listener;
+import org.spongepowered.api.event.block.InteractBlockEvent;
 import org.spongepowered.api.event.block.tileentity.ChangeSignEvent;
+import org.spongepowered.api.event.filter.cause.Root;
+import org.spongepowered.api.text.Text;
+import org.spongepowered.api.util.Direction;
 import org.spongepowered.api.world.World;
 
-public final class CruiseSign implements Listener {
+public final class CruiseSign {
 
-    @EventHandler
+    @Listener
     public void onCraftDetect(CraftDetectEvent event){
         World world = event.getCraft().getW();
         for(MovecraftLocation location: event.getCraft().getHitBox()){
-            Block block = location.toBukkit(world).getBlock();
-            if(block.getType() == BlockTypes.WALL_SIGN || block.getType() == BlockTypes.STANDING_SIGN){
-                Sign sign = (Sign) block.getState();
-                if (ChatColor.stripColor(sign.getLine(0)).equalsIgnoreCase("Cruise: ON")) {
-                    sign.setLine(0, "Cruise: OFF");
-                    sign.update();
+            BlockSnapshot block = location.toSponge(world).createSnapshot();
+            if(block.getState().getType() == BlockTypes.WALL_SIGN || block.getState().getType() == BlockTypes.STANDING_SIGN){
+
+                if (!block.getLocation().isPresent() || !block.getLocation().get().getTileEntity().isPresent())
+                    return;
+
+                Sign sign = (Sign) block.getLocation().get().getTileEntity().get();
+                ListValue<Text> lines = sign.lines();
+                if (lines.get(0).toPlain().equalsIgnoreCase("Cruise: ON")) {
+                    lines.set(0, Text.of("Cruise: OFF"));
+                    sign.offer(lines);
                 }
             }
         }
     }
 
-    @EventHandler
-    public final void onSignClick(PlayerInteractEvent event) {
-        if (event.getAction() != Action.RIGHT_CLICK_BLOCK) {
+    @Listener
+    public final void onSignClick(InteractBlockEvent.Secondary.MainHand event, @Root Player player) {
+
+        BlockSnapshot block = event.getTargetBlock();
+        if (block.getState().getType() != BlockTypes.STANDING_SIGN && block.getState().getType() != BlockTypes.WALL_SIGN) {
             return;
         }
-        Block block = event.getClickedBlock();
-        if (block.getType() != BlockTypes.STANDING_SIGN && block.getType() != BlockTypes.WALL_SIGN) {
+
+        if (!block.getLocation().isPresent() || !block.getLocation().get().getTileEntity().isPresent())
             return;
-        }
-        Sign sign = (Sign) event.getClickedBlock().getState();
-        if (ChatColor.stripColor(sign.getLine(0)).equalsIgnoreCase("Cruise: OFF")) {
-            if (CraftManager.getInstance().getCraftByPlayer(event.getPlayer()) == null) {
+
+        Sign sign = (Sign) block.getLocation().get().getTileEntity().get();
+        ListValue<Text> lines = sign.lines();
+        if (lines.get(0).toPlain().equalsIgnoreCase("Cruise: OFF")) {
+
+            event.setCancelled(true);
+
+            if (CraftManager.getInstance().getCraftByPlayer(player) == null) {
                 return;
             }
-            Craft c = CraftManager.getInstance().getCraftByPlayer(event.getPlayer());
+
+            Craft c = CraftManager.getInstance().getCraftByPlayer(player);
+
             if (!c.getType().getCanCruise()) {
                 return;
             }
-            //c.resetSigns(false, true, true);
-            sign.setLine(0, "Cruise: ON");
-            sign.update(true);
 
-            c.setCruiseDirection(sign.getRawData());
-            c.setLastCruisUpdate(System.currentTimeMillis());
+            //get Cruise Direction
+            Direction cruiseDirection = block.get(Keys.DIRECTION).get().getOpposite();
+            if (cruiseDirection != Direction.NORTH && cruiseDirection != Direction.WEST && cruiseDirection != Direction.SOUTH && cruiseDirection != Direction.EAST) {
+                if (cruiseDirection == Direction.NORTH_NORTHEAST || cruiseDirection == Direction.NORTH_NORTHWEST) {
+                    cruiseDirection = Direction.NORTH;
+                } else if (cruiseDirection == Direction.SOUTH_SOUTHEAST || cruiseDirection == Direction.SOUTH_SOUTHWEST) {
+                    cruiseDirection = Direction.SOUTH;
+                } else if (cruiseDirection == Direction.WEST_NORTHWEST || cruiseDirection == Direction.WEST_SOUTHWEST) {
+                    cruiseDirection = Direction.WEST;
+                } else if (cruiseDirection == Direction.EAST_NORTHEAST || cruiseDirection == Direction.EAST_SOUTHEAST) {
+                    cruiseDirection = Direction.EAST;
+                } else {
+                    player.sendMessage(Text.of("Invalid Cruise Direction!"));
+                    return;
+                }
+            }
+
+            //c.resetSigns(false, true, true);
+            lines.set(0, Text.of("Cruise: ON"));
+            sign.offer(lines);
+
+            c.setCruiseDirection(cruiseDirection);
+            c.setLastCruiseUpdate(System.currentTimeMillis());
             c.setCruising(true);
             if (!c.getType().getMoveEntities()) {
                 CraftManager.getInstance().addReleaseTask(c);
             }
             return;
         }
-        if (ChatColor.stripColor(sign.getLine(0)).equalsIgnoreCase("Cruise: ON")
-                && CraftManager.getInstance().getCraftByPlayer(event.getPlayer()) != null
-                && CraftManager.getInstance().getCraftByPlayer(event.getPlayer()).getType().getCanCruise()) {
-            sign.setLine(0, "Cruise: OFF");
-            sign.update(true);
-            CraftManager.getInstance().getCraftByPlayer(event.getPlayer()).setCruising(false);
+        if (lines.get(0).toPlain().equalsIgnoreCase("Cruise: ON")
+                && CraftManager.getInstance().getCraftByPlayer(player) != null
+                && CraftManager.getInstance().getCraftByPlayer(player).getType().getCanCruise()) {
+            event.setCancelled(true);
+            lines.set(0, Text.of("Cruise: OFF"));
+            sign.offer(lines);
+            CraftManager.getInstance().getCraftByPlayer(player).setCruising(false);
         }
     }
 
-    @EventHandler(priority = EventPriority.NORMAL)
-    public void onSignChange(ChangeSignEvent event) {
-        Player player = event.getPlayer();
-        if (!event.getLine(0).equalsIgnoreCase("Cruise: OFF") && !event.getLine(0).equalsIgnoreCase("Cruise: ON")) {
+    @Listener
+    public void onSignChange(ChangeSignEvent event, @Root Player player) {
+
+        if (!event.getText().lines().get(0).toPlain().equalsIgnoreCase("Cruise: OFF") && !event.getText().lines().get(0).toPlain().equalsIgnoreCase("Cruise: ON")) {
             return;
         }
         if (player.hasPermission("movecraft.cruisesign") || !Settings.RequireCreatePerm) {
             return;
         }
-        player.sendMessage(I18nSupport.getInternationalisedString("Insufficient Permissions"));
+        player.sendMessage(Text.of(I18nSupport.getInternationalisedString("Insufficient Permissions")));
         event.setCancelled(true);
     }
 }

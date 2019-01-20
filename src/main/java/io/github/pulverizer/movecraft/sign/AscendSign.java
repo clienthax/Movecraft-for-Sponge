@@ -7,9 +7,13 @@ import io.github.pulverizer.movecraft.events.CraftDetectEvent;
 import org.spongepowered.api.block.BlockSnapshot;
 import org.spongepowered.api.block.BlockTypes;
 import org.spongepowered.api.block.tileentity.Sign;
+import org.spongepowered.api.data.value.mutable.ListValue;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.event.Listener;
 import org.spongepowered.api.event.block.InteractBlockEvent;
+import org.spongepowered.api.event.filter.cause.Root;
+import org.spongepowered.api.text.Text;
+import org.spongepowered.api.util.Direction;
 import org.spongepowered.api.world.World;
 
 public class AscendSign {
@@ -20,10 +24,15 @@ public class AscendSign {
         for(MovecraftLocation location: event.getCraft().getHitBox()){
             BlockSnapshot block = location.toSponge(world).createSnapshot();
             if(block.getState().getType() == BlockTypes.WALL_SIGN || block.getState().getType() == BlockTypes.STANDING_SIGN){
-                Sign sign = (Sign) block.getExtendedState();
-                if (sign.lines().get(0).toPlain().equalsIgnoreCase("Ascend: ON")) {
-                    sign.setLine(0, "Ascend: OFF");
-                    sign.update();
+
+                if (!location.toSponge(world).getTileEntity().isPresent())
+                    return;
+
+                Sign sign = (Sign) location.toSponge(world).getTileEntity().get();
+                ListValue<Text> lines = sign.lines();
+                if (lines.get(0).toPlain().equalsIgnoreCase("Ascend: ON")) {
+                    lines.set(0, Text.of("Ascend: OFF"));
+                    sign.offer(lines);
                 }
             }
         }
@@ -31,34 +40,32 @@ public class AscendSign {
 
 
     @Listener
-    public void onSignClickEvent(InteractBlockEvent event){
-        if (!(event instanceof InteractBlockEvent.Secondary)) {
-            return;
-        }
+    public void onSignClickEvent(InteractBlockEvent.Secondary.MainHand event, @Root Player player){
+
         BlockSnapshot block = event.getTargetBlock();
         if (block.getState().getType() != BlockTypes.STANDING_SIGN && block.getState().getType() != BlockTypes.WALL_SIGN){
             return;
         }
 
-        Player player = null;
-        if (event.getSource() instanceof Player) {
-            player = ((Player) event.getSource()).getPlayer().orElse(null);
-        }
         Craft c = CraftManager.getInstance().getCraftByPlayer(player);
 
-        Sign sign = (Sign) block.getExtendedState();
-        if (sign.lines().get(0).toPlain().equalsIgnoreCase("Ascend: OFF")) {
-            if (c == null) {
-                return;
-            }
-            if (!c.getType().getCanCruise()) {
-                return;
-            }
-            sign.setLine(0, "Ascend: ON");
-            sign.update(true);
+        if (!block.getLocation().isPresent() || !block.getLocation().get().getTileEntity().isPresent())
+            return;
 
-            c.setCruiseDirection((byte) 0x42);
-            c.setLastCruisUpdate(System.currentTimeMillis());
+        Sign sign = (Sign) block.getLocation().get().getTileEntity().get();
+        ListValue<Text> lines = sign.lines();
+        if (lines.get(0).toPlain().equalsIgnoreCase("Ascend: OFF")) {
+            if (c == null || !c.getType().getCanCruise()) {
+                return;
+            }
+
+            event.setCancelled(true);
+
+            lines.set(0, Text.of("Ascend: ON"));
+            sign.offer(lines);
+
+            c.setCruiseDirection(Direction.UP);
+            c.setLastCruiseUpdate(System.currentTimeMillis());
             c.setCruising(true);
 
             if (!c.getType().getMoveEntities()) {
@@ -66,14 +73,14 @@ public class AscendSign {
             }
             return;
         }
-        if (!sign.lines().get(0).toPlain().equalsIgnoreCase("Ascend: ON")) {
-            return;
+        if (lines.get(0).toPlain().equalsIgnoreCase("Ascend: ON")) {
+            if (c == null || !c.getType().getCanCruise()) {
+                return;
+            }
+            event.setCancelled(true);
+            lines.set(0, Text.of("Ascend: OFF"));
+            sign.offer(lines);
+            c.setCruising(false);
         }
-        if (c == null || !c.getType().getCanCruise()) {
-            return;
-        }
-        sign.setLine(0, "Ascend: OFF");
-        sign.update(true);
-        c.setCruising(false);
     }
 }

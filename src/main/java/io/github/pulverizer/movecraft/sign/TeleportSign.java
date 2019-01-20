@@ -8,27 +8,27 @@ import org.spongepowered.api.block.tileentity.Sign;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.event.Listener;
 import org.spongepowered.api.event.block.InteractBlockEvent;
+import org.spongepowered.api.event.filter.cause.Root;
 import org.spongepowered.api.text.Text;
 
 public final class TeleportSign {
     private static final String HEADER = "Teleport:";
     @Listener
-    public final void onSignClick(InteractBlockEvent event) {
-        if (!(event instanceof InteractBlockEvent.Secondary)) {
-            return;
-        }
+    public final void onSignClick(InteractBlockEvent.Secondary.MainHand event, @Root Player player) {
+
         BlockSnapshot block = event.getTargetBlock();
         if (block.getState().getType() != BlockTypes.STANDING_SIGN && block.getState().getType() != BlockTypes.WALL_SIGN) {
             return;
         }
-        Sign sign = (Sign) block.getState();
+
+        if (!block.getLocation().isPresent() && !block.getLocation().get().getTileEntity().isPresent())
+            return;
+
+        Sign sign = (Sign) block.getLocation().get().getTileEntity().get();
         if (!sign.lines().get(0).toPlain().equalsIgnoreCase(HEADER)) {
             return;
         }
-        Player player = null;
-        if (event.getSource() instanceof Player) {
-            player = ((Player) event.getSource()).getPlayer().orElse(null);
-        }
+
         if (CraftManager.getInstance().getCraftByPlayer(player) == null) {
             return;
         }

@@ -17,6 +17,7 @@ import org.spongepowered.api.block.BlockType;
 import org.spongepowered.api.block.BlockTypes;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.text.Text;
+import org.spongepowered.api.util.Direction;
 import org.spongepowered.api.world.Location;
 import org.spongepowered.api.world.World;
 
@@ -38,7 +39,7 @@ public class Craft {
     private boolean cruising;
     private boolean sinking;
     private boolean disabled;
-    private byte cruiseDirection;
+    private Direction cruiseDirection;
     private long lastCruiseUpdate;
     private long lastBlockCheck;
     private long lastRotateTime=0;
@@ -183,15 +184,15 @@ public class Craft {
         this.disabled = disabled;
     }
 
-    public byte getCruiseDirection() {
+    public Direction getCruiseDirection() {
         return cruiseDirection;
     }
 
-    public void setCruiseDirection(byte cruiseDirection) {
+    public void setCruiseDirection(Direction cruiseDirection) {
         this.cruiseDirection = cruiseDirection;
     }
 
-    public void setLastCruisUpdate(long update) {
+    public void setLastCruiseUpdate(long update) {
         this.lastCruiseUpdate = update;
     }
 

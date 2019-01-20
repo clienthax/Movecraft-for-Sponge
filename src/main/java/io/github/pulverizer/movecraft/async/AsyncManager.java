@@ -2,11 +2,9 @@ package io.github.pulverizer.movecraft.async;
 
 import com.flowpowered.math.vector.Vector3d;
 import com.flowpowered.math.vector.Vector3i;
-import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
 import io.github.pulverizer.movecraft.Movecraft;
 import io.github.pulverizer.movecraft.MovecraftLocation;
-import io.github.pulverizer.movecraft.Rotation;
 import io.github.pulverizer.movecraft.async.detection.DetectionTask;
 import io.github.pulverizer.movecraft.async.detection.DetectionTaskData;
 import io.github.pulverizer.movecraft.async.rotation.RotationTask;
@@ -17,7 +15,6 @@ import io.github.pulverizer.movecraft.craft.CraftManager;
 import io.github.pulverizer.movecraft.events.CraftDetectEvent;
 import io.github.pulverizer.movecraft.localisation.I18nSupport;
 import io.github.pulverizer.movecraft.mapUpdater.MapUpdateManager;
-import io.github.pulverizer.movecraft.mapUpdater.update.UpdateCommand;
 import io.github.pulverizer.movecraft.utils.CollectionUtils;
 import io.github.pulverizer.movecraft.utils.HashHitBox;
 import org.spongepowered.api.Sponge;
@@ -33,16 +30,15 @@ import org.spongepowered.api.entity.explosive.PrimedTNT;
 import org.spongepowered.api.entity.living.Living;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.entity.projectile.explosive.fireball.SmallFireball;
-import org.spongepowered.api.item.inventory.entity.Hotbar;
 import org.spongepowered.api.item.inventory.entity.PlayerInventory;
 import org.spongepowered.api.scheduler.Task;
 import org.spongepowered.api.text.Text;
+import org.spongepowered.api.util.Direction;
 import org.spongepowered.api.util.blockray.BlockRay;
 import org.spongepowered.api.util.blockray.BlockRayHit;
 import org.spongepowered.api.world.Location;
 import org.spongepowered.api.world.World;
 
-import java.sql.Array;
 import java.util.*;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -328,11 +324,11 @@ public class AsyncManager {
             int dy = 0;
 
             // ascend
-            if (pcraft.getCruiseDirection() == 0x42) {
+            if (pcraft.getCruiseDirection() == Direction.UP) {
                 dy = 1 + pcraft.getType().getVertCruiseSkipBlocks();
             }
             // descend
-            if (pcraft.getCruiseDirection() == 0x43) {
+            if (pcraft.getCruiseDirection() == Direction.DOWN) {
                 dy = 0 - 1 - pcraft.getType().getVertCruiseSkipBlocks();
                 if (pcraft.getHitBox().getMinY() <= w.getSeaLevel()) {
                     dy = -1;
@@ -344,7 +340,7 @@ public class AsyncManager {
                 }
             }
             // ship faces west
-            if (pcraft.getCruiseDirection() == 0x5) {
+            if (pcraft.getCruiseDirection() == Direction.WEST) {
                 dx = 0 - 1 - pcraft.getType().getCruiseSkipBlocks();
                 if (bankRight) {
                     dz = (0 - 1 - pcraft.getType().getCruiseSkipBlocks()) >> 1;
@@ -354,7 +350,7 @@ public class AsyncManager {
                 }
             }
             // ship faces east
-            if (pcraft.getCruiseDirection() == 0x4) {
+            if (pcraft.getCruiseDirection() == Direction.EAST) {
                 dx = 1 + pcraft.getType().getCruiseSkipBlocks();
                 if (bankLeft) {
                     dz = (0 - 1 - pcraft.getType().getCruiseSkipBlocks()) >> 1;
@@ -364,7 +360,7 @@ public class AsyncManager {
                 }
             }
             // ship faces north
-            if (pcraft.getCruiseDirection() == 0x2) {
+            if (pcraft.getCruiseDirection() == Direction.NORTH) {
                 dz = 1 + pcraft.getType().getCruiseSkipBlocks();
                 if (bankRight) {
                     dx = (0 - 1 - pcraft.getType().getCruiseSkipBlocks()) >> 1;
@@ -374,7 +370,7 @@ public class AsyncManager {
                 }
             }
             // ship faces south
-            if (pcraft.getCruiseDirection() == 0x3) {
+            if (pcraft.getCruiseDirection() == Direction.SOUTH) {
                 dz = 0 - 1 - pcraft.getType().getCruiseSkipBlocks();
                 if (bankLeft) {
                     dx = (0 - 1 - pcraft.getType().getCruiseSkipBlocks()) >> 1;
@@ -390,9 +386,9 @@ public class AsyncManager {
             pcraft.setLastDX(dx);
             pcraft.setLastDZ(dz);
             if (pcraft.getLastCruiseUpdate() != -1) {
-                pcraft.setLastCruisUpdate(System.currentTimeMillis());
+                pcraft.setLastCruiseUpdate(System.currentTimeMillis());
             } else {
-                pcraft.setLastCruisUpdate(System.currentTimeMillis() - 30000);
+                pcraft.setLastCruiseUpdate(System.currentTimeMillis() - 30000);
             }
         }
     }
@@ -534,7 +530,7 @@ public class AsyncManager {
                 dz = craft.getLastDZ();
             }
             craft.translate(dx, -1, dz);
-            craft.setLastCruisUpdate(System.currentTimeMillis() - (craft.getLastCruiseUpdate() != -1 ? 0 : 30000));
+            craft.setLastCruiseUpdate(System.currentTimeMillis() - (craft.getLastCruiseUpdate() != -1 ? 0 : 30000));
         }
     }
 

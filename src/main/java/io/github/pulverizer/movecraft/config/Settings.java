@@ -12,7 +12,7 @@ public class Settings {
     public static boolean IGNORE_RESET = false;
     public static boolean Debug = false;
     public static int THREAD_POOL_SIZE = 5;
-    public static List<Integer> DATA_BLOCKS;
+    public static List<BlockType> DATA_BLOCKS;
     public static String LOCALE;
     public static ItemType PilotTool = ItemTypes.STICK;
     public static int SilhouetteViewDistance = 200;
@@ -36,6 +36,5 @@ public class Settings {
     public static boolean AllowCrewSigns = true;
     public static boolean SetHomeToCrewSign = true;
     public static Map<BlockType, Integer> DurabilityOverride;
-    public static boolean IsPaper = false;
     public static HashSet<BlockType> DisableShadowBlocks;
 }

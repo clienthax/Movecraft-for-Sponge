@@ -2,19 +2,14 @@ package io.github.pulverizer.movecraft.sign;
 
 import io.github.pulverizer.movecraft.craft.Craft;
 import io.github.pulverizer.movecraft.craft.CraftManager;
-import org.bukkit.ChatColor;
-import org.bukkit.block.Block;
-import org.bukkit.event.EventHandler;
-import org.bukkit.event.block.Action;
-import org.bukkit.event.player.PlayerInteractEvent;
 import org.spongepowered.api.block.BlockTypes;
 import org.spongepowered.api.block.tileentity.Sign;
 import org.spongepowered.api.event.Listener;
 
-public final class ReleaseSign implements Listener {
+public final class ReleaseSign {
     private static final String HEADER = "Release";
 
-    @EventHandler
+    @Listener
     public final void onSignClick(PlayerInteractEvent event) {
         if (event.getAction() != Action.RIGHT_CLICK_BLOCK) {
             return;
