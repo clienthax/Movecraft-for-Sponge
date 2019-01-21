@@ -13,6 +13,8 @@ import io.github.pulverizer.movecraft.utils.HashHitBox;
 import io.github.pulverizer.movecraft.utils.HitBox;
 import io.github.pulverizer.movecraft.utils.MutableHitBox;
 import io.github.pulverizer.movecraft.utils.SolidHitBox;
+import org.slf4j.Logger;
+import org.spongepowered.api.Sponge;
 import org.spongepowered.api.block.BlockSnapshot;
 import org.spongepowered.api.block.BlockType;
 import org.spongepowered.api.block.BlockTypes;
@@ -24,7 +26,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Queue;
 import java.util.Set;
-import java.util.logging.Logger;
 
 public class CraftTranslateCommand extends UpdateCommand {
     private final Craft craft;
@@ -37,9 +38,9 @@ public class CraftTranslateCommand extends UpdateCommand {
 
     @Override
     public void doUpdate() {
-        final Logger logger = Movecraft.getLogger();
+        final Logger logger = Movecraft.getInstance().getLogger();
         if(craft.getHitBox().isEmpty()){
-            logger.warning("Attempted to move craft with empty HashHitBox!");
+            logger.warn("Attempted to move craft with empty HashHitBox!");
             CraftManager.getInstance().removeCraft(craft);
             return;
         }
@@ -60,9 +61,7 @@ public class CraftTranslateCommand extends UpdateCommand {
             for(MovecraftLocation location : craft.getHitBox()){
                 BlockSnapshot block = location.toSponge(craft.getW()).createSnapshot();
                 if(block.getState().getType() == BlockTypes.WALL_SIGN || block.getState().getType() == BlockTypes.STANDING_SIGN){
-                    Sign sign = (Sign) block.getState();
-                    Bukkit.getServer().getPluginManager().callEvent(new SignTranslateEvent(block, craft, sign.getLines()));
-                    sign.update();
+                    Sponge.getEventManager().post(new SignTranslateEvent(block, craft));
                 }
             }
         } else {
@@ -143,9 +142,7 @@ public class CraftTranslateCommand extends UpdateCommand {
             for (MovecraftLocation location : craft.getHitBox()) {
                 BlockSnapshot block = location.toSponge(craft.getW()).createSnapshot();
                 if (block.getState().getType() == BlockTypes.WALL_SIGN || block.getState().getType() == BlockTypes.STANDING_SIGN) {
-                    Sign sign = (Sign) block.getState();
-                    Bukkit.getServer().getPluginManager().callEvent(new SignTranslateEvent(block, craft, sign.getLines()));
-                    sign.update();
+                    Sponge.getEventManager().post(new SignTranslateEvent(block, craft));
                 }
             }
 
@@ -154,13 +151,13 @@ public class CraftTranslateCommand extends UpdateCommand {
                 if (!craft.getPhaseBlocks().containsKey(location)) {
                     continue;
                 }
-                handler.setBlockFast(location.toSponge(craft.getW()), craft.getPhaseBlocks().get(location), (byte) 0);
+                handler.setBlockFast(location.toSponge(craft.getW()), craft.getPhaseBlocks().get(location));
                 craft.getPhaseBlocks().remove(location);
             }
 
             for(MovecraftLocation location : originalLocations){
                 if(!craft.getHitBox().inBounds(location) && craft.getPhaseBlocks().containsKey(location)){
-                    handler.setBlockFast(location.toSponge(craft.getW()), craft.getPhaseBlocks().remove(location), (byte) 0);
+                    handler.setBlockFast(location.toSponge(craft.getW()), craft.getPhaseBlocks().remove(location));
                 }
             }
 

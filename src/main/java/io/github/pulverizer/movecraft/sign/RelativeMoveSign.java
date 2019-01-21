@@ -2,35 +2,42 @@ package io.github.pulverizer.movecraft.sign;
 
 import io.github.pulverizer.movecraft.craft.CraftManager;
 import io.github.pulverizer.movecraft.localisation.I18nSupport;
-import org.bukkit.ChatColor;
-import org.bukkit.block.Block;
-import org.bukkit.event.EventHandler;
-import org.bukkit.event.block.Action;
-import org.bukkit.event.player.PlayerInteractEvent;
+import org.spongepowered.api.block.BlockSnapshot;
 import org.spongepowered.api.block.BlockTypes;
 import org.spongepowered.api.block.tileentity.Sign;
+import org.spongepowered.api.data.key.Keys;
+import org.spongepowered.api.data.value.mutable.ListValue;
+import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.event.Listener;
+import org.spongepowered.api.event.block.InteractBlockEvent;
+import org.spongepowered.api.event.filter.cause.Root;
+import org.spongepowered.api.text.Text;
+import org.spongepowered.api.util.Direction;
 
-public final class RelativeMoveSign implements Listener {
+public final class RelativeMoveSign {
     private static final String HEADER = "RMove:";
 
-    @EventHandler
-    public final void onSignClick(PlayerInteractEvent event) {
-        if (event.getAction() != Action.RIGHT_CLICK_BLOCK) {
+    @Listener
+    public final void onSignClick(InteractBlockEvent.Secondary.MainHand event, @Root Player player) {
+
+        BlockSnapshot block = event.getTargetBlock();
+        if (block.getState().getType() != BlockTypes.STANDING_SIGN && block.getState().getType() != BlockTypes.WALL_SIGN) {
             return;
         }
-        Block block = event.getClickedBlock();
-        if (block.getType() != BlockTypes.STANDING_SIGN && block.getType() != BlockTypes.WALL_SIGN) {
+
+        if (!block.getLocation().isPresent() || !block.getLocation().get().getTileEntity().isPresent())
+            return;
+
+        Sign sign = (Sign) block.getLocation().get().getTileEntity().get();
+        ListValue<Text> lines = sign.lines();
+
+        if (!lines.get(0).toPlain().equalsIgnoreCase(HEADER)) {
             return;
         }
-        Sign sign = (Sign) event.getClickedBlock().getState();
-        if (!ChatColor.stripColor(sign.getLine(0)).equalsIgnoreCase(HEADER)) {
+        if (CraftManager.getInstance().getCraftByPlayer(player) == null) {
             return;
         }
-        if (CraftManager.getInstance().getCraftByPlayer(event.getPlayer()) == null) {
-            return;
-        }
-        String[] numbers = ChatColor.stripColor(sign.getLine(1)).split(",");
+        String[] numbers = lines.get(1).toPlain().split(",");
         int dLeftRight = Integer.parseInt(numbers[0]); // negative =
         // left,
         // positive =
@@ -42,7 +49,7 @@ public final class RelativeMoveSign implements Listener {
         // positive
         // =
         // forwards
-        int maxMove = CraftManager.getInstance().getCraftByPlayer(event.getPlayer()).getType().maxStaticMove();
+        int maxMove = CraftManager.getInstance().getCraftByPlayer(player).getType().maxStaticMove();
 
         if (dLeftRight > maxMove)
             dLeftRight = maxMove;
@@ -58,37 +65,55 @@ public final class RelativeMoveSign implements Listener {
             dBackwardForward = -maxMove;
         int dx = 0;
         int dz = 0;
-        switch (sign.getRawData()) {
-            case 0x3:
+
+        //get Orientation
+        Direction orientation = block.get(Keys.DIRECTION).get().getOpposite();
+        if (orientation != Direction.NORTH && orientation != Direction.WEST && orientation != Direction.SOUTH && orientation != Direction.EAST) {
+            if (orientation == Direction.NORTH_NORTHEAST || orientation == Direction.NORTH_NORTHWEST) {
+                orientation = Direction.NORTH;
+            } else if (orientation == Direction.SOUTH_SOUTHEAST || orientation == Direction.SOUTH_SOUTHWEST) {
+                orientation = Direction.SOUTH;
+            } else if (orientation == Direction.WEST_NORTHWEST || orientation == Direction.WEST_SOUTHWEST) {
+                orientation = Direction.WEST;
+            } else if (orientation == Direction.EAST_NORTHEAST || orientation == Direction.EAST_SOUTHEAST) {
+                orientation = Direction.EAST;
+            } else {
+                player.sendMessage(Text.of("Invalid Sign Orientation!"));
+                return;
+            }
+        }
+
+
+        switch (orientation) {
+            case NORTH:
                 // North
                 dx = dLeftRight;
                 dz = -dBackwardForward;
                 break;
-            case 0x2:
+            case SOUTH:
                 // South
                 dx = -dLeftRight;
                 dz = dBackwardForward;
                 break;
-            case 0x4:
+            case EAST:
                 // East
                 dx = dBackwardForward;
                 dz = dLeftRight;
                 break;
-            case 0x5:
+            case WEST:
                 // West
                 dx = -dBackwardForward;
                 dz = -dLeftRight;
                 break;
         }
 
-        if (!event.getPlayer().hasPermission("movecraft." + CraftManager.getInstance().getCraftByPlayer(event.getPlayer()).getType().getCraftName() + ".move")) {
-            event.getPlayer().sendMessage(
-                    I18nSupport.getInternationalisedString("Insufficient Permissions"));
+        if (!player.hasPermission("movecraft." + CraftManager.getInstance().getCraftByPlayer(player).getType().getCraftName() + ".move")) {
+            player.sendMessage(Text.of(I18nSupport.getInternationalisedString("Insufficient Permissions")));
             return;
         }
-        if (CraftManager.getInstance().getCraftByPlayer(event.getPlayer()).getType().getCanStaticMove()) {
-            CraftManager.getInstance().getCraftByPlayer(event.getPlayer()).translate(dx, dy, dz);
-            CraftManager.getInstance().getCraftByPlayer(event.getPlayer()).setLastCruiseUpdate(System.currentTimeMillis());
+        if (CraftManager.getInstance().getCraftByPlayer(player).getType().getCanStaticMove()) {
+            CraftManager.getInstance().getCraftByPlayer(player).translate(dx, dy, dz);
+            CraftManager.getInstance().getCraftByPlayer(player).setLastCruiseUpdate(System.currentTimeMillis());
         }
     }
 }

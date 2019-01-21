@@ -30,6 +30,8 @@ import org.spongepowered.api.text.Text;
 import org.spongepowered.api.world.Location;
 import org.spongepowered.api.world.World;
 
+import static org.spongepowered.api.event.Order.FIRST;
+
 public class CrewSign {
 
     @Listener
@@ -113,7 +115,7 @@ public class CrewSign {
         player.offer(Keys.RESPAWN_LOCATIONS, )setBedSpawnLocation(location, true);
     }
 
-    @Listener(Order.FIRST)
+    @Listener(order = FIRST)
     public final void onPlayerRespawn(PlayerRespawnEvent event) {
         Player player = event.getPlayer();
         Craft craft = CraftManager.getInstance().getCraftByPlayer(player);
@@ -123,7 +125,7 @@ public class CrewSign {
         if(craft.getSinking() || craft.getDisabled() || !craft.getCrewSigns().containsKey(player.getUniqueId())) {
             return;
         }
-        player.sendMessage("Respawning at crew bed!");
+        player.sendMessage(Text.of("Respawning at crew bed!"));
         event.setRespawnLocation(craft.getCrewSigns().get(player.getUniqueId()));
     }
 

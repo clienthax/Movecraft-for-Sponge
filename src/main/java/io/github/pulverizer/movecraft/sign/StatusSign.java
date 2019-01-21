@@ -5,8 +5,16 @@ import io.github.pulverizer.movecraft.craft.Craft;
 import io.github.pulverizer.movecraft.events.CraftDetectEvent;
 import io.github.pulverizer.movecraft.events.SignTranslateEvent;
 import org.spongepowered.api.block.BlockSnapshot;
+import org.spongepowered.api.block.BlockType;
+import org.spongepowered.api.block.BlockTypes;
 import org.spongepowered.api.block.tileentity.Sign;
+import org.spongepowered.api.block.tileentity.carrier.TileEntityCarrier;
+import org.spongepowered.api.data.value.mutable.ListValue;
 import org.spongepowered.api.event.Listener;
+import org.spongepowered.api.item.ItemTypes;
+import org.spongepowered.api.item.inventory.Inventory;
+import org.spongepowered.api.text.Text;
+import org.spongepowered.api.text.format.TextColors;
 import org.spongepowered.api.world.World;
 
 import java.util.ArrayList;
@@ -20,89 +28,103 @@ public final class StatusSign {
     public void onCraftDetect(CraftDetectEvent event){
         World world = event.getCraft().getW();
         for(MovecraftLocation location: event.getCraft().getHitBox()){
-            BlockSnapshot block = location.toBukkit(world).getBlock();
-            if(block.getType() == Material.WALL_SIGN || block.getType() == Material.SIGN_POST){
-                Sign sign = (Sign) block.getState();
-                if (ChatColor.stripColor(sign.getLine(0)).equalsIgnoreCase("Status:")) {
-                    sign.setLine(1, "");
-                    sign.setLine(2, "");
-                    sign.setLine(3, "");
-                    sign.update();
-                }
+            BlockSnapshot block = location.toSponge(world).createSnapshot();
+
+            if(block.getState().getType() != BlockTypes.WALL_SIGN && block.getState().getType() != BlockTypes.STANDING_SIGN)
+                return;
+
+            if (!block.getLocation().isPresent() || !block.getLocation().get().getTileEntity().isPresent())
+                return;
+
+            Sign sign = (Sign) block.getLocation().get().getTileEntity().get();
+            ListValue<Text> lines = sign.lines();
+
+            if (lines.get(0).toPlain().equalsIgnoreCase("Status:")) {
+                lines.set(1, Text.of(""));
+                lines.set(2, Text.of(""));
+                lines.set(3, Text.of(""));
+                sign.offer(lines);
             }
         }
     }
 
-    @EventHandler
+
+    @Listener
     public final void onSignTranslate(SignTranslateEvent event) {
         Craft craft = event.getCraft();
-        if (!ChatColor.stripColor(event.getLine(0)).equalsIgnoreCase("Status:")) {
+
+        BlockSnapshot block = event.getBlock();
+
+        if (!block.getLocation().isPresent() || !block.getLocation().get().getTileEntity().isPresent())
+            return;
+
+        Sign sign = (Sign) block.getLocation().get().getTileEntity().get();
+        ListValue<Text> lines = sign.lines();
+
+        if (!lines.get(0).toPlain().equalsIgnoreCase("Status:")) {
             return;
         }
+
         int fuel=0;
         int totalBlocks=0;
-        Map<Integer, Integer> foundBlocks = new HashMap<>();
+        Map<BlockType, Integer> foundBlocks = new HashMap<>();
         for (MovecraftLocation ml : craft.getHitBox()) {
-            Integer blockID = craft.getW().getBlockAt(ml.getX(), ml.getY(), ml.getZ()).getTypeId();
+            BlockType blockType = craft.getW().getBlockType(ml.getX(), ml.getY(), ml.getZ());
 
-            if (foundBlocks.containsKey(blockID)) {
-                Integer count = foundBlocks.get(blockID);
+            if (foundBlocks.containsKey(blockType)) {
+                Integer count = foundBlocks.get(blockType);
                 if (count == null) {
-                    foundBlocks.put(blockID, 1);
+                    foundBlocks.put(blockType, 1);
                 } else {
-                    foundBlocks.put(blockID, count + 1);
+                    foundBlocks.put(blockType, count + 1);
                 }
             } else {
-                foundBlocks.put(blockID, 1);
+                foundBlocks.put(blockType, 1);
             }
 
-            if (blockID == 61) {
-                InventoryHolder inventoryHolder = (InventoryHolder) craft.getW().getBlockAt(ml.getX(), ml.getY(), ml.getZ()).getState();
-                if (inventoryHolder.getInventory().contains(263)
-                        || inventoryHolder.getInventory().contains(173)) {
-                    ItemStack[] istack=inventoryHolder.getInventory().getContents();
+            if (blockType == BlockTypes.FURNACE || blockType == BlockTypes.LIT_FURNACE) {
+                Inventory inventory = ((TileEntityCarrier) craft.getW().getTileEntity(ml.getX(), ml.getY(), ml.getZ()).get()).getInventory();
+                if (inventory.contains(ItemTypes.COAL) || inventory.contains(ItemTypes.COAL_BLOCK)) {
+                    ItemStack[] istack=inventory.getContents();
                     for(ItemStack i : istack) {
                         if(i!=null) {
-                            if(i.getTypeId()==263) {
+                            if(i.getTypeId()== ItemTypes.COAL) {
                                 fuel+=i.getAmount()*8;
                             }
-                            if(i.getTypeId()==173) {
+                            if(i.getTypeId()== ItemTypes.COAL_BLOCK) {
                                 fuel+=i.getAmount()*80;
                             }
                         }
                     }
                 }
             }
-            if (blockID != 0) {
+            if (blockType != BlockTypes.AIR) {
                 totalBlocks++;
             }
         }
         int signLine=1;
         int signColumn=0;
-        for(List<Integer> alFlyBlockID : craft.getType().getFlyBlocks().keySet()) {
-            int flyBlockID=alFlyBlockID.get(0);
+        for(List<BlockType> alFlyBlockID : craft.getType().getFlyBlocks().keySet()) {
+            BlockType flyBlockID=alFlyBlockID.get(0);
             Double minimum=craft.getType().getFlyBlocks().get(alFlyBlockID).get(0);
-            if(foundBlocks.containsKey(flyBlockID) && minimum>0) { // if it has a minimum, it should be considered for sinking consideration
-                int amount=foundBlocks.get(flyBlockID);
-                Double percentPresent=(double) (amount*100/totalBlocks);
-                int deshiftedID=flyBlockID;
-                if(deshiftedID>10000) {
-                    deshiftedID=(deshiftedID-10000)>>4;
-                }
-                String signText="";
-                if(percentPresent>minimum*1.04) {
-                    signText+= ChatColor.GREEN;
+            if(foundBlocks.containsKey(flyBlockID) && minimum > 0) { // if it has a minimum, it should be considered for sinking consideration
+                int amount = foundBlocks.get(flyBlockID);
+                Double percentPresent = (double) (amount*100/totalBlocks);
+                String signText = "";
+                if (percentPresent > minimum * 1.04) {
+                    signText+= TextColors.GREEN;
                 } else if(percentPresent>minimum*1.02) {
-                    signText+=ChatColor.YELLOW;
+                    signText+= TextColors.YELLOW;
                 } else {
-                    signText+=ChatColor.RED;
+                    signText+ = TextColors.RED;
                 }
-                if(deshiftedID==152) {
+                //TODO: Change to Fly and Move Blocks
+                if(flyBlockID == BlockTypes.REDSTONE_BLOCK) {
                     signText+="R";
-                } else if(deshiftedID==42) {
+                } else if(flyBlockID == BlockTypes.IRON_BLOCK) {
                     signText+="I";
                 } else {
-                    signText+= Material.getMaterial(deshiftedID).toString().charAt(0);
+                    signText+= flyBlockID.getName().charAt(0);
                 }
 
                 signText+=" ";
@@ -111,28 +133,31 @@ public final class StatusSign {
                 signText+=minimum.intValue();
                 signText+="  ";
                 if(signColumn==0) {
-                    event.setLine(signLine,signText);
+                    lines.set(signLine,Text.of(signText));
+                    sign.offer(lines);
                     signColumn++;
                 } else if(signLine<3) {
-                    String existingLine=event.getLine(signLine);
-                    existingLine+=signText;
-                    event.setLine(signLine, existingLine);
+                    String existingLine = lines.get(signLine).toPlain();
+                    existingLine+= signText;
+                    lines.set(signLine, Text.of(existingLine));
+                    sign.offer(lines);
                     signLine++;
                     signColumn=0;
                 }
             }
         }
         String fuelText="";
-        int fuelRange=(int) ((fuel*(1+craft.getType().getCruiseSkipBlocks()))/craft.getType().getFuelBurnRate());
+        int fuelRange = (int) ((fuel*(1+craft.getType().getCruiseSkipBlocks()))/craft.getType().getFuelBurnRate());
         if(fuelRange>1000) {
-            fuelText+=ChatColor.GREEN;
+            fuelText+= TextColors.GREEN;
         } else if(fuelRange>100) {
-            fuelText+=ChatColor.YELLOW;
+            fuelText+= TextColors.YELLOW;
         } else {
-            fuelText+=ChatColor.RED;
+            fuelText+= TextColors.RED;
         }
         fuelText+="Fuel range:";
         fuelText+=fuelRange;
-        event.setLine(signLine,fuelText);
+        lines.set(signLine, Text.of(fuelText));
+        sign.offer(lines);
     }
 }

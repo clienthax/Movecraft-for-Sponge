@@ -4,6 +4,7 @@ import io.github.pulverizer.movecraft.Movecraft;
 import org.spongepowered.api.entity.Entity;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.world.Location;
+import org.spongepowered.api.world.World;
 
 import java.util.Objects;
 
@@ -34,8 +35,8 @@ public class EntityUpdateCommand extends UpdateCommand {
     @Override
     public void doUpdate() {
         if (!(entity instanceof Player)) {
-            Location playerLoc = entity.getLocation();
-            entity.setLocationAndRotation(playerLoc.add(x, y, z), entity.getRotation().add(pitch, yaw , 0));
+            Location<World> entityLocation = entity.getLocation();
+            entity.setLocationAndRotation(entityLocation.add(x, y, z), entity.getRotation().add(pitch, yaw , 0));
             return;
         }
         Movecraft.getInstance().getWorldHandler().addPlayerLocation((Player) entity,x,y,z,yaw,pitch);

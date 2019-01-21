@@ -36,7 +36,7 @@ public final class InteractListener {
         }
     }
 
-    @Listener
+    @Listenerjkhyk
     public void onPlayerInteractStick(InteractBlockEvent event, @Root Player player) {
 
         Craft c = CraftManager.getInstance().getCraftByPlayer(player);

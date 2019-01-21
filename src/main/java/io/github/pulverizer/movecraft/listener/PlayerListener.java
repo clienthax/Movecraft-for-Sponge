@@ -180,9 +180,9 @@ public class PlayerListener {
 
         if (c.isNotProcessing() && c.getType().getMoveEntities() && !timeToReleaseAfter.containsKey(c)) {
             if (Settings.ManOverBoardTimeout != 0) {
-                player.sendMessage(Text.of(I18nSupport.getInternationalisedString("You have left your craft. You may return to your craft by typing /manoverboard any time before the timeout expires")));
+                player.sendMessage(Text.of(I18nSupport.getInternationalisedString("You have left your craft. You may return to your craft by typing /manoverboard any time before the timeout expires.")));
             } else {
-                player.sendMessage(Text.of(I18nSupport.getInternationalisedString("Release - Player has left craft")));
+                player.sendMessage(Text.of(I18nSupport.getInternationalisedString("Craft Released - Player has left craft!")));
             }
             if (c.getHitBox().size() > 11000) {
                 player.sendMessage(Text.of(I18nSupport.getInternationalisedString("Craft is too big to check its borders. Make sure this area is safe to release your craft in.")));

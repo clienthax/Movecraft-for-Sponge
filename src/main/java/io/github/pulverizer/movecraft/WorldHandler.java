@@ -170,18 +170,18 @@ public class WorldHandler {
 
         Chunk chunk = world.getChunkAtBlock(blockPosition).get();
         chunk.loadChunk(true);
-        chunk.getLocation(blockPosition).restoreSnapshot(block, true, BlockChangeFlags.NEIGHBOR);
+        chunk.getLocation(blockPosition).restoreSnapshot(block, true, BlockChangeFlags.NONE);
 
     }
 
     public void setBlockFast(Location<World> location, BlockSnapshot block){
-        location.restoreSnapshot(block, true, BlockChangeFlags.NEIGHBOR);
+        location.restoreSnapshot(block, true, BlockChangeFlags.NONE);
     }
 
     public void setBlockFast(Location<World> location, Rotation rotation, BlockSnapshot block) {
 
         BlockSnapshot rotatedBlock = rotateBlock(rotation, block);
-        location.restoreSnapshot(rotatedBlock, true, BlockChangeFlags.NEIGHBOR);
+        location.restoreSnapshot(rotatedBlock, true, BlockChangeFlags.NONE);
     }
 
     public BlockSnapshot rotateBlock(Rotation rotation, BlockSnapshot block) {

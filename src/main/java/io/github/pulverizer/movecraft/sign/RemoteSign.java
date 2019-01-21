@@ -34,7 +34,7 @@ public final class RemoteSign {
             return;
         }
 
-        if (!block.getLocation().isPresent() && !block.getLocation().get().getTileEntity().isPresent())
+        if (!block.getLocation().isPresent() || !block.getLocation().get().getTileEntity().isPresent())
             return;
 
         Sign sign = (Sign) block.getLocation().get().getTileEntity().get();
@@ -95,7 +95,7 @@ public final class RemoteSign {
                 continue;
             }
 
-            if (!targetBlock.getLocation().isPresent() && !targetBlock.getLocation().get().getTileEntity().isPresent())
+            if (!targetBlock.getLocation().isPresent() || !targetBlock.getLocation().get().getTileEntity().isPresent())
                 continue;
 
             Sign targetSign = (Sign) targetBlock.getLocation().get().getTileEntity().get();

@@ -1,8 +1,5 @@
 package io.github.pulverizer.movecraft.mapUpdater.update;
 
-import io.github.pulverizer.movecraft.Movecraft;
-import org.spongepowered.api.entity.explosive.Explosive;
-import org.spongepowered.api.entity.explosive.PrimedTNT;
 import org.spongepowered.api.world.Location;
 import org.spongepowered.api.world.World;
 import org.spongepowered.api.world.explosion.Explosion;

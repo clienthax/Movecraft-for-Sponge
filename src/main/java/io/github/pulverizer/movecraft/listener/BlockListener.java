@@ -16,6 +16,7 @@ import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.event.Listener;
 import org.spongepowered.api.event.block.ChangeBlockEvent;
 import org.spongepowered.api.event.entity.SpawnEntityEvent;
+import org.spongepowered.api.event.filter.cause.Root;
 import org.spongepowered.api.text.Text;
 import org.spongepowered.api.world.Location;
 import org.spongepowered.api.world.World;
@@ -31,7 +32,7 @@ public class BlockListener {
     private long lastDamagesUpdate = 0;
 
     @Listener(order = FIRST)
-    public void onBlockBreak(final ChangeBlockEvent.Break e) {
+    public void onBlockBreak(final ChangeBlockEvent.Break e, @Root Player player) {
         if (e.isCancelled()) {
             return;
         }
@@ -48,10 +49,7 @@ public class BlockListener {
                     }
                     for (MovecraftLocation tloc : craft.getHitBox()) {
                         if (tloc.equals(mloc)) {
-                            if (e.getSource() instanceof Player) {
-                                Player player = ((Player) e.getSource()).getPlayer().get();
                                 player.sendMessage(Text.of(I18nSupport.getInternationalisedString("BLOCK IS PART OF A PILOTED CRAFT")));
-                            }
                             e.setCancelled(true);
                             return;
                         }
@@ -194,14 +192,8 @@ public class BlockListener {
         if (!testBlock.getType().isBurnable()) {
             return;
         }
-        // check to see if fire spread is allowed, don't check if worldguard integration is not enabled
-        if (Movecraft.getInstance().getWorldGuardPlugin() != null && (Settings.WorldGuardBlockMoveOnBuildPerm || Settings.WorldGuardBlockSinkOnPVPPerm)) {
-            ApplicableRegionSet set = Movecraft.getInstance().getWorldGuardPlugin().getRegionManager(testBlock.getWorld()).getApplicableRegions(testBlock.getLocation());
-            if (!set.allows(DefaultFlag.FIRE_SPREAD)) {
-                return;
-            }
-        }
-        testBlock.setType(org.bukkit.Material.AIR);
+        
+        testBlock.setType(BlockTypes.AIR);
     }
 
     @Listener(order = FIRST)

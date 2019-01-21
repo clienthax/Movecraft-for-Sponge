@@ -5,65 +5,78 @@ import io.github.pulverizer.movecraft.craft.Craft;
 import io.github.pulverizer.movecraft.utils.MathUtils;
 import io.github.pulverizer.movecraft.craft.CraftManager;
 import io.github.pulverizer.movecraft.localisation.I18nSupport;
-import org.bukkit.ChatColor;
-import org.bukkit.block.Block;
-import org.bukkit.event.EventHandler;
-import org.bukkit.event.block.Action;
-import org.bukkit.event.player.PlayerInteractEvent;
+import org.spongepowered.api.block.BlockSnapshot;
 import org.spongepowered.api.block.BlockTypes;
 import org.spongepowered.api.block.tileentity.Sign;
+import org.spongepowered.api.data.value.mutable.ListValue;
+import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.event.Listener;
+import org.spongepowered.api.event.block.InteractBlockEvent;
 import org.spongepowered.api.event.block.tileentity.ChangeSignEvent;
+import org.spongepowered.api.event.filter.cause.Root;
+import org.spongepowered.api.event.filter.type.Include;
+import org.spongepowered.api.text.Text;
 
-public final class HelmSign implements Listener {
+public final class HelmSign {
 
-    @EventHandler
+    @Listener
     public final void onSignChange(ChangeSignEvent event){
-        if (!ChatColor.stripColor(event.getLine(0)).equalsIgnoreCase("[helm]")) {
+        ListValue<Text> lines = event.getText().lines();
+        if (!lines.get(0).toPlain().equalsIgnoreCase("[helm]")) {
             return;
         }
-        event.setLine(0, "\\  ||  /");
-        event.setLine(1, "==      ==");
-        event.setLine(2, "/  ||  \\");
+        lines.set(0, Text.of("\\  ||  /"));
+        lines.set(1, Text.of("==      =="));
+        lines.set(2, Text.of("/  ||  \\"));
+        event.getTargetTile().offer(lines);
     }
 
-    @EventHandler
-    public final void onSignClick(PlayerInteractEvent event) {
+    @Listener
+    @Include({InteractBlockEvent.Primary.class, InteractBlockEvent.Secondary.MainHand.class})
+    public final void onSignClick(InteractBlockEvent event, @Root Player player) {
         Rotation rotation;
-        if (event.getAction() == Action.RIGHT_CLICK_BLOCK) {
+        if (event instanceof InteractBlockEvent.Secondary) {
             rotation = Rotation.CLOCKWISE;
-        }else if(event.getAction() == Action.LEFT_CLICK_BLOCK){
+        }else if(event instanceof InteractBlockEvent.Primary){
             rotation = Rotation.ANTICLOCKWISE;
         }else{
             return;
         }
-        Block block = event.getClickedBlock();
-        if (block.getType() != BlockTypes.STANDING_SIGN && block.getType() != BlockTypes.WALL_SIGN) {
-            return;
-        }
-        Sign sign = (Sign) event.getClickedBlock().getState();
-        if (!(ChatColor.stripColor(sign.getLine(0)).equals("\\  ||  /") &&
-                ChatColor.stripColor(sign.getLine(1)).equals("==      ==") &&
-                ChatColor.stripColor(sign.getLine(2)).equals("/  ||  \\"))) {
-            return;
-        }
-        Craft craft = CraftManager.getInstance().getCraftByPlayer(event.getPlayer());
-        if (craft == null) {
-            return;
-        }
-        if (!event.getPlayer().hasPermission("movecraft." + craft.getType().getCraftName() + ".rotate")) {
-            event.getPlayer().sendMessage(I18nSupport.getInternationalisedString("Insufficient Permissions"));
+
+        BlockSnapshot block = event.getTargetBlock();
+        if (block.getState().getType() != BlockTypes.STANDING_SIGN && block.getState().getType() != BlockTypes.WALL_SIGN) {
             return;
         }
 
-        if (!MathUtils.locationInHitbox(craft.getHitBox(), event.getPlayer().getLocation())) {
+        if (!block.getLocation().isPresent() || !block.getLocation().get().getTileEntity().isPresent())
+            return;
+
+        Sign sign = (Sign) block.getLocation().get().getTileEntity().get();
+        ListValue<Text> lines = sign.lines();
+
+        if (!lines.get(0).toPlain().equalsIgnoreCase("\\  ||  /") &&
+                lines.get(1).toPlain().equalsIgnoreCase("==      ==") &&
+                lines.get(2).toPlain().equalsIgnoreCase("/  ||  \\")) {
+            return;
+        }
+
+        Craft craft = CraftManager.getInstance().getCraftByPlayer(player);
+        if (craft == null) {
+            return;
+        }
+        if (!player.hasPermission("movecraft." + craft.getType().getCraftName() + ".rotate")) {
+            player.sendMessage(Text.of(I18nSupport.getInternationalisedString("Insufficient Permissions")));
+            return;
+        }
+
+        if (!MathUtils.locationInHitbox(craft.getHitBox(), player.getLocation())) {
             return;
         }
 
         if (craft.getType().rotateAtMidpoint()) {
-            CraftManager.getInstance().getCraftByPlayer(event.getPlayer()).rotate(rotation, craft.getHitBox().getMidPoint());
+            CraftManager.getInstance().getCraftByPlayer(player).rotate(rotation, craft.getHitBox().getMidPoint());
         } else {
-            CraftManager.getInstance().getCraftByPlayer(event.getPlayer()).rotate(rotation, MathUtils.bukkit2MovecraftLoc(sign.getLocation()));
+            CraftManager.getInstance().getCraftByPlayer(player).rotate(rotation, MathUtils.sponge2MovecraftLoc(sign.getLocation()));
         }
 
         //timeMap.put(event.getPlayer(), System.currentTimeMillis());

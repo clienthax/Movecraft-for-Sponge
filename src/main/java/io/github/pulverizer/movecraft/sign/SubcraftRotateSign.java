@@ -14,9 +14,13 @@ import io.github.pulverizer.movecraft.utils.MathUtils;
 import org.spongepowered.api.block.BlockSnapshot;
 import org.spongepowered.api.block.BlockTypes;
 import org.spongepowered.api.block.tileentity.Sign;
+import org.spongepowered.api.data.value.mutable.ListValue;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.event.Listener;
 import org.spongepowered.api.event.block.InteractBlockEvent;
+import org.spongepowered.api.event.filter.cause.Root;
+import org.spongepowered.api.event.filter.type.Include;
+import org.spongepowered.api.scheduler.Task;
 import org.spongepowered.api.text.Text;
 import org.spongepowered.api.world.Location;
 import org.spongepowered.api.world.World;
@@ -28,10 +32,8 @@ public final class SubcraftRotateSign {
     private final Set<UUID> rotatingPlayers = new HashSet<>();
 
     @Listener
-    public final void onSignClick(InteractBlockEvent event) {
-        if(!(event instanceof InteractBlockEvent.Primary) && !(event instanceof InteractBlockEvent.Secondary)) {
-            return;
-        }
+    @Include({InteractBlockEvent.Primary.class, InteractBlockEvent.Secondary.MainHand.class})
+    public final void onSignClick(InteractBlockEvent event, @Root Player player) {
 
         Rotation rotation;
         if (event instanceof InteractBlockEvent.Secondary) {
@@ -45,21 +47,16 @@ public final class SubcraftRotateSign {
         if (block.getState().getType() != BlockTypes.STANDING_SIGN && block.getState().getType() != BlockTypes.WALL_SIGN) {
             return;
         }
-        Sign sign = (Sign) event.getTargetBlock().getExtendedState();
-        if (!sign.lines().get(0).toPlain().equalsIgnoreCase(HEADER)) {
+
+        if (!block.getLocation().isPresent() || !block.getLocation().get().getTileEntity().isPresent())
+            return;
+
+        Sign sign = (Sign) block.getLocation().get().getTileEntity().get();
+        ListValue<Text> lines = sign.lines();
+
+        if (!lines.get(0).toPlain().equalsIgnoreCase(HEADER)) {
             return;
         }
-
-        Player player = null;
-        if (event.getSource() instanceof Player && ((Player) event.getSource()).getPlayer().isPresent()) {
-            player = ((Player) event.getSource()).getPlayer().get();
-        }
-
-        if (player == null)
-            return;
-
-        if (!event.getTargetBlock().getLocation().isPresent())
-            return;
 
         if(rotatingPlayers.contains(player.getUniqueId())){
             player.sendMessage(Text.of("You are already rotating!"));
@@ -72,10 +69,10 @@ public final class SubcraftRotateSign {
         if (type == null) {
             return;
         }
-        if (sign.lines().get(2).toPlain().equalsIgnoreCase("") && sign.lines().get(3).toPlain().equalsIgnoreCase("")) {
-            sign.setLine(2, "_\\ /_");
-            sign.setLine(3, "/ \\");
-            sign.update(false, false);
+        if (lines.get(2).toPlain().equalsIgnoreCase("") && lines.get(3).toPlain().equalsIgnoreCase("")) {
+            lines.set(2, Text.of("_\\ /_"));
+            lines.set(3, Text.of("/ \\"));
+            sign.offer(lines);
         }
 
         if (!player.hasPermission("movecraft." + craftTypeStr + ".pilot") || !player.hasPermission("movecraft." + craftTypeStr + ".rotate")) {
@@ -90,12 +87,11 @@ public final class SubcraftRotateSign {
                 return;
             }
             craft.setProcessing(true); // prevent the parent craft from moving or updating until the subcraft is done
-            new BukkitRunnable() {
-                @Override
-                public void run() {
-                    craft.setProcessing(false);
-                }
-            }.runTaskLater(Movecraft.getInstance(), (10));
+
+            Task.builder()
+                    .delayTicks(10)
+                    .execute(() -> craft.setProcessing(false))
+                    .submit(Movecraft.getInstance());
         }
 
         final Location<World> loc = event.getTargetBlock().getLocation().get();
@@ -103,19 +99,20 @@ public final class SubcraftRotateSign {
         MovecraftLocation startPoint = new MovecraftLocation(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
         subCraft.detect(null, player, startPoint);
         rotatingPlayers.add(player.getUniqueId());
-        new BukkitRunnable() {
-            @Override
-            public void run() {
-                subCraft.rotate(rotation, startPoint, true);
-                new BukkitRunnable() {
-                    @Override
-                    public void run() {
-                        rotatingPlayers.remove(player.getUniqueId());
-                        CraftManager.getInstance().removeCraft(subCraft);
-                    }
-                }.runTaskLater(Movecraft.getInstance(), 3);
-            }
-        }.runTaskLater(Movecraft.getInstance(), 3);
+
+        Task.builder()
+                .delayTicks(3)
+                .execute(() -> {
+                    subCraft.rotate(rotation, startPoint, true);
+                    Task.builder()
+                            .delayTicks(3)
+                            .execute(() -> {
+                                rotatingPlayers.remove(player.getUniqueId());
+                                CraftManager.getInstance().removeCraft(subCraft);
+                            })
+                            .submit(Movecraft.getInstance()); })
+                .submit(Movecraft.getInstance());
+
         event.setCancelled(true);
     }
 

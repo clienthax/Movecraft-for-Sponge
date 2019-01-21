@@ -21,7 +21,7 @@ public final class TeleportSign {
             return;
         }
 
-        if (!block.getLocation().isPresent() && !block.getLocation().get().getTileEntity().isPresent())
+        if (!block.getLocation().isPresent() || !block.getLocation().get().getTileEntity().isPresent())
             return;
 
         Sign sign = (Sign) block.getLocation().get().getTileEntity().get();
