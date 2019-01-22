@@ -44,7 +44,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
 @SuppressWarnings("deprecation")
-public class AsyncManager {
+public class AsyncManager implements Runnable {
     private final HashMap<AsyncTask, Craft> ownershipMap = new HashMap<>();
     private final HashMap<PrimedTNT, Double> TNTTracking = new HashMap<>();
     private final HashMap<Craft, HashMap<Craft, Long>> recentContactTracking = new HashMap<>();

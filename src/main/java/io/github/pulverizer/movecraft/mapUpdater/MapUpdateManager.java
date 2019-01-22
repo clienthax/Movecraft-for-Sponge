@@ -12,7 +12,7 @@ import org.spongepowered.api.text.Text;
 import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-public class MapUpdateManager {
+public class MapUpdateManager implements Runnable{
 
     private final Queue<UpdateCommand> updates = new ConcurrentLinkedQueue<>();
 

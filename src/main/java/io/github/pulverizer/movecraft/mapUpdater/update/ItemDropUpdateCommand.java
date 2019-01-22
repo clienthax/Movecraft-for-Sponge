@@ -1,7 +1,11 @@
 package io.github.pulverizer.movecraft.mapUpdater.update;
 
 import io.github.pulverizer.movecraft.Movecraft;
+import org.spongepowered.api.data.key.Keys;
+import org.spongepowered.api.entity.Entity;
+import org.spongepowered.api.entity.EntityTypes;
 import org.spongepowered.api.item.inventory.ItemStack;
+import org.spongepowered.api.scheduler.Task;
 import org.spongepowered.api.world.Location;
 import org.spongepowered.api.world.World;
 
@@ -30,12 +34,14 @@ public class ItemDropUpdateCommand extends UpdateCommand {
         if (itemStack != null) {
             final World world = location.getExtent();
             // drop Item
-            new BukkitRunnable() {
-                @Override
-                public void run() {
-                    world.dropItemNaturally(ItemDropUpdateCommand.this.location, itemStack);
-                }
-            }.runTaskLater(Movecraft.getInstance(), 20);
+            Task.builder()
+                    .delayTicks(20)
+                    .execute(() -> {
+                        Entity entity = world.createEntityNaturally(EntityTypes.ITEM, ItemDropUpdateCommand.this.location.getPosition());
+                        entity.offer(Keys.REPRESENTED_ITEM, itemStack.createSnapshot());
+                        world.spawnEntity(entity);
+                    })
+                    .submit(Movecraft.getInstance());
         }
     }
 

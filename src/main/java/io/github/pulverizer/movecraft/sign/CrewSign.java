@@ -1,34 +1,31 @@
 package io.github.pulverizer.movecraft.sign;
 
-import io.github.pulverizer.movecraft.Movecraft;
 import io.github.pulverizer.movecraft.MovecraftLocation;
 import io.github.pulverizer.movecraft.craft.Craft;
 import io.github.pulverizer.movecraft.craft.CraftManager;
 import io.github.pulverizer.movecraft.events.CraftDetectEvent;
 import io.github.pulverizer.movecraft.events.SignTranslateEvent;
 import io.github.pulverizer.movecraft.config.Settings;
-import org.bukkit.block.Block;
-import org.bukkit.event.EventHandler;
-import org.bukkit.event.EventPriority;
-import org.bukkit.event.block.Action;
-import org.bukkit.event.player.PlayerInteractEvent;
-import org.bukkit.event.player.PlayerRespawnEvent;
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.block.BlockSnapshot;
 import org.spongepowered.api.block.BlockTypes;
 import org.spongepowered.api.block.tileentity.Sign;
 import org.spongepowered.api.data.key.Keys;
 import org.spongepowered.api.data.value.mutable.ListValue;
+import org.spongepowered.api.entity.Transform;
 import org.spongepowered.api.entity.living.player.Player;
-import org.spongepowered.api.entity.living.player.User;
 import org.spongepowered.api.event.Listener;
-import org.spongepowered.api.event.Order;
 import org.spongepowered.api.event.block.InteractBlockEvent;
 import org.spongepowered.api.event.block.tileentity.ChangeSignEvent;
+import org.spongepowered.api.event.entity.living.humanoid.player.RespawnPlayerEvent;
 import org.spongepowered.api.event.filter.cause.Root;
 import org.spongepowered.api.text.Text;
+import org.spongepowered.api.util.RespawnLocation;
 import org.spongepowered.api.world.Location;
 import org.spongepowered.api.world.World;
+
+import java.util.Map;
+import java.util.UUID;
 
 import static org.spongepowered.api.event.Order.FIRST;
 
@@ -109,15 +106,26 @@ public class CrewSign {
             player.sendMessage(Text.of("You can't set your priority crew sign to a piloted craft."));
             return;
         }
-        Location location = sign.getLocation();
+        Location<World> location = block.getLocation().get();
         player.sendMessage(Text.of("Priority crew bed set!"));
-        player.get(Keys.RESPAWN_LOCATIONS).get().
-        player.offer(Keys.RESPAWN_LOCATIONS, )setBedSpawnLocation(location, true);
+        if (player.get(Keys.RESPAWN_LOCATIONS).isPresent()) {
+            player.get(Keys.RESPAWN_LOCATIONS).get().clear();
+        }
+
+        Map<UUID, RespawnLocation> respawnLocationList = player.get(Keys.RESPAWN_LOCATIONS).get();
+        RespawnLocation respawnLocation = RespawnLocation.builder().location(location).build();
+        respawnLocationList.put(location.getExtent().getUniqueId(), respawnLocation);
+
+        player.offer(Keys.RESPAWN_LOCATIONS, respawnLocationList);
     }
 
     @Listener(order = FIRST)
-    public final void onPlayerRespawn(PlayerRespawnEvent event) {
-        Player player = event.getPlayer();
+    public final void onPlayerRespawn(RespawnPlayerEvent event) {
+
+        if (!event.isDeath())
+            return;
+
+        Player player = event.getTargetEntity();
         Craft craft = CraftManager.getInstance().getCraftByPlayer(player);
         if (craft == null) {
             return;
@@ -126,7 +134,9 @@ public class CrewSign {
             return;
         }
         player.sendMessage(Text.of("Respawning at crew bed!"));
-        event.setRespawnLocation(craft.getCrewSigns().get(player.getUniqueId()));
+        Transform<World> respawnTransform = event.getToTransform();
+        respawnTransform.setLocation(craft.getCrewSigns().get(player.getUniqueId()));
+        event.setToTransform(respawnTransform);
     }
 
     @Listener

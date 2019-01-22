@@ -31,6 +31,14 @@ public class BlockCreateCommand extends UpdateCommand {
     }
 
 
+
+    public BlockCreateCommand(World world, MovecraftLocation newBlockLocation, BlockType block) {
+        this.newBlockLocation = newBlockLocation;
+        this.block = BlockSnapshot.builder().blockState(block.getDefaultState()).build();
+        this.world = world;
+    }
+
+
     @Override
     @SuppressWarnings("deprecation")
     public void doUpdate() {

@@ -12,7 +12,10 @@ import org.spongepowered.api.data.type.HandTypes;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.event.Listener;
 import org.spongepowered.api.event.block.InteractBlockEvent;
+import org.spongepowered.api.event.entity.living.humanoid.HandInteractEvent;
 import org.spongepowered.api.event.filter.cause.Root;
+import org.spongepowered.api.event.filter.type.Include;
+import org.spongepowered.api.event.item.inventory.InteractItemEvent;
 import org.spongepowered.api.text.Text;
 import org.spongepowered.api.world.BlockChangeFlags;
 
@@ -36,24 +39,28 @@ public final class InteractListener {
         }
     }
 
-    @Listenerjkhyk
-    public void onPlayerInteractStick(InteractBlockEvent event, @Root Player player) {
+    @Listener
+    @Include({InteractItemEvent.Primary.class, InteractItemEvent.Secondary.MainHand.class})
+    public void onPlayerInteractStick(InteractItemEvent event, @Root Player player) {
 
         Craft c = CraftManager.getInstance().getCraftByPlayer(player);
         // if not in command of craft, don't process pilot tool clicks
         if (c == null)
             return;
 
-        if (event instanceof InteractBlockEvent.Secondary) {
+        if (event instanceof InteractItemEvent.Secondary) {
             Craft craft = CraftManager.getInstance().getCraftByPlayer(player);
 
             if (player.getItemInHand(HandTypes.MAIN_HAND).get().getType() != Settings.PilotTool) {
                 return;
             }
-            event.setCancelled(true);
+
             if (craft == null) {
                 return;
             }
+
+            event.setCancelled(true);
+
             Long time = timeMap.get(player);
             if (time != null) {
                 long ticksElapsed = (System.currentTimeMillis() - time) / 50;
@@ -112,7 +119,7 @@ public final class InteractListener {
             craft.setLastCruiseUpdate(System.currentTimeMillis());
             return;
         }
-        if (event instanceof InteractBlockEvent.Primary) {
+        if (event instanceof InteractItemEvent.Primary) {
             if (player.getItemInHand(HandTypes.MAIN_HAND).get().getType() != Settings.PilotTool) {
                 return;
             }
@@ -120,6 +127,7 @@ public final class InteractListener {
             if (craft == null) {
                 return;
             }
+
             if (craft.getPilotLocked()) {
                 craft.setPilotLocked(false);
                 player.sendMessage(Text.of(I18nSupport.getInternationalisedString("Leaving Direct Control Mode")));

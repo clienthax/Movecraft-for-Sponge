@@ -95,10 +95,11 @@ public class DetectionTask extends AsyncTask {
                 data.setWaterContact(true);
             }
             if (testID == BlockTypes.STANDING_SIGN || testID == BlockTypes.WALL_SIGN) {
-                //TODO: I DON'T THINK THIS WORKS!!!! BlockSnapshot instanceof Sign
                 BlockSnapshot snapshot = data.getWorld().createSnapshot(x, y, z);
-                if (snapshot instanceof Sign) {
-                    Sign s = (Sign) snapshot;
+
+                if(snapshot.getLocation().isPresent() && snapshot.getLocation().get().getTileEntity().isPresent()) {
+
+                    Sign s = (Sign) snapshot.getLocation().get().getTileEntity().get();
                     if (s.lines().get(0).toString().equalsIgnoreCase("Pilot:") && data.getPlayer() != null) {
                         String playerName = data.getPlayer().getName();
                         boolean foundPilot = false;

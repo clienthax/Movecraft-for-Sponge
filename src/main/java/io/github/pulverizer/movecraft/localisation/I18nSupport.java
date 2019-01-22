@@ -18,7 +18,7 @@ public class I18nSupport {
     public static void init() {
         languageFile = new Properties();
 
-        File localisationDirectory = new File(Movecraft.getInstance().getDataFolder().getAbsolutePath() + "/localisation");
+        File localisationDirectory = Movecraft.getInstance().getConfigDir().resolve("localisation").toFile();
 
         if (!localisationDirectory.exists()) {
             localisationDirectory.mkdirs();

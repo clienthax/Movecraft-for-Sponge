@@ -13,6 +13,7 @@ import org.spongepowered.api.data.value.mutable.ListValue;
 import org.spongepowered.api.event.Listener;
 import org.spongepowered.api.item.ItemTypes;
 import org.spongepowered.api.item.inventory.Inventory;
+import org.spongepowered.api.item.inventory.query.QueryOperationTypes;
 import org.spongepowered.api.text.Text;
 import org.spongepowered.api.text.format.TextColors;
 import org.spongepowered.api.world.World;
@@ -85,17 +86,11 @@ public final class StatusSign {
             if (blockType == BlockTypes.FURNACE || blockType == BlockTypes.LIT_FURNACE) {
                 Inventory inventory = ((TileEntityCarrier) craft.getW().getTileEntity(ml.getX(), ml.getY(), ml.getZ()).get()).getInventory();
                 if (inventory.contains(ItemTypes.COAL) || inventory.contains(ItemTypes.COAL_BLOCK)) {
-                    ItemStack[] istack=inventory.getContents();
-                    for(ItemStack i : istack) {
-                        if(i!=null) {
-                            if(i.getTypeId()== ItemTypes.COAL) {
-                                fuel+=i.getAmount()*8;
-                            }
-                            if(i.getTypeId()== ItemTypes.COAL_BLOCK) {
-                                fuel+=i.getAmount()*80;
-                            }
-                        }
-                    }
+
+                    int coal = inventory.query(QueryOperationTypes.ITEM_TYPE.of(ItemTypes.COAL)).totalItems();
+                    int coalBlocks = inventory.query(QueryOperationTypes.ITEM_TYPE.of(ItemTypes.COAL_BLOCK)).totalItems();
+
+                    fuel = (coal * 8) + (coalBlocks * 80);
                 }
             }
             if (blockType != BlockTypes.AIR) {
@@ -116,7 +111,7 @@ public final class StatusSign {
                 } else if(percentPresent>minimum*1.02) {
                     signText+= TextColors.YELLOW;
                 } else {
-                    signText+ = TextColors.RED;
+                    signText+= TextColors.RED;
                 }
                 //TODO: Change to Fly and Move Blocks
                 if(flyBlockID == BlockTypes.REDSTONE_BLOCK) {

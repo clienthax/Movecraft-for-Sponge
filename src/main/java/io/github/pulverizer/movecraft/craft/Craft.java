@@ -58,7 +58,7 @@ public class Craft {
     private float meanMoveTime;
     private int numMoves;
     private final Map<MovecraftLocation, BlockSnapshot> phaseBlocks = new HashMap<>();
-    private final HashMap<UUID, Location> crewSigns = new HashMap<>();
+    private final HashMap<UUID, Location<World>> crewSigns = new HashMap<>();
     private final UUID id = UUID.randomUUID();
 
     public Craft(CraftType type, World world) {
@@ -423,7 +423,7 @@ public class Craft {
         return phaseBlocks;
     }
 
-    public Map<UUID, Location> getCrewSigns(){
+    public Map<UUID, Location<World>> getCrewSigns(){
         return crewSigns;
     }
 

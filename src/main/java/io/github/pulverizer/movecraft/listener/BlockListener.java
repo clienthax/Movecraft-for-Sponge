@@ -7,16 +7,24 @@ import io.github.pulverizer.movecraft.craft.Craft;
 import io.github.pulverizer.movecraft.config.Settings;
 import io.github.pulverizer.movecraft.craft.CraftManager;
 import io.github.pulverizer.movecraft.localisation.I18nSupport;
+import org.spongepowered.api.Sponge;
 import org.spongepowered.api.block.BlockSnapshot;
+import org.spongepowered.api.block.BlockState;
+import org.spongepowered.api.block.BlockType;
 import org.spongepowered.api.block.BlockTypes;
 import org.spongepowered.api.data.Transaction;
+import org.spongepowered.api.data.key.Keys;
+import org.spongepowered.api.entity.Entity;
 import org.spongepowered.api.entity.EntityTypes;
 import org.spongepowered.api.entity.Item;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.event.Listener;
 import org.spongepowered.api.event.block.ChangeBlockEvent;
+import org.spongepowered.api.event.data.ChangeDataHolderEvent;
 import org.spongepowered.api.event.entity.SpawnEntityEvent;
 import org.spongepowered.api.event.filter.cause.Root;
+import org.spongepowered.api.event.filter.type.Include;
+import org.spongepowered.api.scheduler.Task;
 import org.spongepowered.api.text.Text;
 import org.spongepowered.api.world.Location;
 import org.spongepowered.api.world.World;
@@ -28,7 +36,7 @@ import static org.spongepowered.api.event.Order.LAST;
 
 public class BlockListener {
 
-    final BlockTypes[] fragileBlocks = new BlockTypes[]{26, 34, 50, 55, 63, 64, 65, 68, 69, 70, 71, 72, 75, 76, 77, 93, 94, 96, 131, 132, 143, 147, 148, 149, 150, 151, 171, 323, 324, 330, 331, 356, 404};
+    final BlockType[] fragileBlocks = new BlockType[]{BlockTypes.BED, BlockTypes.PISTON_HEAD, BlockTypes.PISTON_EXTENSION, BlockTypes.TORCH, BlockTypes.REDSTONE_WIRE, BlockTypes.STANDING_SIGN, BlockTypes.WOODEN_DOOR, BlockTypes.LADDER, BlockTypes.WALL_SIGN, BlockTypes.LEVER, BlockTypes.STONE_PRESSURE_PLATE, BlockTypes.IRON_DOOR, BlockTypes.WOODEN_PRESSURE_PLATE, BlockTypes.UNLIT_REDSTONE_TORCH, BlockTypes.REDSTONE_TORCH, BlockTypes.STONE_BUTTON, BlockTypes.TRAPDOOR, BlockTypes.TRIPWIRE_HOOK, BlockTypes.TRIPWIRE, BlockTypes.WOODEN_BUTTON, BlockTypes.LIGHT_WEIGHTED_PRESSURE_PLATE, BlockTypes.HEAVY_WEIGHTED_PRESSURE_PLATE, BlockTypes.DAYLIGHT_DETECTOR, BlockTypes.DAYLIGHT_DETECTOR_INVERTED, BlockTypes.CARPET, BlockTypes.UNPOWERED_REPEATER, BlockTypes.POWERED_REPEATER, BlockTypes.UNPOWERED_COMPARATOR, BlockTypes.UNPOWERED_COMPARATOR};
     private long lastDamagesUpdate = 0;
 
     @Listener(order = FIRST)
@@ -61,46 +69,65 @@ public class BlockListener {
 
     // prevent items from dropping from moving crafts
     @Listener(order = FIRST)
-    public void onItemSpawn(final SpawnEntityEvent e) {
+    public void onItemSpawn(final SpawnEntityEvent event) {
 
-        e.filterEntities(entity -> entity instanceof Item);
+        List<Entity> entities = new ArrayList<>();
+        entities.addAll(event.filterEntities(entity -> entity instanceof Item));
 
-        for (Craft tcraft : CraftManager.getInstance().getCraftsInWorld(e.getLocation().getWorld())) {
-            if ((!tcraft.isNotProcessing()) && MathUtils.locationInHitbox(tcraft.getHitBox(), e.getLocation())) {
-                e.setCancelled(true);
-                return;
+        if (entities.isEmpty())
+            return;
+
+        for (Entity entity : entities) {
+            for (Craft tcraft : CraftManager.getInstance().getCraftsInWorld(entity.getWorld())) {
+                if ((!tcraft.isNotProcessing()) && MathUtils.locationInHitbox(tcraft.getHitBox(), entity.getLocation())) {
+                    event.setCancelled(true);
+                    return;
+                }
             }
+
         }
     }
 
     // prevent water and lava from spreading on moving crafts
     @Listener(order = FIRST)
-    public void onBlockFromTo(BlockFromToEvent e) {
-        if (e.isCancelled()) {
+    public void onBlockFromTo(ChangeBlockEvent.Pre event) {
+
+        if (!(event.getSource() instanceof BlockSnapshot))
             return;
-        }
-        BlockSnapshot block = e.getToBlock();
-        if (block.getType() != Material.WATER && block.getType() != Material.LAVA) {
+
+        BlockSnapshot block = (BlockSnapshot) event.getSource();
+
+        if (!block.getLocation().isPresent())
             return;
-        }
-        for (Craft tcraft : CraftManager.getInstance().getCraftsInWorld(block.getWorld())) {
-            if ((!tcraft.isNotProcessing()) && MathUtils.locIsNearCraftFast(tcraft, MathUtils.sponge2MovecraftLoc(block.getLocation()))) {
-                e.setCancelled(true);
+
+        if (block.getState().getType() != BlockTypes.WATER && block.getState().getType() != BlockTypes.LAVA)
+            return;
+
+        for (Craft tcraft : CraftManager.getInstance().getCraftsInWorld(block.getLocation().get().getExtent())) {
+            if ((!tcraft.isNotProcessing()) && MathUtils.locIsNearCraftFast(tcraft, MathUtils.sponge2MovecraftLoc(block.getLocation().get()))) {
+                event.setCancelled(true);
                 return;
             }
         }
     }
 
+    /* TODO: RE-ADD NEXT!!!!
+    Keys.POWER.registerEvent(BlockState.class, event -> {});
     // process certain redstone on cruising crafts
     @Listener(order = FIRST)
-    public void onRedstoneEvent(BlockRedstoneEvent event) {
-        Block block = event.getBlock();
+    public void onRedstoneEvent(ChangeDataHolderEvent.ValueChange event) {
+        if (event.getTargetHolder() == Keys.POWER)
+            return;
+
+        BlockSnapshot block = event.getBlock();
         CraftManager.getInstance().getCraftsInWorld(block.getWorld());
         for (Craft tcraft : CraftManager.getInstance().getCraftsInWorld(block.getWorld())) {
             MovecraftLocation mloc = new MovecraftLocation(block.getX(), block.getY(), block.getZ());
             if (MathUtils.locIsNearCraftFast(tcraft, mloc) &&
-                    tcraft.getCruising() && (block.getTypeId() == 29 ||
-                    block.getTypeId() == 33 || block.getTypeId() == 23 &&
+                    tcraft.getCruising() &&
+                    (block.getTypeId() == 29 ||
+                    block.getTypeId() == 33 ||
+                    block.getTypeId() == 23 &&
                     !tcraft.isNotProcessing())) {
                 event.setNewCurrent(event.getOldCurrent()); // don't allow piston movement on cruising crafts
                 return;
@@ -192,7 +219,7 @@ public class BlockListener {
         if (!testBlock.getType().isBurnable()) {
             return;
         }
-        
+
         testBlock.setType(BlockTypes.AIR);
     }
 
@@ -246,7 +273,7 @@ public class BlockListener {
 
             if (e.getEntityType() == EntityTypes.PRIMED_TNT && Settings.TracerRateTicks != 0) {
                 long minDistSquared = 60 * 60;
-                long maxDistSquared = Bukkit.getServer().getViewDistance() * 16;
+                long maxDistSquared = Sponge.getServer().getViewDistance() * 16;
                 maxDistSquared = maxDistSquared - 16;
                 maxDistSquared = maxDistSquared * maxDistSquared;
                 // is the TNT within the view distance (rendered world) of the player, yet further than 60 blocks?
@@ -254,22 +281,21 @@ public class BlockListener {
                     final Location loc = tnt.getLocation();
                     final Player fp = p;
                     final World fw = e.getEntity().getWorld();
+
                     // then make a glowstone to look like the explosion, place it a little later so it isn't right in the middle of the volley
-                    new BukkitRunnable() {
-                        @Override
-                        public void run() {
-                            fp.sendBlockChange(loc, 89, (byte) 0);
-                        }
-                    }.runTaskLater(Movecraft.getInstance(), 5);
+                    Task.builder()
+                            .delayTicks(5)
+                            .execute(() -> fp.sendBlockChange(loc.getBlockPosition(), BlockTypes.GLOWSTONE.getDefaultState()))
+                            .submit(Movecraft.getInstance());
+
                     // then remove it
-                    new BukkitRunnable() {
-                        @Override
-                        public void run() {
-                            fp.sendBlockChange(loc, 0, (byte) 0);
-                        }
-                    }.runTaskLater(Movecraft.getInstance(), 160);
+                    Task.builder()
+                            .delayTicks(160)
+                            .execute(() -> fp.sendBlockChange(loc.getBlockPosition(), BlockTypes.AIR.getDefaultState()))
+                            .submit(Movecraft.getInstance());
                 }
             }
         }
     }
+    */
 }

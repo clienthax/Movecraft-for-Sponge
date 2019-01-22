@@ -3,7 +3,6 @@ package io.github.pulverizer.movecraft;
 import com.google.common.reflect.TypeToken;
 import com.google.inject.Inject;
 import ninja.leaping.configurate.ConfigurationNode;
-import ninja.leaping.configurate.ConfigurationOptions;
 import ninja.leaping.configurate.loader.ConfigurationLoader;
 import ninja.leaping.configurate.objectmapping.ObjectMappingException;
 import ninja.leaping.configurate.yaml.YAMLConfigurationLoader;
@@ -45,6 +44,7 @@ import io.github.pulverizer.movecraft.sign.SpeedSign;
 import io.github.pulverizer.movecraft.sign.StatusSign;
 import io.github.pulverizer.movecraft.sign.SubcraftRotateSign;
 import io.github.pulverizer.movecraft.sign.TeleportSign;
+import org.spongepowered.api.scheduler.Task;
 
 import java.io.File;
 
@@ -62,6 +62,7 @@ public class Movecraft {
     private WorldHandler worldHandler;
     private AsyncManager asyncManager;
 
+    private ConfigurationLoader<ConfigurationNode> mainConfigLoader;
     private ConfigurationNode mainConfigNode;
 
     @Inject
@@ -87,15 +88,9 @@ public class Movecraft {
         return mainConfigNode;
     }
 
-    public ConfigurationNode createConfigNode(Path file) {
+    public ConfigurationLoader<ConfigurationNode> createConfigLoader(Path file) {
         ConfigurationLoader<ConfigurationNode> loader = YAMLConfigurationLoader.builder().setPath(file).build();
-        try {
-            return loader.load(ConfigurationOptions.defaults());
-        } catch (IOException e) {
-            e.printStackTrace();
-            getLogger().error("Fatal Error: Config Handler failed to load!" + e);
-            return null;
-        }
+            return loader;
     }
 
     @Listener
@@ -110,12 +105,17 @@ public class Movecraft {
         logger = getLogger();
 
         Path mainConfigPath = getConfigDir().resolve("movecraft.cfg");
-        mainConfigNode = createConfigNode(mainConfigPath);
+        mainConfigLoader = createConfigLoader(mainConfigPath);
+
+        try {
+            mainConfigNode = mainConfigLoader.load();
+        } catch (IOException error) {
+            error.printStackTrace();
+        }
 
         // Read in config
-        this.saveDefaultConfig();
 
-        Settings.LOCALE = mainConfigNode.getNode("Locale").getString();
+        Settings.LOCALE = mainConfigNode.getNode("Locale").getString("en");
         Settings.Debug = mainConfigNode.getNode("Debug").getBoolean(false);
         Settings.DisableSpillProtection = mainConfigNode.getNode("DisableSpillProtection").getBoolean(false);
 
@@ -156,7 +156,7 @@ public class Movecraft {
         Settings.FadeWrecksAfter = mainConfigNode.getNode("FadeWrecksAfter").getInt(0);
         Settings.DurabilityOverride = new HashMap<>();
 
-        try {
+        /*try {
             Map<BlockType, Integer> tempMap = mainConfigNode.getNode("DurabilityOverride").getValue(new TypeToken<Map<BlockType, Integer>>() {});
             for (BlockType blockType : tempMap.keySet()) {
                 Settings.DurabilityOverride.put(blockType, tempMap.get(blockType));
@@ -164,7 +164,7 @@ public class Movecraft {
 
         } catch (ObjectMappingException e) {
             e.printStackTrace();
-        }
+        }*/
 
         try {
             Settings.DisableShadowBlocks = new HashSet<BlockType>(mainConfigNode.getNode("DisableShadowBlocks").getList(TypeToken.of(BlockType.class)));  //REMOVE FOR PUBLIC VERSION
@@ -183,6 +183,12 @@ public class Movecraft {
         }
         */
 
+        try {
+            mainConfigLoader.save(mainConfigNode);
+        } catch (IOException error) {
+            error.printStackTrace();
+        }
+/*
         String[] localisations = {"en", "cz", "nl"};
         for (String s : localisations) {
             if (!new File(getConfigDir()
@@ -190,7 +196,7 @@ public class Movecraft {
                 this.saveResource("localisation/movecraftlang_" + s + ".properties", false);
             }
         }
-
+*/
         I18nSupport.init();
         if (shuttingDown && Settings.IGNORE_RESET) {
             logger.error(I18nSupport.getInternationalisedString("Startup - Error - Reload error"));
@@ -199,8 +205,16 @@ public class Movecraft {
 
             // Startup procedure
             asyncManager = new AsyncManager();
-            asyncManager.runTaskTimer(this, 0, 1);
-            MapUpdateManager.getInstance().runTaskTimer(this, 0, 1);
+            Task.builder()
+                    .execute(asyncManager)
+                    .intervalTicks(1)
+                    .submit(this);
+            //asyncManager.runTaskTimer(this, 0, 1);
+            Task.builder()
+                    .execute(MapUpdateManager::getInstance)
+                    .intervalTicks(1)
+                    .submit(this);
+            //MapUpdateManager.getInstance().runTaskTimer(this, 0, 1);
 
             CraftManager.initialize();
 

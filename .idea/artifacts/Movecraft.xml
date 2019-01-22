@@ -1,0 +1,11 @@
+<component name="ArtifactManager">
+  <artifact type="jar" name="Movecraft">
+    <output-path>C:/Games/MultiMC/instances/Sponge 1.12/.minecraft/mods</output-path>
+    <root id="archive" name="Movecraft.jar">
+      <element id="module-output" name="movecraft" />
+      <element id="directory" name="META-INF">
+        <element id="file-copy" path="$PROJECT_DIR$/src/main/META-INF/MANIFEST.MF" />
+      </element>
+    </root>
+  </artifact>
+</component>
