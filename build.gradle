@@ -7,5 +7,15 @@ version = '0.0.1'
 description = 'Movecraft for Sponge'
 
 dependencies {
-    compile 'org.spongepowered:spongeapi:7.0.0'
+    compile 'org.spongepowered:spongeapi:7.1.0'
 }
+
+task endBuildTask {
+    doLast {
+        exec {
+            workingDir "C:/Users/berna/IdeaProjects/movecraft"
+            commandLine  'cmd','/c','xcopy /s /y "build/libs" "C:/Games/MultiMC/instances/Sponge 1.12/.minecraft/mods/plugins"'
+        }
+    }
+}
+build.finalizedBy(endBuildTask)

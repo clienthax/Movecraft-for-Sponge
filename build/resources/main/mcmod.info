@@ -1,0 +1,14 @@
+[
+    {
+        "modid": "movecraft",
+        "name": "Movecraft for Sponge",
+        "version": "0.0.0",
+        "description": "Movecraft for Sponge",
+        "dependencies": [
+            "spongeapi@7.1.0"
+        ],
+        "requiredMods": [
+            "spongeapi@7.1.0"
+        ]
+    }
+]

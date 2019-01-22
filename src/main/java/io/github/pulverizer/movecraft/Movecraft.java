@@ -156,15 +156,15 @@ public class Movecraft {
         Settings.FadeWrecksAfter = mainConfigNode.getNode("FadeWrecksAfter").getInt(0);
         Settings.DurabilityOverride = new HashMap<>();
 
-        /*try {
+        try {
             Map<BlockType, Integer> tempMap = mainConfigNode.getNode("DurabilityOverride").getValue(new TypeToken<Map<BlockType, Integer>>() {});
-            for (BlockType blockType : tempMap.keySet()) {
-                Settings.DurabilityOverride.put(blockType, tempMap.get(blockType));
+            for (Object blockType : tempMap.keySet().toArray()) {
+                Settings.DurabilityOverride.put((BlockType) blockType, tempMap.get(blockType));
             }
 
         } catch (ObjectMappingException e) {
             e.printStackTrace();
-        }*/
+        }
 
         try {
             Settings.DisableShadowBlocks = new HashSet<BlockType>(mainConfigNode.getNode("DisableShadowBlocks").getList(TypeToken.of(BlockType.class)));  //REMOVE FOR PUBLIC VERSION
