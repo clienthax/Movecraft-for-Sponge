@@ -69,8 +69,11 @@ public class BlockListener {
 
         event.filterEntities(entity -> {
 
-            if (CraftManager.getInstance().getCraftsInWorld(entity.getWorld()) == null)
+            try {
+                CraftManager.getInstance().getCraftsInWorld(entity.getWorld());
+            } catch (NullPointerException e) {
                 return true;
+            }
 
             if (!(entity instanceof Item)) {
                 return true;

@@ -3,6 +3,7 @@ package io.github.pulverizer.movecraft;
 import com.google.common.reflect.TypeToken;
 import com.google.inject.Inject;
 import ninja.leaping.configurate.ConfigurationNode;
+import ninja.leaping.configurate.ConfigurationOptions;
 import ninja.leaping.configurate.loader.ConfigurationLoader;
 import ninja.leaping.configurate.objectmapping.ObjectMappingException;
 import ninja.leaping.configurate.yaml.YAMLConfigurationLoader;
@@ -45,8 +46,6 @@ import io.github.pulverizer.movecraft.sign.SubcraftRotateSign;
 import io.github.pulverizer.movecraft.sign.TeleportSign;
 import org.spongepowered.api.scheduler.Task;
 
-import java.io.File;
-
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.HashMap;
@@ -88,7 +87,7 @@ public class Movecraft {
     }
 
     public ConfigurationLoader<ConfigurationNode> createConfigLoader(Path file) {
-        ConfigurationLoader<ConfigurationNode> loader = YAMLConfigurationLoader.builder().setPath(file).build();
+        ConfigurationLoader<ConfigurationNode> loader = YAMLConfigurationLoader.builder().setPath(file).setDefaultOptions(ConfigurationOptions.defaults().setShouldCopyDefaults(true)).build();
             return loader;
     }
 
