@@ -45,6 +45,9 @@ public final class CraftSign {
     @Listener
     public final void onSignClick(InteractBlockEvent.Secondary.MainHand event, @Root Player player) {
 
+        if (Settings.Debug)
+            Movecraft.getInstance().getLogger().info("Attempting to detect CraftType for " + player.getName() + " at " + event.getTargetBlock().getLocation().get().getBlockPosition() + " in world " + event.getTargetBlock().getLocation().get().getExtent().getName());
+
         BlockSnapshot block = event.getTargetBlock();
         if (block.getState().getType() != BlockTypes.STANDING_SIGN && block.getState().getType() != BlockTypes.WALL_SIGN) {
             return;
@@ -57,6 +60,9 @@ public final class CraftSign {
         ListValue<Text> lines = sign.lines();
         CraftType type = CraftManager.getInstance().getCraftTypeFromString(lines.get(0).toPlain());
         if (type == null) {
+            if (Settings.Debug)
+                player.sendMessage(Text.of("Invalid CraftType!"));
+
             return;
         }
 

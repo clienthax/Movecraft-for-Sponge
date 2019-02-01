@@ -21,6 +21,7 @@ public final class PilotSign {
 
             if (pilotName.isEmpty()) {
                 lines.set(1, Text.of(player.getName()));
+                event.getText().set(lines);
             }
         }
     }

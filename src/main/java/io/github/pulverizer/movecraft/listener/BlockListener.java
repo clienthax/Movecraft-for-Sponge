@@ -40,26 +40,22 @@ public class BlockListener {
     private long lastDamagesUpdate = 0;
 
     @Listener(order = FIRST)
-    public void onBlockBreak(final ChangeBlockEvent.Break e, @Root Player player) {
-        if (e.isCancelled()) {
-            return;
-        }
-        List<Transaction<BlockSnapshot>> blocks = e.filter(bt -> bt.getBlockType() == BlockTypes.WALL_SIGN);
+    public void onBlockBreak(final ChangeBlockEvent.Break event, @Root Player player) {
+
+        List<Transaction<BlockSnapshot>> blocks = event.getTransactions();
         for (Transaction<BlockSnapshot> transaction : blocks) {
             BlockSnapshot block = transaction.getOriginal();
             if (Settings.ProtectPilotedCrafts) {
                 MovecraftLocation mloc = MathUtils.sponge2MovecraftLoc(block.getLocation().get());
                 World blockWorld = block.getLocation().get().getExtent();
-                CraftManager.getInstance().getCraftsInWorld(blockWorld);
                 for (Craft craft : CraftManager.getInstance().getCraftsInWorld(blockWorld)) {
                     if (craft == null || craft.getDisabled()) {
                         continue;
                     }
                     for (MovecraftLocation tloc : craft.getHitBox()) {
                         if (tloc.equals(mloc)) {
-                                player.sendMessage(Text.of(I18nSupport.getInternationalisedString("BLOCK IS PART OF A PILOTED CRAFT")));
-                            e.setCancelled(true);
-                            return;
+                            player.sendMessage(Text.of(I18nSupport.getInternationalisedString("BLOCK IS PART OF A PILOTED CRAFT")));
+                            transaction.setValid(false);
                         }
                     }
                 }
@@ -71,21 +67,22 @@ public class BlockListener {
     @Listener(order = FIRST)
     public void onItemSpawn(final SpawnEntityEvent event) {
 
-        List<Entity> entities = new ArrayList<>();
-        entities.addAll(event.filterEntities(entity -> entity instanceof Item));
+        event.filterEntities(entity -> {
 
-        if (entities.isEmpty())
-            return;
+            if (CraftManager.getInstance().getCraftsInWorld(entity.getWorld()) == null)
+                return true;
 
-        for (Entity entity : entities) {
-            for (Craft tcraft : CraftManager.getInstance().getCraftsInWorld(entity.getWorld())) {
-                if ((!tcraft.isNotProcessing()) && MathUtils.locationInHitbox(tcraft.getHitBox(), entity.getLocation())) {
-                    event.setCancelled(true);
-                    return;
-                }
+            if (!(entity instanceof Item)) {
+                return true;
             }
 
-        }
+            for (Craft tcraft : CraftManager.getInstance().getCraftsInWorld(entity.getWorld())) {
+                if ((!tcraft.isNotProcessing()) && MathUtils.locationInHitbox(tcraft.getHitBox(), entity.getLocation())) {
+                    return false;
+                }
+            }
+            return true;
+        });
     }
 
     // prevent water and lava from spreading on moving crafts

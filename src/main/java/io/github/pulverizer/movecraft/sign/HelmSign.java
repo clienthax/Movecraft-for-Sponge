@@ -28,7 +28,7 @@ public final class HelmSign {
         lines.set(0, Text.of("\\  ||  /"));
         lines.set(1, Text.of("==      =="));
         lines.set(2, Text.of("/  ||  \\"));
-        event.getTargetTile().offer(lines);
+        event.getText().set(lines);
     }
 
     @Listener

@@ -38,7 +38,7 @@ public class CrewSign {
         }
         ListValue<Text> lines = event.getText().lines();
         lines.set(1, Text.of(player.getName()));
-        event.getTargetTile().offer(lines);
+        event.getText().set(lines);
     }
 
     @Listener

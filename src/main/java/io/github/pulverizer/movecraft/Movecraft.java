@@ -11,8 +11,7 @@ import org.spongepowered.api.Sponge;
 import org.spongepowered.api.block.BlockType;
 import org.spongepowered.api.config.ConfigDir;
 import org.spongepowered.api.event.Listener;
-import org.spongepowered.api.event.game.state.GamePreInitializationEvent;
-import org.spongepowered.api.event.game.state.GameStoppingEvent;
+import org.spongepowered.api.event.game.state.*;
 import org.spongepowered.api.item.ItemType;
 import org.spongepowered.api.item.ItemTypes;
 import org.spongepowered.api.plugin.Plugin;
@@ -158,9 +157,9 @@ public class Movecraft {
 
         try {
             Map<BlockType, Integer> tempMap = mainConfigNode.getNode("DurabilityOverride").getValue(new TypeToken<Map<BlockType, Integer>>() {});
-            for (Object blockType : tempMap.keySet().toArray()) {
-                Settings.DurabilityOverride.put((BlockType) blockType, tempMap.get(blockType));
-            }
+            if (tempMap != null)
+                for (Object blockType : tempMap.keySet().toArray())
+                    Settings.DurabilityOverride.put((BlockType) blockType, tempMap.get(blockType));
 
         } catch (ObjectMappingException e) {
             e.printStackTrace();
@@ -203,21 +202,6 @@ public class Movecraft {
             logger.info(I18nSupport.getInternationalisedString("Startup - Error - Disable warning for reload"));
         } else {
 
-            // Startup procedure
-            asyncManager = new AsyncManager();
-            Task.builder()
-                    .execute(asyncManager)
-                    .intervalTicks(1)
-                    .submit(this);
-            //asyncManager.runTaskTimer(this, 0, 1);
-            Task.builder()
-                    .execute(MapUpdateManager::getInstance)
-                    .intervalTicks(1)
-                    .submit(this);
-            //MapUpdateManager.getInstance().runTaskTimer(this, 0, 1);
-
-            CraftManager.initialize();
-
             //TODO: Re-add this good stuff!
             /*
             this.getCommand("movecraft").setExecutor(new MovecraftCommand());
@@ -255,6 +239,32 @@ public class Movecraft {
 
             logger.info(String.format(I18nSupport.getInternationalisedString("Startup - Enabled message"), "0.0.0"));
         }
+    }
+
+    @Listener
+    public void initializeManagers(GameStartedServerEvent event) {
+/*
+        if (shuttingDown && Settings.IGNORE_RESET) {
+            logger.error(I18nSupport.getInternationalisedString("Startup - Error - Reload error"));
+            logger.info(I18nSupport.getInternationalisedString("Startup - Error - Disable warning for reload"));
+        } else {*/
+
+            // Startup procedure
+            asyncManager = new AsyncManager();
+            Task.builder()
+                    .execute(asyncManager)
+                    .intervalTicks(1)
+                    .submit(this);
+            //asyncManager.runTaskTimer(this, 0, 1);
+            Task.builder()
+                    .execute(MapUpdateManager::getInstance)
+                    .intervalTicks(1)
+                    .submit(this);
+            //MapUpdateManager.getInstance().runTaskTimer(this, 0, 1);
+
+            CraftManager.initialize();
+            CraftManager.getInstance().initCraftTypes();
+        //}
     }
 
     public WorldHandler getWorldHandler(){

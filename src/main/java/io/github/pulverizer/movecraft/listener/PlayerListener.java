@@ -150,6 +150,7 @@ public class PlayerListener {
         CraftManager.getInstance().removeCraftByPlayer(e.getTargetEntity());
     }
 
+    /*
     @Listener
     //TODO: Change to still fly, if (!crew.size().isEmpty())
     public void onPlayerDeath(DamageEntityEvent e, @Root(typeFilter = {Fireball.class, PrimedTNT.class}) EntityDamageSource damageSource) {  // changed to death so when you shoot up an airship and hit the pilot, it still sinks
@@ -159,6 +160,7 @@ public class PlayerListener {
                 CraftManager.getInstance().removeCraft(CraftManager.getInstance().getCraftByPlayer(p));
         }
     }
+    */
 
     @Listener
     public void onPlayerMove(MoveEntityEvent event, @Root Player player) {

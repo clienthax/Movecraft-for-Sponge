@@ -56,6 +56,7 @@ public class AscendSign {
         ListValue<Text> lines = sign.lines();
         if (lines.get(0).toPlain().equalsIgnoreCase("Ascend: OFF")) {
             if (c == null || !c.getType().getCanCruise()) {
+                player.sendMessage(Text.of("You are not piloting a craft!"));
                 return;
             }
 
@@ -75,6 +76,7 @@ public class AscendSign {
         }
         if (lines.get(0).toPlain().equalsIgnoreCase("Ascend: ON")) {
             if (c == null || !c.getType().getCanCruise()) {
+                player.sendMessage(Text.of("You are not piloting a craft!"));
                 return;
             }
             event.setCancelled(true);

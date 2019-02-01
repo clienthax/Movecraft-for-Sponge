@@ -15,6 +15,7 @@ task endBuildTask {
         exec {
             workingDir "C:/Users/berna/IdeaProjects/movecraft"
             commandLine  'cmd','/c','xcopy /s /y "build/libs" "C:/Games/MultiMC/instances/Sponge 1.12/.minecraft/mods/plugins"'
+            commandLine  'cmd','/c','xcopy /s /y "build/libs" "C:/Users/berna/Downloads/Sponge Server/mods/plugins"'
         }
     }
 }
