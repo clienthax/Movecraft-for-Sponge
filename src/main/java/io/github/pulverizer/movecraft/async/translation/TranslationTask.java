@@ -1,8 +1,11 @@
 package io.github.pulverizer.movecraft.async.translation;
 
+import com.flowpowered.math.vector.Vector3d;
+import com.google.common.collect.ImmutableSet;
 import io.github.pulverizer.movecraft.Movecraft;
 import io.github.pulverizer.movecraft.MovecraftLocation;
 import io.github.pulverizer.movecraft.async.AsyncTask;
+import io.github.pulverizer.movecraft.config.Settings;
 import io.github.pulverizer.movecraft.craft.Craft;
 import io.github.pulverizer.movecraft.craft.CraftManager;
 import io.github.pulverizer.movecraft.events.CraftTranslateEvent;
@@ -36,13 +39,14 @@ import org.spongepowered.api.item.inventory.query.QueryOperationTypes;
 import org.spongepowered.api.scheduler.Task;
 import org.spongepowered.api.util.AABB;
 import org.spongepowered.api.world.Location;
+import org.spongepowered.api.world.World;
 
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.StreamSupport;
 
 public class TranslationTask extends AsyncTask {
-    private static final BlockType[] FALL_THROUGH_BLOCKS = {BlockTypes.AIR, BlockTypes.FLOWING_WATER, BlockTypes.WATER, BlockTypes.FLOWING_LAVA, BlockTypes.LAVA, BlockTypes.TALLGRASS, BlockTypes.YELLOW_FLOWER, BlockTypes.RED_FLOWER, BlockTypes.BROWN_MUSHROOM, BlockTypes.RED_MUSHROOM, BlockTypes.TORCH, BlockTypes.FIRE, BlockTypes.REDSTONE_WIRE, BlockTypes.WHEAT, BlockTypes.STANDING_SIGN, BlockTypes.LADDER, BlockTypes.WALL_SIGN, BlockTypes.LEVER, BlockTypes.LIGHT_WEIGHTED_PRESSURE_PLATE, BlockTypes.HEAVY_WEIGHTED_PRESSURE_PLATE, BlockTypes.STONE_PRESSURE_PLATE, BlockTypes.WOODEN_PRESSURE_PLATE, BlockTypes.UNLIT_REDSTONE_TORCH, BlockTypes.REDSTONE_TORCH, BlockTypes.STONE_BUTTON, BlockTypes.SNOW_LAYER, BlockTypes.REEDS, BlockTypes.FENCE, BlockTypes.ACACIA_FENCE, BlockTypes.BIRCH_FENCE, BlockTypes.DARK_OAK_FENCE, BlockTypes.JUNGLE_FENCE, BlockTypes.NETHER_BRICK_FENCE, BlockTypes.SPRUCE_FENCE, BlockTypes.UNPOWERED_REPEATER, BlockTypes.POWERED_REPEATER, BlockTypes.WATERLILY, BlockTypes.CARROTS, BlockTypes.POTATOES, BlockTypes.WOODEN_BUTTON, BlockTypes.CARPET};
+    private static final ImmutableSet<BlockType> FALL_THROUGH_BLOCKS = ImmutableSet.of(BlockTypes.AIR, BlockTypes.FLOWING_WATER, BlockTypes.WATER, BlockTypes.FLOWING_LAVA, BlockTypes.LAVA, BlockTypes.TALLGRASS, BlockTypes.YELLOW_FLOWER, BlockTypes.RED_FLOWER, BlockTypes.BROWN_MUSHROOM, BlockTypes.RED_MUSHROOM, BlockTypes.TORCH, BlockTypes.FIRE, BlockTypes.REDSTONE_WIRE, BlockTypes.WHEAT, BlockTypes.STANDING_SIGN, BlockTypes.LADDER, BlockTypes.WALL_SIGN, BlockTypes.LEVER, BlockTypes.LIGHT_WEIGHTED_PRESSURE_PLATE, BlockTypes.HEAVY_WEIGHTED_PRESSURE_PLATE, BlockTypes.STONE_PRESSURE_PLATE, BlockTypes.WOODEN_PRESSURE_PLATE, BlockTypes.UNLIT_REDSTONE_TORCH, BlockTypes.REDSTONE_TORCH, BlockTypes.STONE_BUTTON, BlockTypes.SNOW_LAYER, BlockTypes.REEDS, BlockTypes.FENCE, BlockTypes.ACACIA_FENCE, BlockTypes.BIRCH_FENCE, BlockTypes.DARK_OAK_FENCE, BlockTypes.JUNGLE_FENCE, BlockTypes.NETHER_BRICK_FENCE, BlockTypes.SPRUCE_FENCE, BlockTypes.UNPOWERED_REPEATER, BlockTypes.POWERED_REPEATER, BlockTypes.WATERLILY, BlockTypes.CARROTS, BlockTypes.POTATOES, BlockTypes.WOODEN_BUTTON, BlockTypes.CARPET);
 
     private int dx, dy, dz;
     private HashHitBox newHitBox, oldHitBox;
@@ -63,7 +67,7 @@ public class TranslationTask extends AsyncTask {
     @Override
     protected void excecute() {
 
-        //Check if theres anything to move
+        //Check if there is anything to move
         if(oldHitBox.isEmpty()){
             return;
         }
@@ -102,7 +106,7 @@ public class TranslationTask extends AsyncTask {
         }
 
         final List<BlockType> harvestBlocks = craft.getType().getHarvestBlocks();
-        final List<MovecraftLocation> harvestedBlocks = new ArrayList<>();
+        final List<Location<World>> harvestedBlocks = new ArrayList<>();
         final List<BlockType> harvesterBladeBlocks = craft.getType().getHarvesterBladeBlocks();
         final HashHitBox collisionBox = new HashHitBox();
         for(MovecraftLocation oldLocation : oldHitBox){
@@ -123,7 +127,7 @@ public class TranslationTask extends AsyncTask {
 
             boolean blockObstructed;
             if (craft.getSinking()) {
-                blockObstructed = !(Arrays.binarySearch(FALL_THROUGH_BLOCKS, testMaterial) >= 0);
+                blockObstructed = !FALL_THROUGH_BLOCKS.contains(testMaterial);
             } else {
                 blockObstructed = !craft.getType().getPassthroughBlocks().contains(testMaterial) && !testMaterial.equals(BlockTypes.AIR);
             }
@@ -138,7 +142,7 @@ public class TranslationTask extends AsyncTask {
                 BlockType tmpType = oldLocation.toSponge(craft.getW()).getBlockType();
                 if (harvesterBladeBlocks.size() > 0 && harvesterBladeBlocks.contains(tmpType)) {
                     blockObstructed = false;
-                    harvestedBlocks.add(newLocation);
+                    harvestedBlocks.add(newLocation.toSponge(craft.getW()));
                 }
             }
 
@@ -169,7 +173,7 @@ public class TranslationTask extends AsyncTask {
                     if (System.currentTimeMillis() - craft.getOrigPilotTime() <= 1000) {
                         continue;
                     }
-                    Location loc = location.toSponge(craft.getW());
+                    Location<World> loc = location.toSponge(craft.getW());
                     if (!loc.getBlock().getType().equals(BlockTypes.AIR)  && ThreadLocalRandom.current().nextDouble(1) < .05) {
                         updates.add(new ExplosionUpdateCommand( loc, craft.getType().getExplodeOnCrash()));
                         collisionExplosion=true;
@@ -200,7 +204,7 @@ public class TranslationTask extends AsyncTask {
                     explosionForce += 25;//TODO: find the correct amount
                 }*/
                 explosionKey = explosionForce;
-                Location loc = location.toSponge(craft.getW());
+                Location<World> loc = location.toSponge(craft.getW());
                 if (!loc.getBlock().getType().equals(BlockTypes.AIR)) {
                     updates.add(new ExplosionUpdateCommand(loc, explosionKey));
                     collisionExplosion = true;
@@ -222,22 +226,22 @@ public class TranslationTask extends AsyncTask {
         updates.add(new CraftTranslateCommand(craft, new MovecraftLocation(dx, dy, dz)));
 
         //prevents torpedo and rocket pilots
-        if (craft.getType().getMoveEntities() && !(craft.getSinking() && craft.getType().getOnlyMovePlayers())) {
+        if (craft.getType().getMoveEntities() && !(craft.getSinking())) {
 
             Task.builder()
-                    .name("TranslationTask:220")
                     .execute(() -> {
                         HashHitBox craftHitBox = craft.getHitBox();
                         for(Entity entity : craft.getW().getIntersectingEntities(new AABB(craftHitBox.getMinX(), craftHitBox.getMinY(), craftHitBox.getMinZ(), craftHitBox.getMaxX(), craftHitBox.getMaxY(), craftHitBox.getMaxZ()))){
-                            if (entity.getType() == EntityTypes.PLAYER && !craft.getSinking()) {
-                                Player player = (Player) entity;
-                                craft.getMovedPlayers().put(player, System.currentTimeMillis());
-                                EntityUpdateCommand eUp = new EntityUpdateCommand(entity, dx, dy, dz, 0, 0);
-                                updates.add(eUp);
-                            } else if (!craft.getType().getOnlyMovePlayers() || entity.getType() == EntityTypes.PRIMED_TNT) {
-                                EntityUpdateCommand eUp = new EntityUpdateCommand(entity, dx, dy, dz, 0, 0);
+
+                            if (entity.getType() == EntityTypes.PLAYER || entity.getType() == EntityTypes.PRIMED_TNT || !craft.getType().getOnlyMovePlayers()) {
+                                if (Settings.Debug) {
+                                    Movecraft.getInstance().getLogger().info("Registering Entity of type " + entity.getType().getName() + " for movement.");
+                                }
+                                EntityUpdateCommand eUp = new EntityUpdateCommand(entity, new Vector3d(dx, dy, dz), 0);
                                 updates.add(eUp);
                             }
+                            if (Settings.Debug)
+                                Movecraft.getInstance().getLogger().info("Submitting Entity Movements.");
                         }
                     })
                     .submit(Movecraft.getInstance());
@@ -248,6 +252,9 @@ public class TranslationTask extends AsyncTask {
         }
         //TODO: Re-add!
         //captureYield(harvestedBlocks);
+        //Temporary fix:
+        //if (!harvestedBlocks.isEmpty())
+        //    harvestedBlocks.forEach(location -> location.removeBlock());
 
     }
 
@@ -381,12 +388,13 @@ public class TranslationTask extends AsyncTask {
         for (MovecraftLocation bTest : oldHitBox) {
             BlockSnapshot b = getCraft().getW().createSnapshot(bTest.getX(), bTest.getY(), bTest.getZ());
             if (b.getState().getType() == BlockTypes.FURNACE || b.getState().getType() == BlockTypes.LIT_FURNACE) {
-                fuelHolder = b.getLocation()
+                Optional<Furnace> furnaceOptional = b.getLocation()
                         .flatMap(Location::getTileEntity)
                         .filter(Furnace.class::isInstance)
                         .map(Furnace.class::cast)
-                        .filter(furnace -> furnace.getInventory().contains(ItemTypes.COAL) || furnace.getInventory().contains(ItemTypes.COAL_BLOCK))
-                        .get();
+                        .filter(furnace -> furnace.getInventory().contains(ItemTypes.COAL) || furnace.getInventory().contains(ItemTypes.COAL_BLOCK));
+                if (furnaceOptional.isPresent())
+                    fuelHolder = furnaceOptional.get();
             }
         }
 

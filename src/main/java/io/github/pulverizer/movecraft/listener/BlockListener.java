@@ -39,7 +39,7 @@ public class BlockListener {
     final BlockType[] fragileBlocks = new BlockType[]{BlockTypes.BED, BlockTypes.PISTON_HEAD, BlockTypes.PISTON_EXTENSION, BlockTypes.TORCH, BlockTypes.REDSTONE_WIRE, BlockTypes.STANDING_SIGN, BlockTypes.WOODEN_DOOR, BlockTypes.LADDER, BlockTypes.WALL_SIGN, BlockTypes.LEVER, BlockTypes.STONE_PRESSURE_PLATE, BlockTypes.IRON_DOOR, BlockTypes.WOODEN_PRESSURE_PLATE, BlockTypes.UNLIT_REDSTONE_TORCH, BlockTypes.REDSTONE_TORCH, BlockTypes.STONE_BUTTON, BlockTypes.TRAPDOOR, BlockTypes.TRIPWIRE_HOOK, BlockTypes.TRIPWIRE, BlockTypes.WOODEN_BUTTON, BlockTypes.LIGHT_WEIGHTED_PRESSURE_PLATE, BlockTypes.HEAVY_WEIGHTED_PRESSURE_PLATE, BlockTypes.DAYLIGHT_DETECTOR, BlockTypes.DAYLIGHT_DETECTOR_INVERTED, BlockTypes.CARPET, BlockTypes.UNPOWERED_REPEATER, BlockTypes.POWERED_REPEATER, BlockTypes.UNPOWERED_COMPARATOR, BlockTypes.UNPOWERED_COMPARATOR};
     private long lastDamagesUpdate = 0;
 
-    @Listener(order = FIRST)
+    @Listener(order = LAST)
     public void onBlockBreak(final ChangeBlockEvent.Break event, @Root Player player) {
 
         List<Transaction<BlockSnapshot>> blocks = event.getTransactions();

@@ -84,12 +84,12 @@ public class CrewSign {
         if (!block.getLocation().isPresent() || !block.getLocation().get().getTileEntity().isPresent())
             return;
 
+        if (!player.get(Keys.IS_SNEAKING).get() || block.getState().getType() != BlockTypes.STANDING_SIGN || block.getState().getType() != BlockTypes.WALL_SIGN)
+            return;
+
+
         Sign sign = (Sign) block.getLocation().get().getTileEntity().get();
         ListValue<Text> lines = sign.lines();
-
-        if (!player.get(Keys.IS_SNEAKING).get() || block.getState().getType() != BlockTypes.STANDING_SIGN || block.getState().getType() != BlockTypes.WALL_SIGN) {
-            return;
-        }
 
         if (!lines.get(0).toPlain().equalsIgnoreCase("Crew:")) {
             return;

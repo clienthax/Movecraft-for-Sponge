@@ -45,6 +45,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 @SuppressWarnings("deprecation")
 public class AsyncManager implements Runnable {
+    private static AsyncManager ourInstance;
     private final HashMap<AsyncTask, Craft> ownershipMap = new HashMap<>();
     private final HashMap<PrimedTNT, Double> TNTTracking = new HashMap<>();
     private final HashMap<Craft, HashMap<Craft, Long>> recentContactTracking = new HashMap<>();
@@ -88,6 +89,13 @@ public class AsyncManager implements Runnable {
         transparent.add(BlockTypes.STONE_STAIRS);
         transparent.add(BlockTypes.WALL_SIGN);
         transparent.add(BlockTypes.STANDING_SIGN);
+    }
+
+    public static AsyncManager getInstance() {
+        return ourInstance;
+    }
+    public static void initialize(){
+        ourInstance = new AsyncManager();
     }
 
     public void submitTask(AsyncTask task, Craft c) {
@@ -234,14 +242,6 @@ public class AsyncManager implements Runnable {
                 } else {
                     // The craft is clear to move, perform the block updates
                     MapUpdateManager.getInstance().scheduleUpdates(task.getUpdates());
-                    if (c.getNotificationPlayer() != null) {
-                        // convert blocklist to location list
-                        List<Location> shipLocations = new ArrayList<>();
-                        for (MovecraftLocation loc : c.getHitBox()) {
-                            Location tloc = new Location<>(c.getW(), loc.getX(), loc.getY(), loc.getZ());
-                            shipLocations.add(tloc);
-                        }
-                    }
 
                     sentMapUpdate = true;
                     c.setHitBox(task.getNewHitBox());

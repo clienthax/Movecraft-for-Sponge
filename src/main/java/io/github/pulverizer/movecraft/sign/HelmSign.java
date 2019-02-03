@@ -54,9 +54,9 @@ public final class HelmSign {
         Sign sign = (Sign) block.getLocation().get().getTileEntity().get();
         ListValue<Text> lines = sign.lines();
 
-        if (!lines.get(0).toPlain().equalsIgnoreCase("\\  ||  /") &&
-                lines.get(1).toPlain().equalsIgnoreCase("==      ==") &&
-                lines.get(2).toPlain().equalsIgnoreCase("/  ||  \\")) {
+        if (!lines.get(0).toPlain().equalsIgnoreCase("\\  ||  /") ||
+                !lines.get(1).toPlain().equalsIgnoreCase("==      ==") ||
+                !lines.get(2).toPlain().equalsIgnoreCase("/  ||  \\")) {
             return;
         }
 

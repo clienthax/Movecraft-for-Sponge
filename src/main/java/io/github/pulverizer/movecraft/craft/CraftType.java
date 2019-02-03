@@ -90,7 +90,6 @@ final public class CraftType {
         maxSize = integerFromObject(data.get("maxSize"));
         minSize = integerFromObject(data.get("minSize"));
         allowedBlocks = blockIDListFromObject(data.get("allowedBlocks"));
-        Arrays.sort(allowedBlocks);
 
         forbiddenBlocks = blockIDListFromObject(data.get("forbiddenBlocks"));
         forbiddenSignStrings = stringListFromObject(data.get("forbiddenSignStrings"));

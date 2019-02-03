@@ -54,7 +54,6 @@ public class Craft {
     private Player notificationPlayer;
     private Player cannonDirector;
     private Player AADirector;
-    private final Map<Player, Long> movedPlayers = new HashMap<>();
     private float meanMoveTime;
     private int numMoves;
     private final Map<MovecraftLocation, BlockSnapshot> phaseBlocks = new HashMap<>();
@@ -238,10 +237,6 @@ public class Craft {
 
     public void setPilotLocked(boolean pilotLocked) {
         this.pilotLocked = pilotLocked;
-    }
-
-    public Map<Player, Long> getMovedPlayers() {
-        return movedPlayers;
     }
 
     public double getPilotLockedX() {

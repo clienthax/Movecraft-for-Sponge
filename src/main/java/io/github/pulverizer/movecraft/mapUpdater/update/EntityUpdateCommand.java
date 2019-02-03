@@ -1,10 +1,9 @@
 package io.github.pulverizer.movecraft.mapUpdater.update;
 
+import com.flowpowered.math.vector.Vector3d;
 import io.github.pulverizer.movecraft.Movecraft;
+import io.github.pulverizer.movecraft.config.Settings;
 import org.spongepowered.api.entity.Entity;
-import org.spongepowered.api.entity.living.player.Player;
-import org.spongepowered.api.world.Location;
-import org.spongepowered.api.world.World;
 
 import java.util.Objects;
 
@@ -13,19 +12,13 @@ import java.util.Objects;
  */
 public class EntityUpdateCommand extends UpdateCommand {
     private final Entity entity;
-    private final double x;
-    private final double y;
-    private final double z;
+    private final Vector3d displacement;
     private final float yaw;
-    private final float pitch;
 
-    public EntityUpdateCommand(Entity entity, double x, double y, double z, float yaw, float pitch) {
+    public EntityUpdateCommand(Entity entity, Vector3d displacement, float yaw) {
         this.entity = entity;
-        this.x = x;
-        this.y = y;
-        this.z = z;
+        this.displacement = displacement;
         this.yaw = yaw;
-        this.pitch = pitch;
     }
 
     public Entity getEntity() {
@@ -34,17 +27,18 @@ public class EntityUpdateCommand extends UpdateCommand {
 
     @Override
     public void doUpdate() {
-        if (!(entity instanceof Player)) {
-            Location<World> entityLocation = entity.getLocation();
-            entity.setLocationAndRotation(entityLocation.add(x, y, z), entity.getRotation().add(pitch, yaw , 0));
-            return;
+        if (Settings.Debug)
+            Movecraft.getInstance().getLogger().info("Attempting to move entity of type: " + entity.getType().getName());
+        try {
+            Movecraft.getInstance().getWorldHandler().addEntityLocation(entity, displacement, yaw);
+        } catch (Exception e) {
+            Movecraft.getInstance().getLogger().info(e.getStackTrace().toString());
         }
-        Movecraft.getInstance().getWorldHandler().addPlayerLocation((Player) entity,x,y,z,yaw,pitch);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(entity.getUniqueId(), x, y, z, pitch, yaw);
+        return Objects.hash(entity.getUniqueId(), displacement, yaw);
     }
 
     @Override
@@ -53,10 +47,7 @@ public class EntityUpdateCommand extends UpdateCommand {
             return false;
         }
         EntityUpdateCommand other = (EntityUpdateCommand) obj;
-        return this.x == other.x &&
-                this.y == other.y &&
-                this.z == other.z &&
-                this.pitch == other.pitch &&
+        return this.displacement == other.displacement &&
                 this.yaw == other.yaw &&
                 this.entity.equals(other.entity);
     }

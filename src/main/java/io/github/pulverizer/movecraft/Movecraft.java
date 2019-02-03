@@ -242,28 +242,23 @@ public class Movecraft {
 
     @Listener
     public void initializeManagers(GameStartedServerEvent event) {
-/*
-        if (shuttingDown && Settings.IGNORE_RESET) {
-            logger.error(I18nSupport.getInternationalisedString("Startup - Error - Reload error"));
-            logger.info(I18nSupport.getInternationalisedString("Startup - Error - Disable warning for reload"));
-        } else {*/
 
-            // Startup procedure
-            asyncManager = new AsyncManager();
-            Task.builder()
-                    .execute(asyncManager)
-                    .intervalTicks(1)
-                    .submit(this);
-            //asyncManager.runTaskTimer(this, 0, 1);
-            Task.builder()
-                    .execute(MapUpdateManager::getInstance)
-                    .intervalTicks(1)
-                    .submit(this);
-            //MapUpdateManager.getInstance().runTaskTimer(this, 0, 1);
+        CraftManager.initialize();
+        AsyncManager.initialize();
+        MapUpdateManager.initialize();
 
-            CraftManager.initialize();
-            CraftManager.getInstance().initCraftTypes();
-        //}
+        // Startup procedure
+        asyncManager = AsyncManager.getInstance();
+        Task.builder()
+                .execute(asyncManager)
+                .intervalTicks(1)
+                .submit(this);
+        //asyncManager.runTaskTimer(this, 0, 1);
+        Task.builder()
+                .execute(MapUpdateManager.getInstance())
+                .intervalTicks(1)
+                .submit(this);
+        //MapUpdateManager.getInstance().runTaskTimer(this, 0, 1);
     }
 
     public WorldHandler getWorldHandler(){

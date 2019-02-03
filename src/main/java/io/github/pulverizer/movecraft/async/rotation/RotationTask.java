@@ -1,5 +1,7 @@
 package io.github.pulverizer.movecraft.async.rotation;
 
+import com.flowpowered.math.vector.Vector3d;
+import com.flowpowered.math.vector.Vector3i;
 import io.github.pulverizer.movecraft.Movecraft;
 import io.github.pulverizer.movecraft.MovecraftLocation;
 import io.github.pulverizer.movecraft.Rotation;
@@ -15,6 +17,7 @@ import io.github.pulverizer.movecraft.localisation.I18nSupport;
 import io.github.pulverizer.movecraft.mapUpdater.update.CraftRotateCommand;
 import io.github.pulverizer.movecraft.mapUpdater.update.EntityUpdateCommand;
 import io.github.pulverizer.movecraft.mapUpdater.update.UpdateCommand;
+import jdk.nashorn.internal.objects.NativeJSON;
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.block.BlockSnapshot;
 import org.spongepowered.api.block.BlockType;
@@ -27,6 +30,7 @@ import org.spongepowered.api.item.ItemTypes;
 import org.spongepowered.api.item.inventory.Inventory;
 import org.spongepowered.api.item.inventory.ItemStack;
 import org.spongepowered.api.item.inventory.query.QueryOperationTypes;
+import org.spongepowered.api.scheduler.Task;
 import org.spongepowered.api.text.Text;
 import org.spongepowered.api.util.AABB;
 import org.spongepowered.api.util.Direction;
@@ -35,6 +39,7 @@ import org.spongepowered.api.world.World;
 
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 public class RotationTask extends AsyncTask {
@@ -83,12 +88,13 @@ public class RotationTask extends AsyncTask {
                 for (MovecraftLocation bTest : oldHitBox) {
                     BlockSnapshot b = getCraft().getW().createSnapshot(bTest.getX(), bTest.getY(), bTest.getZ());
                     if (b.getState().getType() == BlockTypes.FURNACE || b.getState().getType() == BlockTypes.LIT_FURNACE) {
-                        fuelHolder = b.getLocation()
+                        Optional<Furnace> furnaceOptional = b.getLocation()
                                 .flatMap(Location::getTileEntity)
                                 .filter(Furnace.class::isInstance)
                                 .map(Furnace.class::cast)
-                                .filter(furnace -> furnace.getInventory().contains(ItemTypes.COAL) || furnace.getInventory().contains(ItemTypes.COAL_BLOCK))
-                                .get();
+                                .filter(furnace -> furnace.getInventory().contains(ItemTypes.COAL) || furnace.getInventory().contains(ItemTypes.COAL_BLOCK));
+                        if (furnaceOptional.isPresent())
+                            fuelHolder = furnaceOptional.get();
                     }
                 }
                 if (fuelHolder == null) {
@@ -163,25 +169,36 @@ public class RotationTask extends AsyncTask {
 
         updates.add(new CraftRotateCommand(getCraft(),originPoint, rotation));
         //rotate entities in the craft
-        Location tOP = new Location<>(getCraft().getW(), originPoint.getX(), originPoint.getY(), originPoint.getZ());
+        Vector3d tOP = new Vector3d(originPoint.getX(), originPoint.getY(), originPoint.getZ());
         tOP.add(0.5, 0, 0.5);
 
-        if (craft.getType().getMoveEntities() && !(craft.getSinking() && craft.getType().getOnlyMovePlayers())) {
+        //prevents torpedo and rocket passengers
+        if (craft.getType().getMoveEntities() && !(craft.getSinking())) {
 
-            HashHitBox craftHitBox = craft.getHitBox();
+            Task.builder()
+                    .execute(() -> {
+                        HashHitBox craftHitBox = craft.getHitBox();
+                        for (Entity entity : craft.getW().getIntersectingEntities(new AABB(craftHitBox.getMinX(), craftHitBox.getMinY(), craftHitBox.getMinZ(), craftHitBox.getMaxX(), craftHitBox.getMaxY(), craftHitBox.getMaxZ()))) {
 
-            for(Entity entity : craft.getW().getIntersectingEntities(new AABB(craftHitBox.getMinX(), craftHitBox.getMinY(), craftHitBox.getMinZ(), craftHitBox.getMaxX(), craftHitBox.getMaxY(), craftHitBox.getMaxZ()))) {
-                if ((entity.getType() == EntityTypes.PLAYER && !craft.getSinking()) || !craft.getType().getOnlyMovePlayers()) {
-                    // Player is onboard this craft
+                            if (entity.getType() == EntityTypes.PLAYER || entity.getType() == EntityTypes.PRIMED_TNT || !craft.getType().getOnlyMovePlayers()) {
+                                if (Settings.Debug) {
+                                    Movecraft.getInstance().getLogger().info(originPoint + ", " + tOP);
+                                    Movecraft.getInstance().getLogger().info("Registering Entity of type " + entity.getType().getName() + " for movement.");
+                                }
 
-                    Location adjustedPLoc = entity.getLocation().sub(tOP.getX(), tOP.getY(), tOP.getZ());
+                                Location<World> adjustedPLoc = entity.getLocation().sub(tOP);
+                                Movecraft.getInstance().getLogger().info(adjustedPLoc.toString());
 
-                    double[] rotatedCoords = MathUtils.rotateVecNoRound(rotation, adjustedPLoc.getX(), adjustedPLoc.getZ());
-                    float newYaw = rotation == Rotation.CLOCKWISE ? 90F : -90F;
-                    EntityUpdateCommand eUp = new EntityUpdateCommand(entity, rotatedCoords[0] + tOP.getX() - entity.getLocation().getX(), 0, rotatedCoords[1] + tOP.getZ() - entity.getLocation().getZ(), newYaw, 0);
-                    updates.add(eUp);
-                }
-            }
+                                double[] rotatedCoords = MathUtils.rotateVecNoRound(rotation, adjustedPLoc.getX(), adjustedPLoc.getZ());
+                                float newYaw = rotation == Rotation.CLOCKWISE ? 90F : -90F;
+                                EntityUpdateCommand eUp = new EntityUpdateCommand(entity, new Vector3d(rotatedCoords[0] + tOP.getX() - entity.getLocation().getX(), 0, rotatedCoords[1] + tOP.getZ() - entity.getLocation().getZ()), newYaw);
+                                updates.add(eUp);
+                            }
+                        }
+                        if (Settings.Debug)
+                            Movecraft.getInstance().getLogger().info("Submitting Entity Movements.");
+                    })
+                    .submit(Movecraft.getInstance());
         }
 
         if (getCraft().getCruising()) {

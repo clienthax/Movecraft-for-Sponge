@@ -47,10 +47,11 @@ public class CraftTranslateCommand extends UpdateCommand {
         long time = System.nanoTime();
         final Set<BlockType> passthroughBlocks = new HashSet<>(craft.getType().getPassthroughBlocks());
         if(craft.getSinking()){
-            passthroughBlocks.add(BlockTypes.FLOWING_WATER);
             passthroughBlocks.add(BlockTypes.WATER);
+            passthroughBlocks.add(BlockTypes.FLOWING_WATER);
             passthroughBlocks.add(BlockTypes.LEAVES);
             passthroughBlocks.add(BlockTypes.LEAVES2);
+            passthroughBlocks.add(BlockTypes.GRASS);
             passthroughBlocks.add(BlockTypes.TALLGRASS);
             passthroughBlocks.add(BlockTypes.DOUBLE_PLANT);
         }
@@ -64,7 +65,7 @@ public class CraftTranslateCommand extends UpdateCommand {
                     Sponge.getEventManager().post(new SignTranslateEvent(block, craft));
                 }
             }
-        } else {
+        //} else {
             MutableHitBox originalLocations = new HashHitBox();
             for (MovecraftLocation movecraftLocation : craft.getHitBox()) {
                 originalLocations.add((movecraftLocation).subtract(displacement));
@@ -82,8 +83,8 @@ public class CraftTranslateCommand extends UpdateCommand {
             final HitBox invertedHitBox = CollectionUtils.filter(craft.getHitBox().boundingHitBox(), craft.getHitBox());
 
             //A set of locations that are confirmed to be "exterior" locations
-            final MutableHitBox confirmed = new HashHitBox();
-            final MutableHitBox failed = new HashHitBox();
+            final MutableHitBox exterior = new HashHitBox();
+            final MutableHitBox interior = new HashHitBox();
 
             //place phased blocks
             final int minX = craft.getHitBox().getMinX();
@@ -106,7 +107,7 @@ public class CraftTranslateCommand extends UpdateCommand {
             }
             //Check to see which locations in the from set are actually outside of the craft
             for (MovecraftLocation location :validExterior ) {
-                if (craft.getHitBox().contains(location) || confirmed.contains(location)) {
+                if (craft.getHitBox().contains(location) || exterior.contains(location)) {
                     continue;
                 }
                 //use a modified BFS for multiple origin elements
@@ -124,12 +125,12 @@ public class CraftTranslateCommand extends UpdateCommand {
                         queue.add(neighbor);
                     }
                 }
-                confirmed.addAll(visited);
+                exterior.addAll(visited);
             }
-            failed.addAll(CollectionUtils.filter(invertedHitBox, confirmed));
+            interior.addAll(CollectionUtils.filter(invertedHitBox, exterior));
 
             final WorldHandler handler = Movecraft.getInstance().getWorldHandler();
-            for (MovecraftLocation location : CollectionUtils.filter(invertedHitBox, confirmed)) {
+            for (MovecraftLocation location : CollectionUtils.filter(invertedHitBox, exterior)) {
                 BlockSnapshot material = location.toSponge(craft.getW()).createSnapshot();
                 if (!passthroughBlocks.contains(material.getState().getType())) {
                     continue;
@@ -147,7 +148,7 @@ public class CraftTranslateCommand extends UpdateCommand {
             }
 
             //place confirmed blocks if they have been un-phased
-            for (MovecraftLocation location : confirmed) {
+            for (MovecraftLocation location : exterior) {
                 if (!craft.getPhaseBlocks().containsKey(location)) {
                     continue;
                 }
@@ -161,12 +162,23 @@ public class CraftTranslateCommand extends UpdateCommand {
                 }
             }
 
-            for (MovecraftLocation location : failed) {
+            for (MovecraftLocation location : interior) {
                 final BlockSnapshot material = location.toSponge(craft.getW()).createSnapshot();
                 if (passthroughBlocks.contains(material.getState().getType())) {
                     craft.getPhaseBlocks().put(location, material);
                     handler.setBlockFast(location.toSponge(craft.getW()), BlockSnapshot.builder().blockState(BlockTypes.AIR.getDefaultState()).build());
 
+                }
+            }
+        }else{
+            //translate the craft
+
+            Movecraft.getInstance().getWorldHandler().translateCraft(craft, displacement);
+            //trigger sign events
+            for (MovecraftLocation location : craft.getHitBox()) {
+                BlockSnapshot block = location.toSponge(craft.getW()).createSnapshot();
+                if (block.getState().getType() == BlockTypes.WALL_SIGN || block.getState().getType() == BlockTypes.STANDING_SIGN) {
+                    Sponge.getEventManager().post(new SignTranslateEvent(block, craft));
                 }
             }
         }

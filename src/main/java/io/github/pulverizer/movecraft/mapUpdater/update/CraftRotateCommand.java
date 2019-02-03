@@ -49,6 +49,7 @@ public class CraftRotateCommand extends UpdateCommand {
             passthroughBlocks.add(BlockTypes.LEAVES);
             passthroughBlocks.add(BlockTypes.LEAVES2);
             passthroughBlocks.add(BlockTypes.GRASS);
+            passthroughBlocks.add(BlockTypes.TALLGRASS);
             passthroughBlocks.add(BlockTypes.DOUBLE_PLANT);
         }
         if (!passthroughBlocks.isEmpty()) {

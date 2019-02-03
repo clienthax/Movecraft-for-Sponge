@@ -12,14 +12,18 @@ import org.spongepowered.api.text.Text;
 import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-public class MapUpdateManager implements Runnable{
+public class MapUpdateManager implements Runnable {
+    private static MapUpdateManager ourInstance;
 
     private final Queue<UpdateCommand> updates = new ConcurrentLinkedQueue<>();
 
     private MapUpdateManager() { }
 
     public static MapUpdateManager getInstance() {
-        return MapUpdateManagerHolder.INSTANCE;
+        return ourInstance;
+    }
+    public static void initialize(){
+        ourInstance = new MapUpdateManager();
     }
 
     public void run() {
@@ -39,7 +43,6 @@ public class MapUpdateManager implements Runnable{
 
         if (Settings.Debug) {
             long endTime = System.currentTimeMillis();
-            Movecraft.getInstance();
             Sponge.getServer().getBroadcastChannel().send(Text.of("Map update took (ms): " + (endTime - startTime)));
         }
     }
@@ -55,10 +58,6 @@ public class MapUpdateManager implements Runnable{
 
     public void scheduleUpdates(Collection<UpdateCommand> updates){
         this.updates.addAll(updates);
-    }
-
-    private static class MapUpdateManagerHolder {
-        private static final MapUpdateManager INSTANCE = new MapUpdateManager();
     }
 
 }

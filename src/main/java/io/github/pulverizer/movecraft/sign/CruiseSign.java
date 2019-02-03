@@ -70,7 +70,7 @@ public final class CruiseSign {
             }
 
             //get Cruise Direction
-            Direction cruiseDirection = block.get(Keys.DIRECTION).get().getOpposite();
+            Direction cruiseDirection = block.get(Keys.DIRECTION).get();
             if (cruiseDirection != Direction.NORTH && cruiseDirection != Direction.WEST && cruiseDirection != Direction.SOUTH && cruiseDirection != Direction.EAST) {
                 if (cruiseDirection == Direction.NORTH_NORTHEAST || cruiseDirection == Direction.NORTH_NORTHWEST) {
                     cruiseDirection = Direction.NORTH;

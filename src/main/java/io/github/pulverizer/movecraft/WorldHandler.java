@@ -1,34 +1,35 @@
 package io.github.pulverizer.movecraft;
 
+import com.flowpowered.math.vector.Vector3d;
 import com.flowpowered.math.vector.Vector3i;
+import io.github.pulverizer.movecraft.config.Settings;
 import io.github.pulverizer.movecraft.craft.Craft;
 import org.spongepowered.api.block.BlockSnapshot;
 import org.spongepowered.api.block.BlockTypes;
-import org.spongepowered.api.block.tileentity.TileEntity;
 import org.spongepowered.api.data.key.Keys;
-import org.spongepowered.api.entity.living.player.Player;
-import org.spongepowered.api.network.PlayerConnection;
+import org.spongepowered.api.entity.Entity;
 import org.spongepowered.api.util.Direction;
 import org.spongepowered.api.world.BlockChangeFlags;
 import org.spongepowered.api.world.Chunk;
 import org.spongepowered.api.world.Location;
-import io.github.pulverizer.movecraft.config.Settings;
 import io.github.pulverizer.movecraft.utils.MathUtils;
 import io.github.pulverizer.movecraft.utils.CollectionUtils;
 import org.spongepowered.api.world.World;
 
-import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
-import java.lang.reflect.Method;
 import java.util.*;
 
 public class WorldHandler {
 
     public WorldHandler() {}
 
-    public void addPlayerLocation(Player player, double x, double y, double z, float yaw, float pitch){
-        Location<World> playerLoc = player.getLocation();
-        player.setLocationAndRotation(new Location<>(player.getWorld(), x + playerLoc.getX(),y + playerLoc.getY(),z + playerLoc.getZ()), player.getRotation().add(pitch, yaw, 0));
+    public void addEntityLocation(Entity entity, Vector3d displacement, float yaw){
+        Location<World> entityLoc = entity.getLocation();
+        boolean entityMoved = entity.setLocationAndRotation(entityLoc.add(displacement), entity.getRotation().add(0, yaw, 0));
+
+        if (Settings.Debug && entityMoved)
+            Movecraft.getInstance().getLogger().info("Moved Entity of type: " + entity.getType().getName());
+        else if (Settings.Debug)
+            Movecraft.getInstance().getLogger().info("Failed to move Entity of type: " + entity.getType().getName());
     }
 
     public void rotateCraft(Craft craft, MovecraftLocation originPoint, Rotation rotation) {
@@ -58,7 +59,7 @@ public class WorldHandler {
         }
         //create the new block
         for(Map.Entry<Vector3i,BlockSnapshot> entry : blockData.entrySet()) {
-            setBlockFast(nativeWorld, rotatedBlockPositions.get(entry.getKey()), entry.getValue());
+            setBlockFast(nativeWorld, rotatedBlockPositions.get(entry.getKey()), rotation, entry.getValue());
         }
 
         //*******************************************
@@ -67,7 +68,7 @@ public class WorldHandler {
         //TODO: add support for pass-through
         Collection<Vector3i> deleteBlockPositions =  CollectionUtils.filter(rotatedBlockPositions.keySet(),rotatedBlockPositions.values());
         for(Vector3i blockPosition : deleteBlockPositions){
-            setBlockFast(nativeWorld, blockPosition, BlockSnapshot.builder().blockState(BlockTypes.AIR.getDefaultState()).build());
+            setBlockFast(nativeWorld, blockPosition, BlockSnapshot.builder().blockState(BlockTypes.AIR.getDefaultState()).world(nativeWorld.getProperties()).position(blockPosition).build());
         }
         //*******************************************
         //*       Step seven: Send to players       *
@@ -133,7 +134,7 @@ public class WorldHandler {
         //*******************************************
         Collection<Vector3i> deleteBlockPositions =  CollectionUtils.filter(blockPositions,newBlockPositions);
         for(Vector3i blockPosition : deleteBlockPositions){
-            setBlockFast(nativeWorld, blockPosition, BlockSnapshot.builder().blockState(BlockTypes.AIR.getDefaultState()).build());
+            setBlockFast(nativeWorld, blockPosition, BlockSnapshot.builder().blockState(BlockTypes.AIR.getDefaultState()).world(nativeWorld.getProperties()).position(blockPosition).build());
         }
         //*******************************************
         //*       Step seven: Send to players       *
@@ -171,6 +172,21 @@ public class WorldHandler {
         Chunk chunk = world.getChunkAtBlock(blockPosition).get();
         chunk.loadChunk(true);
         chunk.getLocation(blockPosition).restoreSnapshot(block, true, BlockChangeFlags.NONE);
+
+    }
+    private void setBlockFast(World world, Vector3i blockPosition, Rotation rotation, BlockSnapshot block) {
+
+        BlockSnapshot rotatedBlock = rotateBlock(rotation, block);
+
+        if (!world.getChunkAtBlock(blockPosition).isPresent()) {
+
+            Movecraft.getInstance().getLogger().error("Error 404: Chunk not Found");
+            return;
+        }
+
+        Chunk chunk = world.getChunkAtBlock(blockPosition).get();
+        chunk.loadChunk(true);
+        chunk.getLocation(blockPosition).restoreSnapshot(rotatedBlock, true, BlockChangeFlags.NONE);
 
     }
 

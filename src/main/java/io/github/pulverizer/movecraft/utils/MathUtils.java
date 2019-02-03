@@ -7,35 +7,6 @@ import org.spongepowered.api.world.Location;
 
 public class MathUtils {
 
-
-
-    /**
-     * checks if <code>location</code> is within the bounding box <code>box</code> restricted by minimum values on x and z
-     * @param box the bounding box to check within
-     * @param minX the minimum x coordinate to search
-     * @param minZ the minimum z coordinate to search
-     * @param location the location to check
-     * @return True if the player is within the given bounding box
-     */
-
-    public static boolean playerIsWithinBoundingPolygon(final int[][][] box, final int minX, final int minZ, final MovecraftLocation location) {
-        if (location.getX() >= minX && location.getX() < (minX + box.length)) {
-            // PLayer is within correct X boundary
-            if (location.getZ() >= minZ && location.getZ() < (minZ + box[location.getX() - minX].length)) {
-                // Player is within valid Z boundary
-                int minY, maxY;
-                try {
-                    minY = box[location.getX() - minX][location.getZ() - minZ][0];
-                    maxY = box[location.getX() - minX][location.getZ() - minZ][1];
-                } catch (NullPointerException e) {
-                    return false;
-                }
-                return location.getY() >= minY && location.getY() <= (maxY + 2);
-            }
-        }
-        return false;
-    }
-
     /**
      * checks if the given bukkit <code>location</code> is within <code>hitbox</code>
      * @param hitBox the bounding box to check within
@@ -124,16 +95,21 @@ public class MathUtils {
     }
 
     @Deprecated
-    public static double[] rotateVecNoRound(Rotation r, double x, double z) {
-        double theta;
-        if (r == Rotation.CLOCKWISE) {
-            theta = 0.5 * Math.PI;
-        } else {
-            theta = -1 * 0.5 * Math.PI;
-        }
+    public static double[] rotateVecNoRound(Rotation rotation, double x, double z) {
+        double newX;
+        double newZ;
 
-        double newX = (x * Math.cos(theta)) + (z * (-1 * Math.sin(theta)));
-        double newZ = (x * Math.sin(theta)) + (z * Math.cos(theta));
+        if (rotation == Rotation.CLOCKWISE) {
+
+            newX = -z;
+            newZ = x;
+
+        } else {
+
+            newX = z;
+            newZ = -x;
+
+        }
 
         return new double[]{newX, newZ};
     }
