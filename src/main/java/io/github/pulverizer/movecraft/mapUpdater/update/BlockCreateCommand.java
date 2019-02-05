@@ -41,13 +41,15 @@ public class BlockCreateCommand extends UpdateCommand {
 
     @Override
     @SuppressWarnings("deprecation")
-    public void doUpdate() {
+    public boolean doUpdate() {
         // now do the block updates, move entities when you set the block they are on
         Movecraft.getInstance().getWorldHandler().setBlockFast(newBlockLocation.toSponge(world), block);
         //craft.incrementBlockUpdates();
         newBlockLocation.toSponge(world).addScheduledUpdate(1, 0);
 
         //TODO: Re-add sign updating
+
+        return true;
     }
 
     @Override

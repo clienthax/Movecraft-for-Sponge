@@ -23,13 +23,22 @@ public class WorldHandler {
 
     public WorldHandler() {}
 
-    public void moveEntity(Entity entity, Vector3d newLocation, float yaw){
+    public boolean moveEntity(Entity entity, Vector3d newLocation, float yaw){
         boolean entityMoved = entity.setLocationAndRotation(new Location<>(entity.getWorld(), newLocation), entity.getRotation().add(0, yaw, 0));
 
-        if (Settings.Debug && entityMoved)
-            Movecraft.getInstance().getLogger().info("Moved Entity of type: " + entity.getType().getName());
-        else if (Settings.Debug)
-            Movecraft.getInstance().getLogger().info("Failed to move Entity of type: " + entity.getType().getName());
+        if (entityMoved) {
+            if (Settings.Debug)
+                Movecraft.getInstance().getLogger().info("Moved Entity of type: " + entity.getType().getName());
+
+            return true;
+
+        } else {
+            if (Settings.Debug)
+                Movecraft.getInstance().getLogger().info("Failed to move Entity of type: " + entity.getType().getName());
+
+            return false;
+
+        }
     }
 
     public void rotateCraft(Craft craft, MovecraftLocation originPoint, Rotation rotation) {

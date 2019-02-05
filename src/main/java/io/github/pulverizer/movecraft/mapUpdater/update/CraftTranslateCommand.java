@@ -1,6 +1,5 @@
 package io.github.pulverizer.movecraft.mapUpdater.update;
 
-import com.google.common.collect.Sets;
 import io.github.pulverizer.movecraft.Movecraft;
 import io.github.pulverizer.movecraft.MovecraftLocation;
 import io.github.pulverizer.movecraft.WorldHandler;
@@ -18,11 +17,9 @@ import org.spongepowered.api.Sponge;
 import org.spongepowered.api.block.BlockSnapshot;
 import org.spongepowered.api.block.BlockType;
 import org.spongepowered.api.block.BlockTypes;
-import org.spongepowered.api.block.tileentity.Sign;
 
 import java.util.HashSet;
 import java.util.LinkedList;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Queue;
 import java.util.Set;
@@ -39,12 +36,12 @@ public class CraftTranslateCommand extends UpdateCommand {
     }
 
     @Override
-    public void doUpdate() {
+    public boolean doUpdate() {
         final Logger logger = Movecraft.getInstance().getLogger();
         if(craft.getHitBox().isEmpty()){
             logger.warn("Attempted to move craft with empty HashHitBox!");
             CraftManager.getInstance().removeCraft(craft);
-            return;
+            return false;
         }
         long time = System.nanoTime();
         final Set<BlockType> passthroughBlocks = new HashSet<>(craft.getType().getPassthroughBlocks());
@@ -179,6 +176,7 @@ public class CraftTranslateCommand extends UpdateCommand {
         if(Settings.Debug)
             logger.info("Total time: " + (time / 1e9) + " seconds. Moving with cooldown of " + craft.getTickCooldown() + ". Speed of: " + String.format("%.2f", craft.getSpeed()));
         craft.addMoveTime(time/1e9f);
+        return true;
     }
 
     public Craft getCraft(){
