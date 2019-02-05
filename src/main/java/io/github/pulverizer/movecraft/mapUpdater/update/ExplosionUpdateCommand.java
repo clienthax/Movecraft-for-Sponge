@@ -27,13 +27,12 @@ public class ExplosionUpdateCommand extends UpdateCommand {
     }
 
     @Override
-    public boolean doUpdate() {
+    public void doUpdate() {
         //if (explosionStrength > 0) { // don't bother with tiny explosions
         //Location loc = new Location(explosionLocation.getWorld(), explosionLocation.getX() + 0.5, explosionLocation.getY() + 0.5, explosionLocation.getZ());
         this.createExplosion(explosionLocation.add(.5,.5,.5), explosionStrength);
         //}
 
-        return true;
     }
 
     private void createExplosion(Location<World> loc, float explosionPower) {

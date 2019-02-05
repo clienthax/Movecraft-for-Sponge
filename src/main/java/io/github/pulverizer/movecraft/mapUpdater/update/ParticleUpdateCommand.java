@@ -22,19 +22,18 @@ public class ParticleUpdateCommand extends UpdateCommand {
     }
 
     @Override
-    public boolean doUpdate() {
+    public void doUpdate() {
         // put in smoke or effects
         if (smokeStrength == 1) {
+
             location.getExtent().spawnParticles(ParticleEffect.builder().type(ParticleTypes.SMOKE).build(), location.getPosition());
-            return true;
+
         }
         if (Settings.SilhouetteViewDistance > 0 && silhouetteBlocksSent < Settings.SilhouetteBlockCount) {
             if (sendSilhouetteToPlayers())
                 silhouetteBlocksSent++;
-            return true;
         }
 
-        return false;
     }
 
     private boolean sendSilhouetteToPlayers() {

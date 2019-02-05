@@ -30,7 +30,7 @@ public class ItemDropUpdateCommand extends UpdateCommand {
     }
 
     @Override
-    public boolean doUpdate() {
+    public void doUpdate() {
         if (itemStack != null) {
             final World world = location.getExtent();
             // drop Item
@@ -42,9 +42,7 @@ public class ItemDropUpdateCommand extends UpdateCommand {
                         world.spawnEntity(entity);
                     })
                     .submit(Movecraft.getInstance());
-            return true;
         }
-        return false;
     }
 
     @Override

@@ -26,11 +26,11 @@ public class EntityUpdateCommand extends UpdateCommand {
     }
 
     @Override
-    public boolean doUpdate() {
+    public void doUpdate() {
         if (Settings.Debug)
             Movecraft.getInstance().getLogger().info("Attempting to move entity of type: " + entity.getType().getName());
 
-        return Movecraft.getInstance().getWorldHandler().moveEntity(entity, newLocation, yaw);
+        Movecraft.getInstance().getWorldHandler().moveEntity(entity, newLocation, yaw);
     }
 
     @Override

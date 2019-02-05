@@ -34,12 +34,12 @@ public class CraftRotateCommand extends UpdateCommand {
     }
 
     @Override
-    public boolean doUpdate() {
+    public void doUpdate() {
         final Logger logger = Movecraft.getInstance().getLogger();
         if (craft.getHitBox().isEmpty()) {
             logger.warn("Attempted to move craft with empty HashHitBox!");
             CraftManager.getInstance().removeCraft(craft);
-            return false;
+            return;
         }
         long time = System.nanoTime();
         final Set<BlockType> passthroughBlocks = new HashSet<>(craft.getType().getPassthroughBlocks());
@@ -176,8 +176,6 @@ public class CraftRotateCommand extends UpdateCommand {
         if (Settings.Debug)
             logger.info("Total time: " + (time / 1e9) + " seconds. Moving with cooldown of " + craft.getTickCooldown() + ". Speed of: " + String.format("%.2f", craft.getSpeed()));
         craft.addMoveTime(time / 1e9f);
-
-        return true;
     }
 
     public Craft getCraft() {
