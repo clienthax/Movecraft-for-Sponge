@@ -71,6 +71,10 @@ public class TranslationTask extends AsyncTask {
         if(oldHitBox.isEmpty()){
             return;
         }
+        if (getCraft().getDisabled() && !getCraft().getSinking()) {
+            fail(I18nSupport.getInternationalisedString("Craft is disabled!"));
+            return;
+        }
         final int minY = oldHitBox.getMinY();
         final int maxY = oldHitBox.getMaxY();
 
@@ -223,7 +227,7 @@ public class TranslationTask extends AsyncTask {
             newHitBox = new HashHitBox();
         }
 
-        updates.add(new CraftTranslateCommand(craft, new MovecraftLocation(dx, dy, dz)));
+        updates.add(new CraftTranslateCommand(craft, new MovecraftLocation(dx, dy, dz), getNewHitBox()));
 
         //prevents torpedo and rocket pilots
         if (craft.getType().getMoveEntities() && !(craft.getSinking())) {
@@ -237,7 +241,7 @@ public class TranslationTask extends AsyncTask {
                                 if (Settings.Debug) {
                                     Movecraft.getInstance().getLogger().info("Registering Entity of type " + entity.getType().getName() + " for movement.");
                                 }
-                                EntityUpdateCommand eUp = new EntityUpdateCommand(entity, new Vector3d(dx, dy, dz), 0);
+                                EntityUpdateCommand eUp = new EntityUpdateCommand(entity, entity.getLocation().getPosition().add(dx, dy, dz), 0);
                                 updates.add(eUp);
                             }
                             if (Settings.Debug)

@@ -231,9 +231,7 @@ public class AsyncManager implements Runnable {
                         notifyP.sendMessage(Text.of(task.getFailMessage()));
 
                     if (task.isCollisionExplosion()) {
-                        c.setHitBox(task.getNewHitBox());
-                        //c.setBlockList(task.getData().getBlockList());
-                        //boolean failed = MapUpdateManager.getInstance().addWorldUpdate(c.getW(), updates, null, null, exUpdates);
+                        //c.setHitBox(task.getNewHitBox());
                         MapUpdateManager.getInstance().scheduleUpdates(task.getUpdates());
                         sentMapUpdate = true;
                         CraftManager.getInstance().addReleaseTask(c);
@@ -244,7 +242,7 @@ public class AsyncManager implements Runnable {
                     MapUpdateManager.getInstance().scheduleUpdates(task.getUpdates());
 
                     sentMapUpdate = true;
-                    c.setHitBox(task.getNewHitBox());
+                    //c.setHitBox(task.getNewHitBox());
                 }
 
             } else if (poll instanceof RotationTask) {
@@ -341,7 +339,7 @@ public class AsyncManager implements Runnable {
             }
             // ship faces west
             if (pcraft.getCruiseDirection() == Direction.WEST) {
-                dx = 0 - 1 - pcraft.getType().getCruiseSkipBlocks();
+                dx = 1 + pcraft.getType().getCruiseSkipBlocks();
                 if (bankRight) {
                     dz = (0 - 1 - pcraft.getType().getCruiseSkipBlocks()) >> 1;
                 }
@@ -351,7 +349,7 @@ public class AsyncManager implements Runnable {
             }
             // ship faces east
             if (pcraft.getCruiseDirection() == Direction.EAST) {
-                dx = 1 + pcraft.getType().getCruiseSkipBlocks();
+                dx = 0 - 1 - pcraft.getType().getCruiseSkipBlocks();
                 if (bankLeft) {
                     dz = (0 - 1 - pcraft.getType().getCruiseSkipBlocks()) >> 1;
                 }

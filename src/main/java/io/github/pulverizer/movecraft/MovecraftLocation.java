@@ -59,12 +59,24 @@ final public class MovecraftLocation extends Vector3i {
         return (x ^ (z << 12)) ^ (y << 24);
     }
 
-    public MovecraftLocation add(MovecraftLocation l) {
-        return new MovecraftLocation(getX() + l.getX(), getY() + l.getY(), getZ() + l.getZ());
+    public MovecraftLocation add(MovecraftLocation loc) {
+        return new MovecraftLocation(getX() + loc.getX(), getY() + loc.getY(), getZ() + loc.getZ());
+    }
+
+    public MovecraftLocation add(Vector3i loc) {
+        return new MovecraftLocation(getX() + loc.getX(), getY() + loc.getY(), getZ() + loc.getZ());
     }
     
-    public MovecraftLocation subtract(MovecraftLocation l) {
-        return new MovecraftLocation(getX() - l.getX(), getY() - l.getY(), getZ() - l.getZ());
+    public MovecraftLocation subtract(MovecraftLocation loc) {
+        return new MovecraftLocation(getX() - loc.getX(), getY() - loc.getY(), getZ() - loc.getZ());
+    }
+
+    public MovecraftLocation subtract(Vector3i loc) {
+        return new MovecraftLocation(getX() - loc.getX(), getY() - loc.getY(), getZ() - loc.getZ());
+    }
+
+    public Vector3i toVector3i() {
+        return new Vector3i(getX(), getY(), getZ());
     }
 
     public Location<World> toSponge(World world){

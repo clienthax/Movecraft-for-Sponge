@@ -169,8 +169,7 @@ public class RotationTask extends AsyncTask {
 
         updates.add(new CraftRotateCommand(getCraft(),originPoint, rotation));
         //rotate entities in the craft
-        Vector3d tOP = new Vector3d(originPoint.getX(), originPoint.getY(), originPoint.getZ());
-        tOP.add(0.5, 0, 0.5);
+        final Vector3d tOP = originPoint.toVector3i().toDouble().add(0.5, 0, 0.5);
 
         //prevents torpedo and rocket passengers
         if (craft.getType().getMoveEntities() && !(craft.getSinking())) {
@@ -178,7 +177,7 @@ public class RotationTask extends AsyncTask {
             Task.builder()
                     .execute(() -> {
                         HashHitBox craftHitBox = craft.getHitBox();
-                        for (Entity entity : craft.getW().getIntersectingEntities(new AABB(craftHitBox.getMinX(), craftHitBox.getMinY(), craftHitBox.getMinZ(), craftHitBox.getMaxX(), craftHitBox.getMaxY(), craftHitBox.getMaxZ()))) {
+                        for (Entity entity : craft.getW().getIntersectingEntities(new AABB(craftHitBox.getMinX() -0.5, craftHitBox.getMinY() -0.5, craftHitBox.getMinZ() -0.5, craftHitBox.getMaxX() +0.5, craftHitBox.getMaxY() +0.5, craftHitBox.getMaxZ() +0.5))) {
 
                             if (entity.getType() == EntityTypes.PLAYER || entity.getType() == EntityTypes.PRIMED_TNT || !craft.getType().getOnlyMovePlayers()) {
                                 if (Settings.Debug) {
@@ -187,11 +186,13 @@ public class RotationTask extends AsyncTask {
                                 }
 
                                 Location<World> adjustedPLoc = entity.getLocation().sub(tOP);
-                                Movecraft.getInstance().getLogger().info(adjustedPLoc.toString());
+
+                                if (Settings.Debug)
+                                    Movecraft.getInstance().getLogger().info(adjustedPLoc.getPosition().toString());
 
                                 double[] rotatedCoords = MathUtils.rotateVecNoRound(rotation, adjustedPLoc.getX(), adjustedPLoc.getZ());
                                 float newYaw = rotation == Rotation.CLOCKWISE ? 90F : -90F;
-                                EntityUpdateCommand eUp = new EntityUpdateCommand(entity, new Vector3d(rotatedCoords[0] + tOP.getX() - entity.getLocation().getX(), 0, rotatedCoords[1] + tOP.getZ() - entity.getLocation().getZ()), newYaw);
+                                EntityUpdateCommand eUp = new EntityUpdateCommand(entity, new Vector3d(rotatedCoords[0] + tOP.getX(), entity.getLocation().getY(), rotatedCoords[1] + tOP.getZ()), newYaw);
                                 updates.add(eUp);
                             }
                         }

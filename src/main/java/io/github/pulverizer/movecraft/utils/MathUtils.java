@@ -101,13 +101,13 @@ public class MathUtils {
 
         if (rotation == Rotation.CLOCKWISE) {
 
-            newX = -z;
+            newX = 0 - z;
             newZ = x;
 
         } else {
 
             newX = z;
-            newZ = -x;
+            newZ = 0 - x;
 
         }
 

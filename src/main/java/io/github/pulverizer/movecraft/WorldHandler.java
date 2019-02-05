@@ -4,6 +4,7 @@ import com.flowpowered.math.vector.Vector3d;
 import com.flowpowered.math.vector.Vector3i;
 import io.github.pulverizer.movecraft.config.Settings;
 import io.github.pulverizer.movecraft.craft.Craft;
+import io.github.pulverizer.movecraft.utils.HashHitBox;
 import org.spongepowered.api.block.BlockSnapshot;
 import org.spongepowered.api.block.BlockTypes;
 import org.spongepowered.api.data.key.Keys;
@@ -22,9 +23,8 @@ public class WorldHandler {
 
     public WorldHandler() {}
 
-    public void addEntityLocation(Entity entity, Vector3d displacement, float yaw){
-        Location<World> entityLoc = entity.getLocation();
-        boolean entityMoved = entity.setLocationAndRotation(entityLoc.add(displacement), entity.getRotation().add(0, yaw, 0));
+    public void moveEntity(Entity entity, Vector3d newLocation, float yaw){
+        boolean entityMoved = entity.setLocationAndRotation(new Location<>(entity.getWorld(), newLocation), entity.getRotation().add(0, yaw, 0));
 
         if (Settings.Debug && entityMoved)
             Movecraft.getInstance().getLogger().info("Moved Entity of type: " + entity.getType().getName());
@@ -94,7 +94,7 @@ public class WorldHandler {
         }
     }
 
-    public void translateCraft(Craft craft, Vector3i translateBlockVector) {
+    public void translateCraft(Craft craft, Vector3i translateBlockVector, HashHitBox newHitBox) {
         //TODO: Add support for rotations
 
         World nativeWorld = craft.getW();
@@ -105,9 +105,9 @@ public class WorldHandler {
         //*******************************************
         List<Vector3i> blockPositions = new ArrayList<>();
         for(MovecraftLocation movecraftLocation : craft.getHitBox()) {
-            blockPositions.add(movecraftLocation.add(translateBlockVector));
-
+            blockPositions.add(movecraftLocation);
         }
+
         //*******************************************
         //*   Step three: Translate all the blocks  *
         //*******************************************
@@ -125,6 +125,7 @@ public class WorldHandler {
         for(Vector3i blockPosition : blockPositions){
             newBlockPositions.add(blockPosition.add(translateBlockVector));
         }
+
         //create the new block
         for(int i = 0; i<newBlockPositions.size(); i++) {
             setBlockFast(nativeWorld, newBlockPositions.get(i), blocks.get(i));
@@ -132,10 +133,11 @@ public class WorldHandler {
         //*******************************************
         //*   Step five: Destroy the leftovers      *
         //*******************************************
-        Collection<Vector3i> deleteBlockPositions =  CollectionUtils.filter(blockPositions,newBlockPositions);
+        Collection<Vector3i> deleteBlockPositions =  CollectionUtils.filter(blockPositions, newBlockPositions);
         for(Vector3i blockPosition : deleteBlockPositions){
             setBlockFast(nativeWorld, blockPosition, BlockSnapshot.builder().blockState(BlockTypes.AIR.getDefaultState()).world(nativeWorld.getProperties()).position(blockPosition).build());
         }
+
         //*******************************************
         //*       Step seven: Send to players       *
         //*******************************************
@@ -159,6 +161,8 @@ public class WorldHandler {
             );
         }
         //sendToPlayers(chunks.toArray(new Chunk[0]));
+
+        craft.setHitBox(newHitBox);
     }
 
     private void setBlockFast(World world, Vector3i blockPosition, BlockSnapshot block) {

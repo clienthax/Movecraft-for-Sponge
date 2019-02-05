@@ -12,12 +12,12 @@ import java.util.Objects;
  */
 public class EntityUpdateCommand extends UpdateCommand {
     private final Entity entity;
-    private final Vector3d displacement;
+    private final Vector3d newLocation;
     private final float yaw;
 
-    public EntityUpdateCommand(Entity entity, Vector3d displacement, float yaw) {
+    public EntityUpdateCommand(Entity entity, Vector3d newLocation, float yaw) {
         this.entity = entity;
-        this.displacement = displacement;
+        this.newLocation = newLocation;
         this.yaw = yaw;
     }
 
@@ -29,16 +29,13 @@ public class EntityUpdateCommand extends UpdateCommand {
     public void doUpdate() {
         if (Settings.Debug)
             Movecraft.getInstance().getLogger().info("Attempting to move entity of type: " + entity.getType().getName());
-        try {
-            Movecraft.getInstance().getWorldHandler().addEntityLocation(entity, displacement, yaw);
-        } catch (Exception e) {
-            Movecraft.getInstance().getLogger().info(e.getStackTrace().toString());
-        }
+
+        Movecraft.getInstance().getWorldHandler().moveEntity(entity, newLocation, yaw);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(entity.getUniqueId(), displacement, yaw);
+        return Objects.hash(entity.getUniqueId(), newLocation, yaw);
     }
 
     @Override
@@ -47,7 +44,7 @@ public class EntityUpdateCommand extends UpdateCommand {
             return false;
         }
         EntityUpdateCommand other = (EntityUpdateCommand) obj;
-        return this.displacement == other.displacement &&
+        return this.newLocation == other.newLocation &&
                 this.yaw == other.yaw &&
                 this.entity.equals(other.entity);
     }
