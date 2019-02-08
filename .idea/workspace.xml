@@ -7,7 +7,6 @@
   </component>
   <component name="BookmarkManager">
     <bookmark url="file://$PROJECT_DIR$/src/main/java/io/github/pulverizer/movecraft/utils/HashHitBox.java" line="3" />
-    <bookmark url="file://$PROJECT_DIR$/src/main/java/io/github/pulverizer/movecraft/async/AsyncManager.java" line="310" />
     <bookmark url="file://$PROJECT_DIR$/src/main/java/io/github/pulverizer/movecraft/sign/DescendSign.java" line="65" />
   </component>
   <component name="ChangeListManager">
@@ -60,41 +59,62 @@
   </component>
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-      <file leaf-file-name="CraftTranslateCommand.java" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/src/main/java/io/github/pulverizer/movecraft/mapUpdater/update/CraftTranslateCommand.java">
+      <file leaf-file-name="TranslationTask.java" pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/src/main/java/io/github/pulverizer/movecraft/async/translation/TranslationTask.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="418">
-              <caret line="142" column="29" lean-forward="true" selection-start-line="142" selection-start-column="29" selection-end-line="142" selection-end-column="29" />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="WorldHandler.java" pinned="false" current-in-tab="true">
-        <entry file="file://$PROJECT_DIR$/src/main/java/io/github/pulverizer/movecraft/WorldHandler.java">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="493">
-              <caret line="164" column="8" selection-start-line="164" selection-start-column="8" selection-end-line="164" selection-end-column="8" />
+            <state relative-caret-position="748">
+              <caret line="88" column="30" lean-forward="true" selection-start-line="88" selection-start-column="30" selection-end-line="88" selection-end-column="30" />
               <folding>
-                <element signature="imports" expanded="true" />
+                <element signature="e#14263#14264#0" expanded="true" />
+                <element signature="e#14298#14299#0" expanded="true" />
+                <element signature="e#20944#20945#0" expanded="true" />
+                <element signature="e#20973#20974#0" expanded="true" />
+                <element signature="e#21011#21012#0" expanded="true" />
+                <element signature="e#21045#21046#0" expanded="true" />
+                <element signature="e#21085#21086#0" expanded="true" />
+                <element signature="e#21117#21118#0" expanded="true" />
+                <element signature="e#21170#21171#0" expanded="true" />
+                <element signature="e#21200#21201#0" expanded="true" />
+                <element signature="e#21225#21226#0" expanded="true" />
+                <element signature="e#21250#21251#0" expanded="true" />
+                <element signature="e#21276#21277#0" expanded="true" />
+                <element signature="e#21301#21302#0" expanded="true" />
+                <element signature="e#21327#21328#0" expanded="true" />
+                <element signature="e#21352#21353#0" expanded="true" />
+                <element signature="e#21397#21398#0" expanded="true" />
+                <element signature="e#21438#21439#0" expanded="true" />
               </folding>
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="TranslationTask.java" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/src/main/java/io/github/pulverizer/movecraft/async/translation/TranslationTask.java">
+      <file leaf-file-name="RotationTask.java" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/src/main/java/io/github/pulverizer/movecraft/async/rotation/RotationTask.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="359">
-              <caret line="229" column="41" selection-start-line="229" selection-start-column="41" selection-end-line="229" selection-end-column="41" />
+            <state relative-caret-position="775">
+              <caret line="213" column="9" lean-forward="true" selection-start-line="174" selection-start-column="8" selection-end-line="213" selection-end-column="9" />
+              <folding>
+                <element signature="e#14181#14182#0" expanded="true" />
+                <element signature="e#14216#14217#0" expanded="true" />
+              </folding>
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="MathUtils.java" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/src/main/java/io/github/pulverizer/movecraft/utils/MathUtils.java">
+      <file leaf-file-name="AsyncTask.java" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/src/main/java/io/github/pulverizer/movecraft/async/AsyncTask.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="720">
-              <caret line="109" column="23" selection-start-line="109" selection-start-column="23" selection-end-line="109" selection-end-column="23" />
+            <state relative-caret-position="374">
+              <caret line="27" column="23" selection-start-line="27" selection-start-column="23" selection-end-line="27" selection-end-column="23" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="CraftSign.java" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/src/main/java/io/github/pulverizer/movecraft/sign/CraftSign.java">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="1530">
+              <caret line="111" column="9" selection-start-line="111" selection-start-column="9" selection-end-line="112" selection-end-column="33" />
             </state>
           </provider>
         </entry>
@@ -129,6 +149,7 @@
       <find>translate</find>
       <find>updates.add</find>
       <find>.translateCraft</find>
+      <find>submit</find>
     </findStrings>
     <replaceStrings>
       <replace />
@@ -364,9 +385,9 @@
     </option>
     <option name="modificationStamps">
       <map>
-        <entry key="$PROJECT_DIR$" value="6148369496772" />
+        <entry key="$PROJECT_DIR$" value="6148918936361" />
         <entry key="$PROJECT_DIR$/.gradle" value="0" />
-        <entry key="$PROJECT_DIR$/build.gradle" value="3827452030" />
+        <entry key="$PROJECT_DIR$/build.gradle" value="3453271953" />
         <entry key="$PROJECT_DIR$/gradle/wrapper/gradle-wrapper.properties" value="2083459160" />
         <entry key="$PROJECT_DIR$/settings.gradle" value="2611696078" />
       </map>
@@ -566,7 +587,6 @@
         <option value="$PROJECT_DIR$/src/main/java/io/github/pulverizer/movecraft/utils/SignUtils.java" />
         <option value="$PROJECT_DIR$/src/main/java/io/github/pulverizer/movecraft/utils/TopicPaginator.java" />
         <option value="$PROJECT_DIR$/src/main/java/io/github/pulverizer/movecraft/mapUpdater/update/ParticleUpdateCommand.java" />
-        <option value="$PROJECT_DIR$/src/main/java/io/github/pulverizer/movecraft/async/AsyncTask.java" />
         <option value="$PROJECT_DIR$/src/main/java/io/github/pulverizer/movecraft/NextTickProvider.java" />
         <option value="$PROJECT_DIR$/src/main/java/io/github/pulverizer/movecraft/config/Settings.java" />
         <option value="$PROJECT_DIR$/src/main/java/io/github/pulverizer/movecraft/config/ConfigManager.java" />
@@ -592,11 +612,8 @@
         <option value="$PROJECT_DIR$/src/main/java/movecraftlang_en.properties" />
         <option value="$PROJECT_DIR$/src/main/java/io/github/pulverizer/movecraft/listener/PlayerListener.java" />
         <option value="$PROJECT_DIR$/src/main/java/io/github/pulverizer/movecraft/events/CraftDetectEvent.java" />
-        <option value="$PROJECT_DIR$/build.gradle" />
         <option value="$PROJECT_DIR$/src/main/java/io/github/pulverizer/movecraft/sign/AscendSign.java" />
         <option value="$PROJECT_DIR$/src/main/java/io/github/pulverizer/movecraft/sign/PilotSign.java" />
-        <option value="$PROJECT_DIR$/src/main/java/io/github/pulverizer/movecraft/craft/CraftManager.java" />
-        <option value="$PROJECT_DIR$/src/main/java/io/github/pulverizer/movecraft/sign/CraftSign.java" />
         <option value="$PROJECT_DIR$/src/main/java/io/github/pulverizer/movecraft/craft/CraftType.java" />
         <option value="$PROJECT_DIR$/src/main/java/io/github/pulverizer/movecraft/sign/CrewSign.java" />
         <option value="$PROJECT_DIR$/src/main/java/io/github/pulverizer/movecraft/mapUpdater/MapUpdateManager.java" />
@@ -607,17 +624,21 @@
         <option value="$PROJECT_DIR$/src/main/java/io/github/pulverizer/movecraft/craft/Craft.java" />
         <option value="$PROJECT_DIR$/src/main/java/io/github/pulverizer/movecraft/mapUpdater/update/CraftRotateCommand.java" />
         <option value="$PROJECT_DIR$/src/main/java/io/github/pulverizer/movecraft/MovecraftLocation.java" />
-        <option value="$PROJECT_DIR$/src/main/java/io/github/pulverizer/movecraft/async/AsyncManager.java" />
         <option value="$PROJECT_DIR$/src/main/java/io/github/pulverizer/movecraft/utils/MathUtils.java" />
         <option value="$PROJECT_DIR$/src/main/java/io/github/pulverizer/movecraft/mapUpdater/update/EntityUpdateCommand.java" />
-        <option value="$PROJECT_DIR$/src/main/java/io/github/pulverizer/movecraft/async/rotation/RotationTask.java" />
-        <option value="$PROJECT_DIR$/src/main/java/io/github/pulverizer/movecraft/async/translation/TranslationTask.java" />
         <option value="$PROJECT_DIR$/src/main/java/io/github/pulverizer/movecraft/mapUpdater/update/CraftTranslateCommand.java" />
         <option value="$PROJECT_DIR$/src/main/java/io/github/pulverizer/movecraft/WorldHandler.java" />
+        <option value="$PROJECT_DIR$/build.gradle" />
+        <option value="$PROJECT_DIR$/src/main/java/io/github/pulverizer/movecraft/craft/CraftManager.java" />
+        <option value="$PROJECT_DIR$/src/main/java/io/github/pulverizer/movecraft/async/AsyncManager.java" />
+        <option value="$PROJECT_DIR$/src/main/java/io/github/pulverizer/movecraft/sign/CraftSign.java" />
+        <option value="$PROJECT_DIR$/src/main/java/io/github/pulverizer/movecraft/async/AsyncTask.java" />
+        <option value="$PROJECT_DIR$/src/main/java/io/github/pulverizer/movecraft/async/translation/TranslationTask.java" />
+        <option value="$PROJECT_DIR$/src/main/java/io/github/pulverizer/movecraft/async/rotation/RotationTask.java" />
       </list>
     </option>
   </component>
-  <component name="ProjectFrameBounds" extendedState="7">
+  <component name="ProjectFrameBounds" extendedState="6">
     <option name="width" value="1950" />
     <option name="height" value="1400" />
   </component>
@@ -627,6 +648,9 @@
       <foldersAlwaysOnTop value="true" />
     </navigator>
     <panes>
+      <pane id="Scope" />
+      <pane id="AndroidView" />
+      <pane id="PackagesPane" />
       <pane id="ProjectPane">
         <subPane>
           <expand>
@@ -676,6 +700,26 @@
               <item name="main" type="8a07ba80:GradleTreeStructureProvider$GradleModuleDirectoryNode" />
               <item name="java" type="462c0819:PsiDirectoryNode" />
               <item name="movecraft" type="462c0819:PsiDirectoryNode" />
+              <item name="async" type="462c0819:PsiDirectoryNode" />
+              <item name="rotation" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="movecraft" type="b2602c69:ProjectViewProjectNode" />
+              <item name="movecraft" type="8a07ba80:GradleTreeStructureProvider$GradleModuleDirectoryNode" />
+              <item name="src" type="462c0819:PsiDirectoryNode" />
+              <item name="main" type="8a07ba80:GradleTreeStructureProvider$GradleModuleDirectoryNode" />
+              <item name="java" type="462c0819:PsiDirectoryNode" />
+              <item name="movecraft" type="462c0819:PsiDirectoryNode" />
+              <item name="async" type="462c0819:PsiDirectoryNode" />
+              <item name="translation" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="movecraft" type="b2602c69:ProjectViewProjectNode" />
+              <item name="movecraft" type="8a07ba80:GradleTreeStructureProvider$GradleModuleDirectoryNode" />
+              <item name="src" type="462c0819:PsiDirectoryNode" />
+              <item name="main" type="8a07ba80:GradleTreeStructureProvider$GradleModuleDirectoryNode" />
+              <item name="java" type="462c0819:PsiDirectoryNode" />
+              <item name="movecraft" type="462c0819:PsiDirectoryNode" />
               <item name="craft" type="462c0819:PsiDirectoryNode" />
             </path>
             <path>
@@ -685,34 +729,12 @@
               <item name="main" type="8a07ba80:GradleTreeStructureProvider$GradleModuleDirectoryNode" />
               <item name="java" type="462c0819:PsiDirectoryNode" />
               <item name="movecraft" type="462c0819:PsiDirectoryNode" />
-              <item name="mapUpdater" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="movecraft" type="b2602c69:ProjectViewProjectNode" />
-              <item name="movecraft" type="8a07ba80:GradleTreeStructureProvider$GradleModuleDirectoryNode" />
-              <item name="src" type="462c0819:PsiDirectoryNode" />
-              <item name="main" type="8a07ba80:GradleTreeStructureProvider$GradleModuleDirectoryNode" />
-              <item name="java" type="462c0819:PsiDirectoryNode" />
-              <item name="movecraft" type="462c0819:PsiDirectoryNode" />
-              <item name="mapUpdater" type="462c0819:PsiDirectoryNode" />
-              <item name="update" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="movecraft" type="b2602c69:ProjectViewProjectNode" />
-              <item name="movecraft" type="8a07ba80:GradleTreeStructureProvider$GradleModuleDirectoryNode" />
-              <item name="src" type="462c0819:PsiDirectoryNode" />
-              <item name="main" type="8a07ba80:GradleTreeStructureProvider$GradleModuleDirectoryNode" />
-              <item name="java" type="462c0819:PsiDirectoryNode" />
-              <item name="movecraft" type="462c0819:PsiDirectoryNode" />
-              <item name="utils" type="462c0819:PsiDirectoryNode" />
+              <item name="sign" type="462c0819:PsiDirectoryNode" />
             </path>
           </expand>
           <select />
         </subPane>
       </pane>
-      <pane id="PackagesPane" />
-      <pane id="AndroidView" />
-      <pane id="Scope" />
     </panes>
   </component>
   <component name="PropertiesComponent">
@@ -870,13 +892,12 @@
       <window_info anchor="bottom" id="Event Log" order="11" sideWeight="0.50029445" side_tool="true" weight="0.32942098" />
       <window_info anchor="right" id="Maven Projects" order="5" />
       <window_info anchor="bottom" id="Version Control" order="10" show_stripe_button="false" />
-      <window_info active="true" anchor="bottom" id="Run" order="2" visible="true" weight="0.23630673" />
+      <window_info anchor="bottom" id="Run" order="2" weight="0.23630673" />
       <window_info anchor="bottom" id="Terminal" order="8" weight="0.32942098" />
       <window_info id="Capture Tool" order="4" />
       <window_info id="Designer" order="2" />
-      <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.10394582" />
+      <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.107479386" />
       <window_info anchor="bottom" id="sbt-shell-toolwindow" order="7" weight="0.32942098" />
-      <window_info anchor="bottom" id="Find" order="1" weight="0.32707354" />
       <window_info id="Learn" order="6" />
       <window_info anchor="right" id="Gradle" order="6" visible="true" weight="0.10424028" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
@@ -887,6 +908,7 @@
       <window_info anchor="bottom" id="Debug" order="3" weight="0.39978212" />
       <window_info anchor="bottom" id="Messages" order="12" sideWeight="0.49970552" weight="0.45602605" />
       <window_info anchor="right" id="Commander" internal_type="SLIDING" order="0" type="SLIDING" weight="0.4" />
+      <window_info anchor="bottom" id="Find" order="1" weight="0.32707354" />
       <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
       <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
       <window_info anchor="bottom" id="Build" order="9" weight="0.3114241" />
@@ -908,13 +930,6 @@
     </breakpoint-manager>
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$PROJECT_DIR$/src/main/java/io/github/pulverizer/movecraft/events/CraftSinkEvent.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="68">
-          <caret line="6" column="13" selection-start-line="6" selection-start-column="13" selection-end-line="6" selection-end-column="13" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/src/main/java/io/github/pulverizer/movecraft/events/SignTranslateEvent.java">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="187">
@@ -1073,20 +1088,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/build.gradle">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="289">
-          <caret line="17" column="107" selection-start-line="17" selection-start-column="107" selection-end-line="17" selection-end-column="107" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/io/github/pulverizer/movecraft/sign/AntiAircraftDirectorSign.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="130">
-          <caret line="25" column="53" lean-forward="true" selection-start-line="25" selection-start-column="53" selection-end-line="25" selection-end-column="53" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/src/main/java/io/github/pulverizer/movecraft/sign/AscendSign.java">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="259">
@@ -1115,13 +1116,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/io/github/pulverizer/movecraft/sign/CraftSign.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="612">
-          <caret line="57" column="99" selection-start-line="57" selection-start-column="99" selection-end-line="57" selection-end-column="99" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/src/main/java/io/github/pulverizer/movecraft/craft/CraftType.java">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="731">
@@ -1140,13 +1134,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="425">
           <caret line="48" column="9" selection-start-line="48" selection-start-column="9" selection-end-line="48" selection-end-column="9" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/io/github/pulverizer/movecraft/craft/CraftManager.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="146">
-          <caret line="20" lean-forward="true" selection-start-line="20" selection-end-line="23" selection-end-column="5" />
         </state>
       </provider>
     </entry>
@@ -1192,10 +1179,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="465">
           <caret line="159" column="8" selection-start-line="159" selection-start-column="8" selection-end-line="159" selection-end-column="8" />
-          <folding>
-            <element signature="e#9516#9517#0" expanded="true" />
-            <element signature="e#9544#9545#0" expanded="true" />
-          </folding>
         </state>
       </provider>
     </entry>
@@ -1206,32 +1189,17 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/io/github/pulverizer/movecraft/craft/Craft.java">
+    <entry file="file://$PROJECT_DIR$/src/main/java/io/github/pulverizer/movecraft/mapUpdater/update/EntityUpdateCommand.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="221">
-          <caret line="115" column="19" lean-forward="true" selection-start-line="115" selection-start-column="19" selection-end-line="115" selection-end-column="19" />
+        <state relative-caret-position="204">
+          <caret line="17" column="22" selection-start-line="17" selection-start-column="22" selection-end-line="17" selection-end-column="22" />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/io/github/pulverizer/movecraft/MovecraftLocation.java">
+    <entry file="file://$PROJECT_DIR$/src/main/java/io/github/pulverizer/movecraft/WorldHandler.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="673">
-          <caret line="78" column="52" lean-forward="true" selection-start-line="78" selection-start-column="52" selection-end-line="78" selection-end-column="52" />
-          <folding>
-            <element signature="e#1501#1502#0" expanded="true" />
-            <element signature="e#1551#1552#0" expanded="true" />
-            <element signature="e#2256#2257#0" expanded="true" />
-            <element signature="e#2341#2342#0" expanded="true" />
-            <element signature="e#1927#1928#0" expanded="true" />
-            <element signature="e#2000#2001#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/io/github/pulverizer/movecraft/async/AsyncManager.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="49">
-          <caret line="233" column="57" selection-start-line="233" selection-start-column="57" selection-end-line="233" selection-end-column="57" />
+        <state relative-caret-position="2618">
+          <caret line="154" column="8" selection-start-line="154" selection-start-column="8" selection-end-line="154" selection-end-column="8" />
         </state>
       </provider>
     </entry>
@@ -1242,44 +1210,107 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/io/github/pulverizer/movecraft/mapUpdater/update/CraftTranslateCommand.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="17">
+          <caret line="145" column="29" selection-start-line="145" selection-start-column="29" selection-end-line="145" selection-end-column="29" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/io/github/pulverizer/movecraft/MovecraftLocation.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="679">
+          <caret line="78" column="52" lean-forward="true" selection-start-line="78" selection-start-column="52" selection-end-line="78" selection-end-column="52" />
+          <folding>
+            <element signature="e#1501#1502#0" expanded="true" />
+            <element signature="e#1551#1552#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/io/github/pulverizer/movecraft/craft/Craft.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="1649">
+          <caret line="135" column="55" selection-start-line="135" selection-start-column="55" selection-end-line="135" selection-end-column="55" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/build.gradle">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="306">
+          <caret line="18" column="31" selection-start-line="18" selection-start-column="31" selection-end-line="18" selection-end-column="31" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/io/github/pulverizer/movecraft/craft/CraftManager.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="860">
+          <caret line="73" column="83" selection-start-line="73" selection-start-column="83" selection-end-line="73" selection-end-column="83" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/io/github/pulverizer/movecraft/sign/AntiAircraftDirectorSign.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="79">
+          <caret line="25" column="53" lean-forward="true" selection-start-line="25" selection-start-column="53" selection-end-line="25" selection-end-column="53" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/io/github/pulverizer/movecraft/sign/CraftSign.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="1530">
+          <caret line="111" column="9" selection-start-line="111" selection-start-column="9" selection-end-line="112" selection-end-column="33" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/io/github/pulverizer/movecraft/async/AsyncManager.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="2329">
+          <caret line="241" column="20" selection-start-line="241" selection-start-column="20" selection-end-line="241" selection-end-column="20" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/io/github/pulverizer/movecraft/async/AsyncTask.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="374">
+          <caret line="27" column="23" selection-start-line="27" selection-start-column="23" selection-end-line="27" selection-end-column="23" />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/src/main/java/io/github/pulverizer/movecraft/async/rotation/RotationTask.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="798">
-          <caret line="194" column="161" selection-start-line="194" selection-start-column="161" selection-end-line="194" selection-end-column="161" />
+        <state relative-caret-position="775">
+          <caret line="213" column="9" lean-forward="true" selection-start-line="174" selection-start-column="8" selection-end-line="213" selection-end-column="9" />
           <folding>
-            <element signature="e#14410#14411#0" expanded="true" />
-            <element signature="e#14440#14441#0" expanded="true" />
+            <element signature="e#14181#14182#0" expanded="true" />
+            <element signature="e#14216#14217#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/src/main/java/io/github/pulverizer/movecraft/async/translation/TranslationTask.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="359">
-          <caret line="229" column="41" selection-start-line="229" selection-start-column="41" selection-end-line="229" selection-end-column="41" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/io/github/pulverizer/movecraft/mapUpdater/update/EntityUpdateCommand.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="204">
-          <caret line="17" column="22" selection-start-line="17" selection-start-column="22" selection-end-line="17" selection-end-column="22" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/io/github/pulverizer/movecraft/mapUpdater/update/CraftTranslateCommand.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="418">
-          <caret line="142" column="29" lean-forward="true" selection-start-line="142" selection-start-column="29" selection-end-line="142" selection-end-column="29" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/io/github/pulverizer/movecraft/WorldHandler.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="493">
-          <caret line="164" column="8" selection-start-line="164" selection-start-column="8" selection-end-line="164" selection-end-column="8" />
+        <state relative-caret-position="748">
+          <caret line="88" column="30" lean-forward="true" selection-start-line="88" selection-start-column="30" selection-end-line="88" selection-end-column="30" />
           <folding>
-            <element signature="imports" expanded="true" />
+            <element signature="e#14263#14264#0" expanded="true" />
+            <element signature="e#14298#14299#0" expanded="true" />
+            <element signature="e#20944#20945#0" expanded="true" />
+            <element signature="e#20973#20974#0" expanded="true" />
+            <element signature="e#21011#21012#0" expanded="true" />
+            <element signature="e#21045#21046#0" expanded="true" />
+            <element signature="e#21085#21086#0" expanded="true" />
+            <element signature="e#21117#21118#0" expanded="true" />
+            <element signature="e#21170#21171#0" expanded="true" />
+            <element signature="e#21200#21201#0" expanded="true" />
+            <element signature="e#21225#21226#0" expanded="true" />
+            <element signature="e#21250#21251#0" expanded="true" />
+            <element signature="e#21276#21277#0" expanded="true" />
+            <element signature="e#21301#21302#0" expanded="true" />
+            <element signature="e#21327#21328#0" expanded="true" />
+            <element signature="e#21352#21353#0" expanded="true" />
+            <element signature="e#21397#21398#0" expanded="true" />
+            <element signature="e#21438#21439#0" expanded="true" />
           </folding>
         </state>
       </provider>

@@ -57,6 +57,7 @@ public class CraftManager implements Iterable<Craft>{
         Set<CraftType> craftTypes = new HashSet<>();
         File[] files = craftsFile.listFiles();
         if (files == null){
+            Movecraft.getInstance().getLogger().error("No CraftTypes Found!");
             return craftTypes;
         }
 
@@ -69,10 +70,8 @@ public class CraftManager implements Iterable<Craft>{
                 }
             }
         }
-        if (craftTypes.isEmpty()) {
-            Movecraft.getInstance().getLogger().warn("ERROR: NO CRAFTS FOUND!");
-        }
-        Movecraft.getInstance().getLogger().info(String.format(I18nSupport.getInternationalisedString("Startup - Number of craft files loaded"), craftTypes.size()));
+
+        Movecraft.getInstance().getLogger().info("Loaded " + craftTypes.size() + " CraftTypes.");
         return craftTypes;
     }
 

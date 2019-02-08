@@ -10,13 +10,10 @@ dependencies {
     compile 'org.spongepowered:spongeapi:7.1.0'
 }
 
-task endBuildTask {
-    doLast {
-        exec {
-            workingDir "C:/Users/berna/IdeaProjects/movecraft"
-            commandLine  'cmd','/c','xcopy /s /y "build/libs" "C:/Games/MultiMC/instances/Sponge 1.12/.minecraft/mods/plugins"'
-            commandLine  'cmd','/c','xcopy /s /y "build/libs" "C:/Users/berna/Downloads/Sponge Server/mods/plugins"'
-        }
-    }
+task endBuildTask(type: Copy) {
+    from "build/libs"
+    //into "C:/Games/MultiMC/instances/Sponge 1.12/.minecraft/mods/plugins"
+    into "C:/Users/berna/Downloads/Sponge Server/mods/plugins"
 }
+
 build.finalizedBy(endBuildTask)

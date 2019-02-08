@@ -50,6 +50,7 @@ public class RotationTask extends AsyncTask {
     private boolean failed = false;
     private String failMessage;
     private Set<UpdateCommand> updates = new HashSet<>();
+    private boolean taskFinished = false;
 
     private final HashHitBox oldHitBox;
     private final HashHitBox newHitBox;
@@ -176,8 +177,7 @@ public class RotationTask extends AsyncTask {
 
             Task.builder()
                     .execute(() -> {
-                        HashHitBox craftHitBox = craft.getHitBox();
-                        for (Entity entity : craft.getW().getIntersectingEntities(new AABB(craftHitBox.getMinX() -0.5, craftHitBox.getMinY() -0.5, craftHitBox.getMinZ() -0.5, craftHitBox.getMaxX() +0.5, craftHitBox.getMaxY() +0.5, craftHitBox.getMaxZ() +0.5))) {
+                        for (Entity entity : craft.getW().getIntersectingEntities(new AABB(oldHitBox.getMinX() -0.5, oldHitBox.getMinY() -0.5, oldHitBox.getMinZ() -0.5, oldHitBox.getMaxX() +0.5, oldHitBox.getMaxY() +0.5, oldHitBox.getMaxZ() +0.5))) {
 
                             if (entity.getType() == EntityTypes.PLAYER || entity.getType() == EntityTypes.PRIMED_TNT || !craft.getType().getOnlyMovePlayers()) {
                                 if (Settings.Debug) {
@@ -196,10 +196,21 @@ public class RotationTask extends AsyncTask {
                                 updates.add(eUp);
                             }
                         }
+
                         if (Settings.Debug)
                             Movecraft.getInstance().getLogger().info("Submitting Entity Movements.");
+
+                        setTaskFinished();
                     })
                     .submit(Movecraft.getInstance());
+
+            while (!taskFinished) {
+                if (Settings.Debug)
+                    Movecraft.getInstance().getLogger().info("Still Processing Entities!");
+            }
+
+            if (taskFinished && Settings.Debug)
+                Movecraft.getInstance().getLogger().info("Processed Entities.");
         }
 
         if (getCraft().getCruising()) {
@@ -285,6 +296,10 @@ public class RotationTask extends AsyncTask {
             }
         }
 
+    }
+
+    public void setTaskFinished(){
+        taskFinished = true;
     }
 
     private static HitBox rotateHitBox(HitBox hitBox, MovecraftLocation originPoint, Rotation rotation){

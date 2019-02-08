@@ -10,6 +10,7 @@ import io.github.pulverizer.movecraft.craft.Craft;
 import io.github.pulverizer.movecraft.craft.CraftManager;
 import io.github.pulverizer.movecraft.events.CraftTranslateEvent;
 import io.github.pulverizer.movecraft.localisation.I18nSupport;
+import io.github.pulverizer.movecraft.mapUpdater.MapUpdateManager;
 import io.github.pulverizer.movecraft.mapUpdater.update.*;
 import io.github.pulverizer.movecraft.utils.HashHitBox;
 import io.github.pulverizer.movecraft.utils.HitBox;
@@ -54,6 +55,7 @@ public class TranslationTask extends AsyncTask {
     private boolean collisionExplosion = false;
     private String failMessage;
     private Collection<UpdateCommand> updates = new HashSet<>();
+    private boolean taskFinished = false;
 
     public TranslationTask(Craft c, int dx, int dy, int dz) {
         super(c);
@@ -230,12 +232,17 @@ public class TranslationTask extends AsyncTask {
         updates.add(new CraftTranslateCommand(craft, new MovecraftLocation(dx, dy, dz), getNewHitBox()));
 
         //prevents torpedo and rocket pilots
-        if (craft.getType().getMoveEntities() && !(craft.getSinking())) {
+        if (craft.getType().getMoveEntities() && !craft.getSinking()) {
+
+            if (Settings.Debug)
+                Movecraft.getInstance().getLogger().info("Craft moves Entities.");
 
             Task.builder()
                     .execute(() -> {
-                        HashHitBox craftHitBox = craft.getHitBox();
-                        for(Entity entity : craft.getW().getIntersectingEntities(new AABB(craftHitBox.getMinX(), craftHitBox.getMinY(), craftHitBox.getMinZ(), craftHitBox.getMaxX(), craftHitBox.getMaxY(), craftHitBox.getMaxZ()))){
+
+                        Movecraft.getInstance().getLogger().info("Searching for Entities on Craft.");
+
+                        for(Entity entity : craft.getW().getIntersectingEntities(new AABB(oldHitBox.getMinX() - 0.5, oldHitBox.getMinY() - 0.5, oldHitBox.getMinZ() - 0.5, oldHitBox.getMaxX() + 1.5, oldHitBox.getMaxY() + 1.5, oldHitBox.getMaxZ()+1.5))){
 
                             if (entity.getType() == EntityTypes.PLAYER || entity.getType() == EntityTypes.PRIMED_TNT || !craft.getType().getOnlyMovePlayers()) {
                                 if (Settings.Debug) {
@@ -244,11 +251,23 @@ public class TranslationTask extends AsyncTask {
                                 EntityUpdateCommand eUp = new EntityUpdateCommand(entity, entity.getLocation().getPosition().add(dx, dy, dz), 0);
                                 updates.add(eUp);
                             }
-                            if (Settings.Debug)
-                                Movecraft.getInstance().getLogger().info("Submitting Entity Movements.");
                         }
+
+                        if (Settings.Debug)
+                            Movecraft.getInstance().getLogger().info("Submitting Entity Movements.");
+
+                        setTaskFinished();
                     })
                     .submit(Movecraft.getInstance());
+
+            while (!taskFinished) {
+                if (Settings.Debug)
+                    Movecraft.getInstance().getLogger().info("Still Processing Entities!");
+            }
+
+            if (taskFinished && Settings.Debug)
+                Movecraft.getInstance().getLogger().info("Processed Entities.");
+
         } else {
             //add releaseTask without playermove to manager
             if (!craft.getType().getCruiseOnPilot() && !craft.getSinking())  // not necessary to release cruiseonpilot crafts, because they will already be released
@@ -260,6 +279,10 @@ public class TranslationTask extends AsyncTask {
         //if (!harvestedBlocks.isEmpty())
         //    harvestedBlocks.forEach(location -> location.removeBlock());
 
+    }
+
+    public void setTaskFinished(){
+        taskFinished = true;
     }
 
     private static HitBox translateHitBox(HitBox hitBox, MovecraftLocation shift){
