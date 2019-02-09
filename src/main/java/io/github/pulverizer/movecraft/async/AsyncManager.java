@@ -13,7 +13,6 @@ import io.github.pulverizer.movecraft.config.Settings;
 import io.github.pulverizer.movecraft.craft.Craft;
 import io.github.pulverizer.movecraft.craft.CraftManager;
 import io.github.pulverizer.movecraft.events.CraftDetectEvent;
-import io.github.pulverizer.movecraft.localisation.I18nSupport;
 import io.github.pulverizer.movecraft.mapUpdater.MapUpdateManager;
 import io.github.pulverizer.movecraft.utils.CollectionUtils;
 import io.github.pulverizer.movecraft.utils.HashHitBox;
@@ -133,7 +132,7 @@ public class AsyncManager implements Runnable {
 
                 if (pCraft != null && p != null) {
                     // Player is already controlling a craft
-                    notifyP.sendMessage(Text.of(I18nSupport.getInternationalisedString("Detection - Failed - Already commanding a craft")));
+                    notifyP.sendMessage(Text.of("Detection Failed! You are already commanding a craft."));
                 } else {
                     if (data.failed()) {
                         if (notifyP != null)
@@ -152,7 +151,7 @@ public class AsyncManager implements Runnable {
                                 if (c.getType().getCruiseOnPilot() || p != null) {
                                     if (craft.getType() == c.getType()
                                             || craft.getHitBox().size() <= data.getBlockList().size()) {
-                                        notifyP.sendMessage(Text.of(I18nSupport.getInternationalisedString("Detection - Failed Craft is already being controlled")));
+                                        notifyP.sendMessage(Text.of("Detection Failed. Craft is already being controlled by another player."));
                                         failed = true;
                                     } else {
                                         // if this is a different type than
@@ -162,7 +161,7 @@ public class AsyncManager implements Runnable {
                                         // carrier
                                         if (!craft.isNotProcessing()) {
                                             failed = true;
-                                            notifyP.sendMessage(Text.of(I18nSupport.getInternationalisedString("Parent Craft is busy")));
+                                            notifyP.sendMessage(Text.of("Parent Craft is busy."));
                                         }
                                         craft.setHitBox(new HashHitBox(CollectionUtils.filter(craft.getHitBox(),data.getBlockList())));
                                         craft.setOrigBlockCount(craft.getOrigBlockCount() - data.getBlockList().size());
@@ -174,7 +173,7 @@ public class AsyncManager implements Runnable {
                         }
                         if (c.getType().getMustBeSubcraft() && !isSubcraft) {
                             failed = true;
-                            notifyP.sendMessage(Text.of(I18nSupport.getInternationalisedString("Craft must be part of another craft")));
+                            notifyP.sendMessage(Text.of("Craft must be part of another craft!"));
                         }
                         if (!failed) {
                             c.setHitBox(task.getData().getBlockList());
@@ -190,22 +189,10 @@ public class AsyncManager implements Runnable {
                             }
 
                             if (notifyP != null) {
-                                notifyP.sendMessage(Text.of(I18nSupport
-                                        .getInternationalisedString("Detection - Successfully piloted craft")
-                                        + " Size: " + c.getHitBox().size()));
-                                Movecraft.getInstance().getLogger().info(
-                                        String.format(
-                                                I18nSupport.getInternationalisedString(
-                                                        "Detection - Success - Log Output"),
-                                                notifyP.getName(), c.getType().getCraftName(), c.getHitBox().size(),
-                                                c.getHitBox().getMinX(), c.getHitBox().getMinZ()));
+                                notifyP.sendMessage(Text.of("Successfully piloted " + c.getType().getCraftName() + " Size: " + c.getHitBox().size()));
+                                Movecraft.getInstance().getLogger().info("New Craft Detected! Pilot: " + notifyP.getName() + " CraftType: " + c.getType().getCraftName() + " Size: " + c.getHitBox().size() + " Location: " + c.getHitBox().getMinX() + ", " + c.getHitBox().getMinY() + ", " + c.getHitBox().getMinZ());
                             } else {
-                                Movecraft.getInstance().getLogger().info(
-                                        String.format(
-                                                I18nSupport.getInternationalisedString(
-                                                        "Detection - Success - Log Output"),
-                                                "NULL PLAYER", c.getType().getCraftName(), c.getHitBox().size(),
-                                                c.getHitBox().getMinX(), c.getHitBox().getMinZ()));
+                                Movecraft.getInstance().getLogger().info("New Craft Detected! Pilot: " + "NULL PLAYER" + " CraftType: " + c.getType().getCraftName() + " Size: " + c.getHitBox().size() + " Location: " + c.getHitBox().getMinX() + ", " + c.getHitBox().getMinY() + ", " + c.getHitBox().getMinZ());
                             }
                             CraftManager.getInstance().addCraft(c, p);
                         }
@@ -494,7 +481,7 @@ public class AsyncManager implements Runnable {
             if (isSinking && pcraft.isNotProcessing()) {
                 Player notifyP = pcraft.getNotificationPlayer();
                 if (notifyP != null) {
-                    notifyP.sendMessage(Text.of(I18nSupport.getInternationalisedString("Player- Craft is sinking")));
+                    notifyP.sendMessage(Text.of("Craft is sinking!"));
                 }
                 pcraft.setCruising(false);
                 pcraft.sink();
@@ -805,6 +792,7 @@ public class AsyncManager implements Runnable {
                 double vel = tnt.getVelocity().lengthSquared();
                 if (vel < TNTTracking.get(tnt) / 10.0) {
                     tnt.detonate();
+                    TNTTracking.remove(tnt);
                 } else {
                     // update the tracking with the new velocity so gradual
                     // changes do not make TNT explode

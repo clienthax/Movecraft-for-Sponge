@@ -1,7 +1,6 @@
 package io.github.pulverizer.movecraft.sign;
 
 import io.github.pulverizer.movecraft.craft.CraftManager;
-import io.github.pulverizer.movecraft.localisation.I18nSupport;
 import org.spongepowered.api.block.BlockSnapshot;
 import org.spongepowered.api.block.BlockTypes;
 import org.spongepowered.api.block.tileentity.Sign;
@@ -108,7 +107,7 @@ public final class RelativeMoveSign {
         }
 
         if (!player.hasPermission("movecraft." + CraftManager.getInstance().getCraftByPlayer(player).getType().getCraftName() + ".move")) {
-            player.sendMessage(Text.of(I18nSupport.getInternationalisedString("Insufficient Permissions")));
+            player.sendMessage(Text.of("Insufficient Permissions"));
             return;
         }
         if (CraftManager.getInstance().getCraftByPlayer(player).getType().getCanStaticMove()) {

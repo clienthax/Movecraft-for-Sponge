@@ -1,27 +1,26 @@
 package io.github.pulverizer.movecraft.sign;
 
-        import io.github.pulverizer.movecraft.Movecraft;
-        import io.github.pulverizer.movecraft.MovecraftLocation;
-        import io.github.pulverizer.movecraft.craft.Craft;
-        import io.github.pulverizer.movecraft.craft.CraftType;
-        import io.github.pulverizer.movecraft.config.Settings;
-        import io.github.pulverizer.movecraft.craft.CraftManager;
-        import io.github.pulverizer.movecraft.localisation.I18nSupport;
-        import org.spongepowered.api.block.BlockSnapshot;
-        import org.spongepowered.api.block.BlockTypes;
-        import org.spongepowered.api.block.tileentity.Sign;
-        import org.spongepowered.api.data.key.Keys;
-        import org.spongepowered.api.data.value.mutable.ListValue;
-        import org.spongepowered.api.entity.living.player.Player;
-        import org.spongepowered.api.event.Listener;
-        import org.spongepowered.api.event.block.InteractBlockEvent;
-        import org.spongepowered.api.event.block.tileentity.ChangeSignEvent;
-        import org.spongepowered.api.event.filter.cause.Root;
-        import org.spongepowered.api.scheduler.Task;
-        import org.spongepowered.api.text.Text;
-        import org.spongepowered.api.util.Direction;
-        import org.spongepowered.api.world.Location;
-        import org.spongepowered.api.world.World;
+import io.github.pulverizer.movecraft.Movecraft;
+import io.github.pulverizer.movecraft.MovecraftLocation;
+import io.github.pulverizer.movecraft.craft.Craft;
+import io.github.pulverizer.movecraft.craft.CraftType;
+import io.github.pulverizer.movecraft.config.Settings;
+import io.github.pulverizer.movecraft.craft.CraftManager;
+import org.spongepowered.api.block.BlockSnapshot;
+import org.spongepowered.api.block.BlockTypes;
+import org.spongepowered.api.block.tileentity.Sign;
+import org.spongepowered.api.data.key.Keys;
+import org.spongepowered.api.data.value.mutable.ListValue;
+import org.spongepowered.api.entity.living.player.Player;
+import org.spongepowered.api.event.Listener;
+import org.spongepowered.api.event.block.InteractBlockEvent;
+import org.spongepowered.api.event.block.tileentity.ChangeSignEvent;
+import org.spongepowered.api.event.filter.cause.Root;
+import org.spongepowered.api.scheduler.Task;
+import org.spongepowered.api.text.Text;
+import org.spongepowered.api.util.Direction;
+import org.spongepowered.api.world.Location;
+import org.spongepowered.api.world.World;
 
 public final class CraftSign {
 
@@ -37,7 +36,7 @@ public final class CraftSign {
             return;
         }
         if (!player.hasPermission("movecraft." + lines.get(0).toPlain() + ".create")) {
-            player.sendMessage(Text.of(I18nSupport.getInternationalisedString("Insufficient Permissions")));
+            player.sendMessage(Text.of("Insufficient Permissions"));
             event.setCancelled(true);
         }
     }
@@ -62,7 +61,7 @@ public final class CraftSign {
 
         // Valid sign prompt for ship command.
         if (!player.hasPermission("movecraft." + lines.get(0).toPlain() + ".pilot")) {
-            player.sendMessage(Text.of(I18nSupport.getInternationalisedString("Insufficient Permissions")));
+            player.sendMessage(Text.of("Insufficient Permissions"));
             return;
         }
         // Attempt to run detection

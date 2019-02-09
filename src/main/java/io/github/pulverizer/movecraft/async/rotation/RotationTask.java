@@ -13,7 +13,6 @@ import io.github.pulverizer.movecraft.utils.HashHitBox;
 import io.github.pulverizer.movecraft.async.AsyncTask;
 import io.github.pulverizer.movecraft.config.Settings;
 import io.github.pulverizer.movecraft.craft.CraftManager;
-import io.github.pulverizer.movecraft.localisation.I18nSupport;
 import io.github.pulverizer.movecraft.mapUpdater.update.CraftRotateCommand;
 import io.github.pulverizer.movecraft.mapUpdater.update.EntityUpdateCommand;
 import io.github.pulverizer.movecraft.mapUpdater.update.UpdateCommand;
@@ -78,7 +77,7 @@ public class RotationTask extends AsyncTask {
 
         if (getCraft().getDisabled() && (!getCraft().getSinking())) {
             failed = true;
-            failMessage = I18nSupport.getInternationalisedString("Craft is disabled!");
+            failMessage = "Craft is disabled!";
         }
 
         // check for fuel, burn some from a furnace if needed. Blocks of coal are supported, in addition to coal and charcoal
@@ -100,7 +99,7 @@ public class RotationTask extends AsyncTask {
                 }
                 if (fuelHolder == null) {
                     failed = true;
-                    failMessage = I18nSupport.getInternationalisedString("Translation - Failed Craft out of fuel");
+                    failMessage = "Translation Failed - Craft out of fuel";
                 } else {
                     Inventory inventory = fuelHolder.getInventory();
                     if (inventory.contains(ItemTypes.COAL)) {
@@ -135,7 +134,7 @@ public class RotationTask extends AsyncTask {
             if ((oldMaterial.equals(BlockTypes.CHEST) || oldMaterial.equals(BlockTypes.TRAPPED_CHEST)) &&
                     !checkChests(oldMaterial, newLocation)) {
                 failed = true;
-                failMessage = String.format(I18nSupport.getInternationalisedString("Rotation - Craft is obstructed") + " @ %d,%d,%d", newLocation.getX(), newLocation.getY(), newLocation.getZ());
+                failMessage = String.format("Rotation Failed- Craft is obstructed" + " @ %d,%d,%d", newLocation.getX(), newLocation.getY(), newLocation.getZ());
                 break;
             }
 
@@ -148,7 +147,7 @@ public class RotationTask extends AsyncTask {
 
             if (!oldHitBox.contains(newLocation)) {
                 failed = true;
-                failMessage = String.format(I18nSupport.getInternationalisedString("Rotation - Craft is obstructed") + " @ %d,%d,%d", newLocation.getX(), newLocation.getY(), newLocation.getZ());
+                failMessage = String.format("Rotation Failed - Craft is obstructed" + " @ %d,%d,%d", newLocation.getX(), newLocation.getY(), newLocation.getZ());
                 break;
             }
         }
@@ -174,6 +173,9 @@ public class RotationTask extends AsyncTask {
 
         //prevents torpedo and rocket passengers
         if (craft.getType().getMoveEntities() && !(craft.getSinking())) {
+
+            if (Settings.Debug)
+                Movecraft.getInstance().getLogger().info("Craft moves Entities.");
 
             Task.builder()
                     .execute(() -> {

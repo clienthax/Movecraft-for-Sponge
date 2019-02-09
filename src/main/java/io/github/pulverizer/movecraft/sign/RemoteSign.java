@@ -4,7 +4,6 @@ import io.github.pulverizer.movecraft.utils.MathUtils;
 import io.github.pulverizer.movecraft.MovecraftLocation;
 import io.github.pulverizer.movecraft.craft.Craft;
 import io.github.pulverizer.movecraft.craft.CraftManager;
-import io.github.pulverizer.movecraft.localisation.I18nSupport;
 
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.block.BlockSnapshot;
@@ -61,14 +60,14 @@ public final class RemoteSign {
 
         if (foundCraft == null) {
             if (player != null) {
-                player.sendMessage(Text.of(I18nSupport.getInternationalisedString("ERROR: Remote Sign must be a part of a piloted craft!")));
+                player.sendMessage(Text.of("ERROR: Remote Sign must be a part of a piloted craft!"));
             }
             return;
         }
 
         if (!foundCraft.getType().allowRemoteSign()) {
             if (player != null) {
-                player.sendMessage(Text.of(I18nSupport.getInternationalisedString("ERROR: Remote Signs not allowed on this craft!")));
+                player.sendMessage(Text.of("ERROR: Remote Signs not allowed on this craft!"));
             }
             return;
         }
@@ -121,7 +120,7 @@ public final class RemoteSign {
         }
         if (foundLocations.isEmpty()) {
             if (player != null) {
-                player.sendMessage(Text.of(I18nSupport.getInternationalisedString("ERROR: Could not find target sign!")));
+                player.sendMessage(Text.of("ERROR: Could not find target sign!"));
             }
             return;
         }

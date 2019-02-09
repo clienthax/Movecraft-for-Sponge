@@ -3,7 +3,6 @@ package io.github.pulverizer.movecraft.sign;
 import io.github.pulverizer.movecraft.craft.Craft;
 import io.github.pulverizer.movecraft.utils.MathUtils;
 import io.github.pulverizer.movecraft.craft.CraftManager;
-import io.github.pulverizer.movecraft.localisation.I18nSupport;
 import org.spongepowered.api.block.BlockSnapshot;
 import org.spongepowered.api.block.BlockTypes;
 import org.spongepowered.api.block.tileentity.Sign;
@@ -48,12 +47,12 @@ public class AntiAircraftDirectorSign {
         }
 
         if (foundCraft == null) {
-            if (player != null) {player.sendMessage(Text.of(I18nSupport.getInternationalisedString("ERROR: Sign must be a part of a piloted craft!")));}
+            if (player != null) {player.sendMessage(Text.of("ERROR: Sign must be a part of a piloted craft!"));}
             return;
         }
 
         if (!foundCraft.getType().allowAADirectorSign()) {
-            if (player != null) {player.sendMessage(Text.of(I18nSupport.getInternationalisedString("ERROR: AA Director Signs not allowed on this craft!")));}
+            if (player != null) {player.sendMessage(Text.of("ERROR: AA Director Signs not allowed on this craft!"));}
             return;
         }
         if(event instanceof InteractBlockEvent.Primary && player == foundCraft.getAADirector()){
@@ -63,7 +62,7 @@ public class AntiAircraftDirectorSign {
         }
 
         foundCraft.setAADirector(player);
-        if(player != null) {player.sendMessage(Text.of(I18nSupport.getInternationalisedString("You are now directing the AA of this craft.")));}
+        if(player != null) {player.sendMessage(Text.of("You are now directing the AA of this craft."));}
         if (foundCraft.getCannonDirector() == player) {
             foundCraft.setCannonDirector(null);
         }

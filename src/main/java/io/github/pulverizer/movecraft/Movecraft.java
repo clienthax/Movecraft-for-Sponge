@@ -24,7 +24,6 @@ import io.github.pulverizer.movecraft.craft.CraftManager;
 import io.github.pulverizer.movecraft.listener.BlockListener;
 import io.github.pulverizer.movecraft.listener.InteractListener;
 import io.github.pulverizer.movecraft.listener.PlayerListener;
-import io.github.pulverizer.movecraft.localisation.I18nSupport;
 import io.github.pulverizer.movecraft.mapUpdater.MapUpdateManager;
 import io.github.pulverizer.movecraft.sign.AntiAircraftDirectorSign;
 import io.github.pulverizer.movecraft.sign.AscendSign;
@@ -195,10 +194,9 @@ public class Movecraft {
             }
         }
 */
-        I18nSupport.init();
         if (shuttingDown && Settings.IGNORE_RESET) {
-            logger.error(I18nSupport.getInternationalisedString("Startup - Error - Reload error"));
-            logger.info(I18nSupport.getInternationalisedString("Startup - Error - Disable warning for reload"));
+            logger.error("Startup - Error - Reload error");
+            logger.info("Startup - Error - Disable warning for reload");
         } else {
 
             //TODO: Re-add this good stuff!
@@ -236,7 +234,7 @@ public class Movecraft {
             Sponge.getEventManager().registerListeners(this, new SubcraftRotateSign());
             Sponge.getEventManager().registerListeners(this, new TeleportSign());
 
-            logger.info(String.format(I18nSupport.getInternationalisedString("Startup - Enabled message"), "0.0.0"));
+            logger.info("Movecraft Enabled. Version: " + "0.0.1");
         }
     }
 

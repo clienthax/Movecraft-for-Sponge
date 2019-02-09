@@ -4,7 +4,6 @@ import io.github.pulverizer.movecraft.utils.MathUtils;
 import io.github.pulverizer.movecraft.craft.Craft;
 import io.github.pulverizer.movecraft.config.Settings;
 import io.github.pulverizer.movecraft.craft.CraftManager;
-import io.github.pulverizer.movecraft.localisation.I18nSupport;
 import org.spongepowered.api.block.BlockSnapshot;
 import org.spongepowered.api.block.BlockTypes;
 import org.spongepowered.api.data.key.Keys;
@@ -80,7 +79,7 @@ public final class InteractListener {
             }
 
             if (!player.hasPermission("movecraft." + craft.getType().getCraftName() + ".move")) {
-                player.sendMessage(Text.of(I18nSupport.getInternationalisedString("Insufficient Permissions")));
+                player.sendMessage(Text.of("Insufficient Permissions"));
                 return;
             }
             if (craft.getPilotLocked()) {
@@ -130,20 +129,20 @@ public final class InteractListener {
 
             if (craft.getPilotLocked()) {
                 craft.setPilotLocked(false);
-                player.sendMessage(Text.of(I18nSupport.getInternationalisedString("Leaving Direct Control Mode")));
+                player.sendMessage(Text.of("Leaving Direct Control Mode"));
                 event.setCancelled(true);
                 return;
             }
             if (!player.hasPermission("movecraft." + craft.getType().getCraftName() + ".move")
                     || !craft.getType().getCanDirectControl()) {
-                player.sendMessage(Text.of(I18nSupport.getInternationalisedString("Insufficient Permissions")));
+                player.sendMessage(Text.of("Insufficient Permissions"));
                 return;
             }
             craft.setPilotLocked(true);
             craft.setPilotLockedX(player.getLocation().getBlockX() + 0.5);
             craft.setPilotLockedY(player.getLocation().getY());
             craft.setPilotLockedZ(player.getLocation().getBlockZ() + 0.5);
-            player.sendMessage(Text.of(I18nSupport.getInternationalisedString("Entering Direct Control Mode")));
+            player.sendMessage(Text.of("Entering Direct Control Mode"));
             event.setCancelled(true);
         }
 

@@ -17,7 +17,6 @@ public class Settings {
     public static ItemType PilotTool = ItemTypes.STICK;
     public static int SilhouetteViewDistance = 200;
     public static int SilhouetteBlockCount = 20;
-    public static boolean CompatibilityMode = false;
     public static boolean DelayColorChanges = false;
     public static double SinkRateTicks = 20.0;
     public static double SinkCheckTicks = 100.0;

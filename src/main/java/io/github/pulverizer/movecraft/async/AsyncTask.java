@@ -2,7 +2,6 @@ package io.github.pulverizer.movecraft.async;
 
 import io.github.pulverizer.movecraft.Movecraft;
 import io.github.pulverizer.movecraft.craft.Craft;
-import io.github.pulverizer.movecraft.localisation.I18nSupport;
 import org.spongepowered.api.scheduler.Task;
 
 public abstract class AsyncTask {
@@ -28,7 +27,7 @@ public abstract class AsyncTask {
             excecute();
             Movecraft.getInstance().getAsyncManager().submitCompletedTask(this);
         } catch (Exception e) {
-            Movecraft.getInstance().getLogger().error(I18nSupport.getInternationalisedString("Internal - Error - Proccessor thread encountered an error"));
+            Movecraft.getInstance().getLogger().error("Internal Error - Proccessor thread encountered an error!");
             e.printStackTrace();
         }
     }

@@ -7,6 +7,7 @@ import io.github.pulverizer.movecraft.craft.Craft;
 import io.github.pulverizer.movecraft.utils.HashHitBox;
 import org.spongepowered.api.block.BlockSnapshot;
 import org.spongepowered.api.block.BlockTypes;
+import org.spongepowered.api.block.ScheduledBlockUpdate;
 import org.spongepowered.api.data.key.Keys;
 import org.spongepowered.api.entity.Entity;
 import org.spongepowered.api.util.Direction;
@@ -166,39 +167,29 @@ public class WorldHandler {
     }
 
     private void setBlockFast(World world, Vector3i blockPosition, BlockSnapshot block) {
-
-        if (!world.getChunkAtBlock(blockPosition).isPresent()) {
-
-            Movecraft.getInstance().getLogger().error("Error 404: Chunk not Found");
-            return;
-        }
-
-        Chunk chunk = world.getChunkAtBlock(blockPosition).get();
-        chunk.loadChunk(true);
-        chunk.getLocation(blockPosition).restoreSnapshot(block, true, BlockChangeFlags.NONE);
+        Collection<ScheduledBlockUpdate> updates = block.getLocation().get().getScheduledUpdates();
+        updates.forEach(update -> block.getLocation().get().removeScheduledUpdate(update));
+        world.getLocation(blockPosition).restoreSnapshot(block, true, BlockChangeFlags.NONE);
 
     }
     private void setBlockFast(World world, Vector3i blockPosition, Rotation rotation, BlockSnapshot block) {
-
+        Collection<ScheduledBlockUpdate> updates = block.getLocation().get().getScheduledUpdates();
+        updates.forEach(update -> block.getLocation().get().removeScheduledUpdate(update));
         BlockSnapshot rotatedBlock = rotateBlock(rotation, block);
 
-        if (!world.getChunkAtBlock(blockPosition).isPresent()) {
-
-            Movecraft.getInstance().getLogger().error("Error 404: Chunk not Found");
-            return;
-        }
-
-        Chunk chunk = world.getChunkAtBlock(blockPosition).get();
-        chunk.loadChunk(true);
-        chunk.getLocation(blockPosition).restoreSnapshot(rotatedBlock, true, BlockChangeFlags.NONE);
+        world.getLocation(blockPosition).restoreSnapshot(rotatedBlock, true, BlockChangeFlags.NONE);
 
     }
 
     public void setBlockFast(Location<World> location, BlockSnapshot block){
+        Collection<ScheduledBlockUpdate> updates = block.getLocation().get().getScheduledUpdates();
+        updates.forEach(update -> block.getLocation().get().removeScheduledUpdate(update));
         location.restoreSnapshot(block, true, BlockChangeFlags.NONE);
     }
 
     public void setBlockFast(Location<World> location, Rotation rotation, BlockSnapshot block) {
+        Collection<ScheduledBlockUpdate> updates = block.getLocation().get().getScheduledUpdates();
+        updates.forEach(update -> block.getLocation().get().removeScheduledUpdate(update));
 
         BlockSnapshot rotatedBlock = rotateBlock(rotation, block);
         location.restoreSnapshot(rotatedBlock, true, BlockChangeFlags.NONE);

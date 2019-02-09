@@ -6,7 +6,6 @@ import io.github.pulverizer.movecraft.MovecraftLocation;
 import io.github.pulverizer.movecraft.craft.Craft;
 import io.github.pulverizer.movecraft.config.Settings;
 import io.github.pulverizer.movecraft.craft.CraftManager;
-import io.github.pulverizer.movecraft.localisation.I18nSupport;
 import org.spongepowered.api.entity.explosive.PrimedTNT;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.entity.projectile.explosive.fireball.Fireball;
@@ -182,12 +181,12 @@ public class PlayerListener {
 
         if (c.isNotProcessing() && c.getType().getMoveEntities() && !timeToReleaseAfter.containsKey(c)) {
             if (Settings.ManOverBoardTimeout != 0) {
-                player.sendMessage(Text.of(I18nSupport.getInternationalisedString("You have left your craft. You may return to your craft by typing /manoverboard any time before the timeout expires.")));
+                player.sendMessage(Text.of("You have left your craft.")); //TODO: Re-add /manoverboard
             } else {
-                player.sendMessage(Text.of(I18nSupport.getInternationalisedString("Craft Released - Player has left craft!")));
+                player.sendMessage(Text.of("You have released your craft."));
             }
             if (c.getHitBox().size() > 11000) {
-                player.sendMessage(Text.of(I18nSupport.getInternationalisedString("Craft is too big to check its borders. Make sure this area is safe to release your craft in.")));
+                player.sendMessage(Text.of("Craft is too big to check its borders. Make sure this area is safe to release your craft in."));
             }
             timeToReleaseAfter.put(c, System.currentTimeMillis() + 30000); //30 seconds to release
         }

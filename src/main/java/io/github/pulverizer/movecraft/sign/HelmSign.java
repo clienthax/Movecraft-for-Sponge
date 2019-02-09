@@ -4,7 +4,6 @@ import io.github.pulverizer.movecraft.Rotation;
 import io.github.pulverizer.movecraft.craft.Craft;
 import io.github.pulverizer.movecraft.utils.MathUtils;
 import io.github.pulverizer.movecraft.craft.CraftManager;
-import io.github.pulverizer.movecraft.localisation.I18nSupport;
 import org.spongepowered.api.block.BlockSnapshot;
 import org.spongepowered.api.block.BlockTypes;
 import org.spongepowered.api.block.tileentity.Sign;
@@ -65,7 +64,7 @@ public final class HelmSign {
             return;
         }
         if (!player.hasPermission("movecraft." + craft.getType().getCraftName() + ".rotate")) {
-            player.sendMessage(Text.of(I18nSupport.getInternationalisedString("Insufficient Permissions")));
+            player.sendMessage(Text.of("Insufficient Permissions"));
             return;
         }
 

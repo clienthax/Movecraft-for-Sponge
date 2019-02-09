@@ -9,7 +9,6 @@ import io.github.pulverizer.movecraft.config.Settings;
 import io.github.pulverizer.movecraft.craft.Craft;
 import io.github.pulverizer.movecraft.craft.CraftManager;
 import io.github.pulverizer.movecraft.events.CraftTranslateEvent;
-import io.github.pulverizer.movecraft.localisation.I18nSupport;
 import io.github.pulverizer.movecraft.mapUpdater.MapUpdateManager;
 import io.github.pulverizer.movecraft.mapUpdater.update.*;
 import io.github.pulverizer.movecraft.utils.HashHitBox;
@@ -74,7 +73,7 @@ public class TranslationTask extends AsyncTask {
             return;
         }
         if (getCraft().getDisabled() && !getCraft().getSinking()) {
-            fail(I18nSupport.getInternationalisedString("Craft is disabled!"));
+            fail("Craft is disabled!");
             return;
         }
         final int minY = oldHitBox.getMinY();
@@ -98,16 +97,16 @@ public class TranslationTask extends AsyncTask {
 
         //Fail the movement if the craft is too high
         if (dy>0 && maxY + dy > craft.getType().getMaxHeightLimit()) {
-            fail(I18nSupport.getInternationalisedString("Translation - Failed Craft hit height limit"));
+            fail("Translation Failed - Craft hit height limit.");
             return;
         } else if (minY + dy < craft.getType().getMinHeightLimit() && dy < 0 && !craft.getSinking()) {
-            fail(I18nSupport.getInternationalisedString("Translation - Failed Craft hit minimum height limit"));
+            fail("Translation Failed - Craft hit minimum height limit.");
             return;
         }
 
         //TODO: Check fuel
         if (!checkFuel()) {
-            fail(I18nSupport.getInternationalisedString("Translation - Failed Craft out of fuel"));
+            fail("Translation Failed - Craft out of fuel.");
             return;
         }
 
@@ -127,7 +126,7 @@ public class TranslationTask extends AsyncTask {
 
             if ((testMaterial.equals(BlockTypes.CHEST) || testMaterial.equals(BlockTypes.TRAPPED_CHEST)) && checkChests(testMaterial, newLocation)) {
                 //prevent chests collision
-                fail(String.format(I18nSupport.getInternationalisedString("Translation - Failed Craft is obstructed") + " @ %d,%d,%d,%s", newLocation.getX(), newLocation.getY(), newLocation.getZ(), newLocation.toSponge(craft.getW()).getBlock().getType().toString()));
+                fail(String.format("Translation Failed - Craft is obstructed" + " @ %d,%d,%d,%s", newLocation.getX(), newLocation.getY(), newLocation.getZ(), newLocation.toSponge(craft.getW()).getBlock().getType().toString()));
                 return;
             }
 
@@ -154,7 +153,7 @@ public class TranslationTask extends AsyncTask {
 
             if (blockObstructed) {
                 if (!craft.getSinking() && craft.getType().getCollisionExplosion() == 0.0F) {
-                    fail(String.format(I18nSupport.getInternationalisedString("Translation - Failed Craft is obstructed") + " @ %d,%d,%d,%s", newLocation.getX(), newLocation.getY(), newLocation.getZ(), testMaterial.toString()));
+                    fail(String.format("Translation Failed - Craft is obstructed" + " @ %d,%d,%d,%s", newLocation.getX(), newLocation.getY(), newLocation.getZ(), testMaterial.toString()));
                     return;
                 }
                 collisionBox.add(newLocation);
@@ -426,7 +425,7 @@ public class TranslationTask extends AsyncTask {
         }
 
         if (fuelHolder == null) {
-            fail(I18nSupport.getInternationalisedString("Translation - Failed Craft out of fuel"));
+            fail("Translation Failed - Craft out of fuel.");
             return false;
         }
 

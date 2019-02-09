@@ -1,7 +1,6 @@
 package io.github.pulverizer.movecraft.craft;
 
 import io.github.pulverizer.movecraft.Movecraft;
-import io.github.pulverizer.movecraft.localisation.I18nSupport;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.scheduler.Task;
 import org.spongepowered.api.text.Text;
@@ -94,10 +93,10 @@ public class CraftManager implements Iterable<Craft>{
         this.craftList.remove(c);
         if(!c.getHitBox().isEmpty()) {
             if (player != null) {
-                player.sendMessage(Text.of(I18nSupport.getInternationalisedString("Release - Craft has been released message")));
-                Movecraft.getInstance().getLogger().info(String.format(I18nSupport.getInternationalisedString("Release - Player has released a craft console"), c.getNotificationPlayer().getName(), c.getType().getCraftName(), c.getHitBox().size(), c.getHitBox().getMinX(), c.getHitBox().getMinZ()));
+                player.sendMessage(Text.of("You have released your craft."));
+                Movecraft.getInstance().getLogger().info(String.format(c.getNotificationPlayer().getName() + " has released a craft of type %s with size %d at coordinates : %d x , %d z", c.getType().getCraftName(), c.getHitBox().size(), c.getHitBox().getMinX(), c.getHitBox().getMinZ()));
             } else {
-                Movecraft.getInstance().getLogger().info(String.format(I18nSupport.getInternationalisedString("NULL Player has released a craft of type %s with size %d at coordinates : %d x , %d z"), c.getType().getCraftName(), c.getHitBox().size(), c.getHitBox().getMinX(), c.getHitBox().getMinZ()));
+                Movecraft.getInstance().getLogger().info(String.format("NULL Player has released a craft of type %s with size %d at coordinates : %d x , %d z", c.getType().getCraftName(), c.getHitBox().size(), c.getHitBox().getMinX(), c.getHitBox().getMinZ()));
             }
         }else{
             Movecraft.getInstance().getLogger().warn("Releasing empty craft!");
@@ -163,8 +162,8 @@ public class CraftManager implements Iterable<Craft>{
         }
         removeReleaseTask(c);
         Player p = getPlayerFromCraft(c);
-        p.sendMessage(Text.of(I18nSupport.getInternationalisedString("Release - Craft has been released message")));
-        Movecraft.getInstance().getLogger().info(String.format(I18nSupport.getInternationalisedString("Release - Player has released a craft console"), p.getName(), c.getType().getCraftName(), c.getHitBox().size(), c.getHitBox().getMinX(), c.getHitBox().getMinZ()));
+        p.sendMessage(Text.of("You have released your craft."));
+        Movecraft.getInstance().getLogger().info(String.format(p.getName() + " has released a craft of type %s with size %d at coordinates : %d x , %d z", c.getType().getCraftName(), c.getHitBox().size(), c.getHitBox().getMinX(), c.getHitBox().getMinZ()));
         c.setNotificationPlayer(null);
         craftPlayerIndex.remove(p);
     }
@@ -174,7 +173,7 @@ public class CraftManager implements Iterable<Craft>{
     public final void addReleaseTask(final Craft c) {
         Player p = getPlayerFromCraft(c);
         if (p!=null) {
-            p.sendMessage(Text.of(I18nSupport.getInternationalisedString("Release - Player has left craft")));
+            p.sendMessage(Text.of("You have released your craft."));
         }
 
         Task releaseTask = Task.builder().delayTicks(20*15).execute(() -> removeCraft(c)).submit(Movecraft.getInstance());

@@ -9,7 +9,6 @@ import io.github.pulverizer.movecraft.craft.CraftType;
 import io.github.pulverizer.movecraft.events.CraftDetectEvent;
 import io.github.pulverizer.movecraft.events.CraftReleaseEvent;
 import io.github.pulverizer.movecraft.events.CraftRotateEvent;
-import io.github.pulverizer.movecraft.localisation.I18nSupport;
 import io.github.pulverizer.movecraft.utils.MathUtils;
 import org.spongepowered.api.block.BlockSnapshot;
 import org.spongepowered.api.block.BlockTypes;
@@ -76,14 +75,14 @@ public final class SubcraftRotateSign {
         }
 
         if (!player.hasPermission("movecraft." + craftTypeStr + ".pilot") || !player.hasPermission("movecraft." + craftTypeStr + ".rotate")) {
-            player.sendMessage(Text.of(I18nSupport.getInternationalisedString("Insufficient Permissions")));
+            player.sendMessage(Text.of("Insufficient Permissions"));
             return;
         }
 
         final Craft craft = CraftManager.getInstance().getCraftByPlayer(player);
         if(craft!=null) {
             if (!craft.isNotProcessing()) {
-                player.sendMessage(Text.of(I18nSupport.getInternationalisedString("Parent Craft is busy")));
+                player.sendMessage(Text.of("Parent Craft is busy!"));
                 return;
             }
             craft.setProcessing(true); // prevent the parent craft from moving or updating until the subcraft is done

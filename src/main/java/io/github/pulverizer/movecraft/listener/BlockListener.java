@@ -6,7 +6,6 @@ import io.github.pulverizer.movecraft.MovecraftLocation;
 import io.github.pulverizer.movecraft.craft.Craft;
 import io.github.pulverizer.movecraft.config.Settings;
 import io.github.pulverizer.movecraft.craft.CraftManager;
-import io.github.pulverizer.movecraft.localisation.I18nSupport;
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.block.BlockSnapshot;
 import org.spongepowered.api.block.BlockState;
@@ -54,7 +53,7 @@ public class BlockListener {
                     }
                     for (MovecraftLocation tloc : craft.getHitBox()) {
                         if (tloc.equals(mloc)) {
-                            player.sendMessage(Text.of(I18nSupport.getInternationalisedString("BLOCK IS PART OF A PILOTED CRAFT")));
+                            player.sendMessage(Text.of("BLOCK IS PART OF A PILOTED CRAFT"));
                             transaction.setValid(false);
                         }
                     }

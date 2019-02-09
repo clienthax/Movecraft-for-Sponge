@@ -5,7 +5,6 @@ import io.github.pulverizer.movecraft.config.Settings;
 import io.github.pulverizer.movecraft.craft.Craft;
 import io.github.pulverizer.movecraft.craft.CraftManager;
 import io.github.pulverizer.movecraft.events.CraftDetectEvent;
-import io.github.pulverizer.movecraft.localisation.I18nSupport;
 import org.spongepowered.api.block.BlockSnapshot;
 import org.spongepowered.api.block.BlockTypes;
 import org.spongepowered.api.block.tileentity.Sign;
@@ -117,7 +116,7 @@ public final class CruiseSign {
         if (player.hasPermission("movecraft.cruisesign") || !Settings.RequireCreatePerm) {
             return;
         }
-        player.sendMessage(Text.of(I18nSupport.getInternationalisedString("Insufficient Permissions")));
+        player.sendMessage(Text.of("Insufficient Permissions"));
         event.setCancelled(true);
     }
 }
