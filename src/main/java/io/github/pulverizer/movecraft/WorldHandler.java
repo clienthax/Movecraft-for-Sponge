@@ -42,56 +42,29 @@ public class WorldHandler {
         //*******************************************
         HashMap<Vector3i,Vector3i> rotatedBlockPositions = new HashMap<>();
         Rotation counterRotation = rotation == Rotation.CLOCKWISE ? Rotation.ANTICLOCKWISE : Rotation.CLOCKWISE;
+        Map<Vector3i, Collection<ScheduledBlockUpdate>> updates = new HashMap<>();
         for(MovecraftLocation newLocation : craft.getHitBox()){
             rotatedBlockPositions.put(MathUtils.rotateVec(counterRotation, newLocation.subtract(originPoint)).add(originPoint), newLocation);
+            updates.put(MathUtils.rotateVec(counterRotation, newLocation.subtract(originPoint)).add(originPoint), nativeWorld.getLocation(MathUtils.rotateVec(counterRotation, newLocation.subtract(originPoint)).add(originPoint)).getScheduledUpdates());
+
         }
 
-        //*******************************************
-        //*   Step three: Translate all the blocks  *
-        //*******************************************
-        // blockedByWater=false means an ocean-going vessel
-        //TODO: Simplify
-        //TODO: go by chunks
-        //TODO: Don't move unnecessary blocks
-        //get the blocks and rotate them
+        //get the old blocks and rotate them
         HashMap<Vector3i,BlockSnapshot> blockData = new HashMap<>();
         for(Vector3i blockPosition : rotatedBlockPositions.keySet()){
             blockData.put(blockPosition,nativeWorld.createSnapshot(blockPosition));
         }
-        //create the new block
-        for(Map.Entry<Vector3i,BlockSnapshot> entry : blockData.entrySet()) {
-            setBlockFast(nativeWorld, rotatedBlockPositions.get(entry.getKey()), rotation, entry.getValue());
-        }
 
-        //*******************************************
-        //*   Step five: Destroy the leftovers      *
-        //*******************************************
-        //TODO: add support for pass-through
-        Collection<Vector3i> deleteBlockPositions =  CollectionUtils.filter(rotatedBlockPositions.keySet(),rotatedBlockPositions.values());
-        for(Vector3i blockPosition : deleteBlockPositions){
+        //remove the old blocks from the world
+        for (Vector3i blockPosition : rotatedBlockPositions.keySet()) {
+            nativeWorld.getLocation(blockPosition).getScheduledUpdates().forEach(update -> nativeWorld.getLocation(blockPosition).removeScheduledUpdate(update));
             setBlockFast(nativeWorld, blockPosition, BlockSnapshot.builder().blockState(BlockTypes.AIR.getDefaultState()).world(nativeWorld.getProperties()).position(blockPosition).build());
         }
-        //*******************************************
-        //*       Step seven: Send to players       *
-        //*******************************************
-        List<Chunk> chunks = new ArrayList<>();
-        for(Vector3i blockPosition : rotatedBlockPositions.values()) {
-            nativeWorld.getChunkAtBlock(blockPosition).ifPresent(
-                    chunk -> {
-                        if (!chunks.contains(chunk)) {
-                            chunks.add(chunk);
-                        }
-                    }
-            );
-        }
-        for(Vector3i blockPosition : deleteBlockPositions){
-            nativeWorld.getChunkAtBlock(blockPosition).ifPresent(
-                    chunk -> {
-                        if (!chunks.contains(chunk)) {
-                            chunks.add(chunk);
-                        }
-                    }
-            );
+
+        //create the new blocks
+        for(Map.Entry<Vector3i,BlockSnapshot> entry : blockData.entrySet()) {
+            setBlockFast(nativeWorld, rotatedBlockPositions.get(entry.getKey()), rotation, entry.getValue());
+            updates.get(entry.getKey()).forEach(update -> nativeWorld.getLocation(rotatedBlockPositions.get(entry.getKey())).addScheduledUpdate(update.getPriority(), update.getTicks()));
         }
     }
 
@@ -102,24 +75,19 @@ public class WorldHandler {
 
         //A craftTranslateCommand should only occur if the craft is moving to a valid position
         //*******************************************
-        //*      Step one: Convert to Positions     *
+        //*          Convert to Positions           *
         //*******************************************
         List<Vector3i> blockPositions = new ArrayList<>();
         for(MovecraftLocation movecraftLocation : craft.getHitBox()) {
             blockPositions.add(movecraftLocation);
         }
 
-        //*******************************************
-        //*   Step three: Translate all the blocks  *
-        //*******************************************
-        // blockedByWater=false means an ocean-going vessel
-        //TODO: Simplify
-        //TODO: go by chunks
-        //TODO: Don't move unnecessary blocks
-        //get the blocks
+        //get the old blocks
         List<BlockSnapshot> blocks = new ArrayList<>();
+        List<Collection<ScheduledBlockUpdate>> updates = new ArrayList<>();
         for(Vector3i blockPosition : blockPositions){
             blocks.add(nativeWorld.createSnapshot(blockPosition));
+            updates.add(nativeWorld.getLocation(blockPosition).getScheduledUpdates());
         }
         //translate the blockPositions
         List<Vector3i> newBlockPositions = new ArrayList<>();
@@ -127,54 +95,27 @@ public class WorldHandler {
             newBlockPositions.add(blockPosition.add(translateBlockVector));
         }
 
-        //create the new block
-        for(int i = 0; i<newBlockPositions.size(); i++) {
-            setBlockFast(nativeWorld, newBlockPositions.get(i), blocks.get(i));
-        }
-        //*******************************************
-        //*   Step five: Destroy the leftovers      *
-        //*******************************************
-        Collection<Vector3i> deleteBlockPositions =  CollectionUtils.filter(blockPositions, newBlockPositions);
-        for(Vector3i blockPosition : deleteBlockPositions){
+        //remove the old blocks from the world
+        for (Vector3i blockPosition : blockPositions) {
+            nativeWorld.getLocation(blockPosition).getScheduledUpdates().forEach(update -> nativeWorld.getLocation(blockPosition).removeScheduledUpdate(update));
             setBlockFast(nativeWorld, blockPosition, BlockSnapshot.builder().blockState(BlockTypes.AIR.getDefaultState()).world(nativeWorld.getProperties()).position(blockPosition).build());
         }
 
-        //*******************************************
-        //*       Step seven: Send to players       *
-        //*******************************************
-        List<Chunk> chunks = new ArrayList<>();
-        for(Vector3i blockPosition : newBlockPositions) {
-            nativeWorld.getChunkAtBlock(blockPosition).ifPresent(
-                    chunk -> {
-                        if (!chunks.contains(chunk)) {
-                            chunks.add(chunk);
-                        }
-                    }
-            );
+        //create the new blocks
+        for(int i = 0; i<newBlockPositions.size(); i++) {
+            setBlockFast(nativeWorld, newBlockPositions.get(i), blocks.get(i));
+            int finalI = i;
+            updates.get(i).forEach(update -> nativeWorld.getLocation(newBlockPositions.get(finalI)).addScheduledUpdate(update.getPriority(), update.getTicks()));
         }
-        for(Vector3i blockPosition : deleteBlockPositions){
-            nativeWorld.getChunkAtBlock(blockPosition).ifPresent(
-                    chunk -> {
-                        if (!chunks.contains(chunk)) {
-                            chunks.add(chunk);
-                        }
-                    }
-            );
-        }
-        //sendToPlayers(chunks.toArray(new Chunk[0]));
 
         craft.setHitBox(newHitBox);
     }
 
     private void setBlockFast(World world, Vector3i blockPosition, BlockSnapshot block) {
-        Collection<ScheduledBlockUpdate> updates = block.getLocation().get().getScheduledUpdates();
-        updates.forEach(update -> block.getLocation().get().removeScheduledUpdate(update));
         world.getLocation(blockPosition).restoreSnapshot(block, true, BlockChangeFlags.NONE);
 
     }
     private void setBlockFast(World world, Vector3i blockPosition, Rotation rotation, BlockSnapshot block) {
-        Collection<ScheduledBlockUpdate> updates = block.getLocation().get().getScheduledUpdates();
-        updates.forEach(update -> block.getLocation().get().removeScheduledUpdate(update));
         BlockSnapshot rotatedBlock = rotateBlock(rotation, block);
 
         world.getLocation(blockPosition).restoreSnapshot(rotatedBlock, true, BlockChangeFlags.NONE);
@@ -182,14 +123,10 @@ public class WorldHandler {
     }
 
     public void setBlockFast(Location<World> location, BlockSnapshot block){
-        Collection<ScheduledBlockUpdate> updates = block.getLocation().get().getScheduledUpdates();
-        updates.forEach(update -> block.getLocation().get().removeScheduledUpdate(update));
         location.restoreSnapshot(block, true, BlockChangeFlags.NONE);
     }
 
     public void setBlockFast(Location<World> location, Rotation rotation, BlockSnapshot block) {
-        Collection<ScheduledBlockUpdate> updates = block.getLocation().get().getScheduledUpdates();
-        updates.forEach(update -> block.getLocation().get().removeScheduledUpdate(update));
 
         BlockSnapshot rotatedBlock = rotateBlock(rotation, block);
         location.restoreSnapshot(rotatedBlock, true, BlockChangeFlags.NONE);
