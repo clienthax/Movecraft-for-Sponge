@@ -51,7 +51,13 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 
-@Plugin(id = "movecraft", name = "Movecraft for Sponge", description = "Movecraft for Sponge", version = "0.0.0")
+@Plugin(
+        id = "movecraft",
+        name = "Movecraft for Sponge",
+        description = "Movecraft for Sponge",
+        version = "0.1.0",
+        url = "https://github.com/Pulverizer/Movecraft-for-Sponge",
+        authors = {"BernardisGood", "https://github.com/Pulverizer/Movecraft-for-Sponge/graphs/contributors"})
 public class Movecraft {
 
     private static Movecraft instance;
@@ -185,15 +191,7 @@ public class Movecraft {
         } catch (IOException error) {
             error.printStackTrace();
         }
-/*
-        String[] localisations = {"en", "cz", "nl"};
-        for (String s : localisations) {
-            if (!new File(getConfigDir()
-                    + "/localisation/movecraftlang_" + s + ".properties").exists()) {
-                this.saveResource("localisation/movecraftlang_" + s + ".properties", false);
-            }
-        }
-*/
+
         if (shuttingDown && Settings.IGNORE_RESET) {
             logger.error("Startup - Error - Reload error");
             logger.info("Startup - Error - Disable warning for reload");
@@ -234,7 +232,7 @@ public class Movecraft {
             Sponge.getEventManager().registerListeners(this, new SubcraftRotateSign());
             Sponge.getEventManager().registerListeners(this, new TeleportSign());
 
-            logger.info("Movecraft Enabled. Version: " + "0.0.1");
+            logger.info("Movecraft Enabled. Version: " + "0.1.0");
         }
     }
 

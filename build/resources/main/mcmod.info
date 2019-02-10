@@ -2,8 +2,13 @@
     {
         "modid": "movecraft",
         "name": "Movecraft for Sponge",
-        "version": "0.0.0",
+        "version": "0.1.0",
         "description": "Movecraft for Sponge",
+        "url": "https://github.com/Pulverizer/Movecraft-for-Sponge",
+        "authorList": [
+            "BernardisGood",
+            "https://github.com/Pulverizer/Movecraft-for-Sponge/graphs/contributors"
+        ],
         "dependencies": [
             "spongeapi@7.1.0"
         ],
