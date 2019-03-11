@@ -732,9 +732,9 @@ public class AsyncManager implements Runnable {
                                     if ((c.getCannonDirector() != null) && inRange) {
                                         Player p = c.getCannonDirector();
                                         if (p.getItemInHand(HandTypes.MAIN_HAND).get().getType() == Settings.PilotTool) {
-                                            Vector3d tv = tnt.getVelocity();
-                                            double speed = tv.length(); // store the speed to add it back in later, since all the values we will be using are "normalized", IE: have a speed of 1
-                                            tv = tv.normalize(); // you normalize it for comparison with the new direction to see if we are trying to steer too far
+                                            Vector3d tntVelocity = tnt.getVelocity();
+                                            double speed = tntVelocity.length(); // store the speed to add it back in later, since all the values we will be using are "normalized", IE: have a speed of 1
+                                            tntVelocity = tntVelocity.normalize(); // you normalize it for comparison with the new direction to see if we are trying to steer too far
 
                                             BlockSnapshot targetBlock = null;
                                             Optional<BlockRayHit<World>> blockRayHit = BlockRay
@@ -756,23 +756,23 @@ public class AsyncManager implements Runnable {
                                                 targetVector = targetBlock.getLocation().get().getPosition().sub(tnt.getLocation().getPosition());
                                                 targetVector = targetVector.normalize();
                                             }
-                                            if (targetVector.getX() - tv.getX() > 0.7) {
-                                                tv.add(0.7, 0, 0);
-                                            } else if (targetVector.getX() - tv.getX() < -0.7) {
-                                                tv.sub(0.7, 0, 0);
+                                            if (targetVector.getX() - tntVelocity.getX() > 0.7) {
+                                                tntVelocity.add(0.7, 0, 0);
+                                            } else if (targetVector.getX() - tntVelocity.getX() < -0.7) {
+                                                tntVelocity.sub(0.7, 0, 0);
                                             } else {
-                                                tv = new Vector3d(targetVector.getX(), tv.getY(), tv.getZ());
+                                                tntVelocity = new Vector3d(targetVector.getX(), tntVelocity.getY(), tntVelocity.getZ());
                                             }
-                                            if (targetVector.getZ() - tv.getZ() > 0.7) {
-                                                tv.add(0, 0, 0.7);
-                                            } else if (targetVector.getZ() - tv.getZ() < -0.7) {
-                                                tv.sub(0, 0, 0.7);
+                                            if (targetVector.getZ() - tntVelocity.getZ() > 0.7) {
+                                                tntVelocity.add(0, 0, 0.7);
+                                            } else if (targetVector.getZ() - tntVelocity.getZ() < -0.7) {
+                                                tntVelocity.sub(0, 0, 0.7);
                                             } else {
-                                                tv = new Vector3d(tv.getX(), tv.getY(), targetVector.getZ());
+                                                tntVelocity = new Vector3d(tntVelocity.getX(), tntVelocity.getY(), targetVector.getZ());
                                             }
-                                            tv = tv.mul(speed); // put the original speed back in, but now along a different trajectory
-                                            tv = new Vector3d(tv.getX(), tnt.getVelocity().getY(), tv.getZ()); // you leave the original Y (or vertical axis) trajectory as it was
-                                            tnt.setVelocity(tv);
+                                            tntVelocity = tntVelocity.mul(speed); // put the original speed back in, but now along a different trajectory
+                                            tntVelocity = new Vector3d(tntVelocity.getX(), tnt.getVelocity().getY(), tntVelocity.getZ()); // you leave the original Y (or vertical axis) trajectory as it was
+                                            tnt.setVelocity(tntVelocity);
                                         }
                                     }
                                 }
