@@ -249,12 +249,10 @@ public class Movecraft {
                 .execute(asyncManager)
                 .intervalTicks(1)
                 .submit(this);
-        //asyncManager.runTaskTimer(this, 0, 1);
         Task.builder()
                 .execute(MapUpdateManager.getInstance())
                 .intervalTicks(1)
                 .submit(this);
-        //MapUpdateManager.getInstance().runTaskTimer(this, 0, 1);
     }
 
     public WorldHandler getWorldHandler(){

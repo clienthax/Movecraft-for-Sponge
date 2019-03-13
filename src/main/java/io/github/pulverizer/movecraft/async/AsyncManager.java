@@ -20,8 +20,11 @@ import org.spongepowered.api.Sponge;
 import org.spongepowered.api.block.BlockSnapshot;
 import org.spongepowered.api.block.BlockType;
 import org.spongepowered.api.block.BlockTypes;
+import org.spongepowered.api.block.tileentity.carrier.Dispenser;
+import org.spongepowered.api.data.DataTransactionResult;
 import org.spongepowered.api.data.key.Keys;
 import org.spongepowered.api.data.type.HandTypes;
+import org.spongepowered.api.data.value.mutable.MapValue;
 import org.spongepowered.api.effect.sound.SoundTypes;
 import org.spongepowered.api.entity.Entity;
 import org.spongepowered.api.entity.EntityTypes;
@@ -50,7 +53,7 @@ public class AsyncManager implements Runnable {
     private final HashMap<Craft, HashMap<Craft, Long>> recentContactTracking = new HashMap<>();
     private final BlockingQueue<AsyncTask> finishedAlgorithms = new LinkedBlockingQueue<>();
     private final HashSet<Craft> clearanceSet = new HashSet<>();
-    private HashMap<SmallFireball, Long> FireballTracking = new HashMap<>();
+    private HashMap<SmallFireball, HashMap<Long, Vector3d>> FireballTracking = new HashMap<>();
     private long lastTracerUpdate = 0;
     private long lastFireballCheck = 0;
     private long lastTNTContactCheck = 0;
@@ -568,7 +571,7 @@ public class AsyncManager implements Runnable {
     private void processFireballs() {
         long ticksElapsed = (System.currentTimeMillis() - lastFireballCheck) / 50;
 
-        if (ticksElapsed > 3) {
+        if (ticksElapsed > 0) {
             for (World w : Sponge.getServer().getWorlds()) {
                 if (w != null) {
                     for (Entity entity : w.getEntities(entity -> entity.getType().equals(EntityTypes.SMALL_FIREBALL))) {
@@ -577,108 +580,128 @@ public class AsyncManager implements Runnable {
                             fireball = (SmallFireball) entity;
                         if (fireball == null)
                             continue;
-                        if (!(fireball.getShooter() instanceof Living)) {
-                            // means
-                            // it
-                            // was
-                            // launched
-                            // by
-                            // a
-                            // dispenser
-                            if (w.getPlayers().size() > 0) {
-                                Player p = w.getPlayers().iterator().next();
 
-                                if (!FireballTracking.containsKey(fireball)) {
-                                    Craft c = fastNearestCraftToLoc(fireball.getLocation());
-                                    if (c != null) {
-                                        int distX = c.getHitBox().getMinX() + c.getHitBox().getMaxX();
-                                        distX = distX >> 1;
-                                        distX = Math.abs(distX - fireball.getLocation().getBlockX());
-                                        int distY = c.getHitBox().getMinY() + c.getHitBox().getMaxY();
-                                        distY = distY >> 1;
-                                        distY = Math.abs(distY - fireball.getLocation().getBlockY());
-                                        int distZ = c.getHitBox().getMinZ() + c.getHitBox().getMaxZ();
-                                        distZ = distZ >> 1;
-                                        distZ = Math.abs(distZ - fireball.getLocation().getBlockZ());
-                                        boolean inRange = (distX < 50) && (distY < 50) && (distZ < 50);
-                                        if ((c.getAADirector() != null) && inRange) {
-                                            p = c.getAADirector();
-                                            if (p.getItemInHand(HandTypes.MAIN_HAND).get().getType() == Settings.PilotTool) {
-                                                Vector3d fv = fireball.getVelocity();
-                                                double speed = fv.length(); // store the speed to add it back in later, since all the values we will be using are "normalized", IE: have a speed of 1
-                                                fv = fv.normalize(); // you normalize it for comparison with the new direction to see if we are trying to steer too far
+                        if (fireball.getShooter() instanceof Dispenser) {
+                            // means it was launched by a dispenser
 
-                                                BlockSnapshot targetBlock = null;
-                                                Optional<BlockRayHit<World>> blockRayHit = BlockRay
-                                                        .from(p)
-                                                        .distanceLimit(p.getViewDistance() * 16)
-                                                        .skipFilter(hit -> transparent.contains(hit.getLocation().getBlockType()))
-                                                        .stopFilter(BlockRay.allFilter())
-                                                        .build()
-                                                        .end();
+                            if (!FireballTracking.containsKey(fireball)) {
+                                //TODO: SEE HACK-PATCH BELOW! Moved this higher to allow hack-patch to work. Move back after!!!
+                                Vector3d fireballVelocity = fireball.getVelocity();
 
-                                                if (blockRayHit.isPresent())
-                                                    // Target is Block :)
-                                                    targetBlock = blockRayHit.get().getLocation().createSnapshot();
+                                Craft c = fastNearestCraftToLoc(fireball.getLocation());
+                                if (c != null) {
+                                    int distX = c.getHitBox().getMinX() + c.getHitBox().getMaxX();
+                                    distX = distX >> 1;
+                                    distX = Math.abs(distX - fireball.getLocation().getBlockX());
+                                    int distY = c.getHitBox().getMinY() + c.getHitBox().getMaxY();
+                                    distY = distY >> 1;
+                                    distY = Math.abs(distY - fireball.getLocation().getBlockY());
+                                    int distZ = c.getHitBox().getMinZ() + c.getHitBox().getMaxZ();
+                                    distZ = distZ >> 1;
+                                    distZ = Math.abs(distZ - fireball.getLocation().getBlockZ());
+                                    boolean inRange = (distX < 50) && (distY < 50) && (distZ < 50);
+                                    if ((c.getAADirector() != null) && inRange) {
+                                        Player p = c.getAADirector();
+                                        if (p.getItemInHand(HandTypes.MAIN_HAND).get().getType() == Settings.PilotTool) {
 
-                                                Vector3d targetVector;
-                                                if (targetBlock == null) { // the player is looking at nothing, shoot in that general direction
-                                                    targetVector = p.getHeadRotation();
-                                                } else { // shoot directly at the block the player is looking at (IE: with convergence)
-                                                    targetVector = targetBlock.getLocation().get().getPosition().sub(fireball.getLocation().getPosition());
-                                                    targetVector = targetVector.normalize();
-                                                }
-                                                if (targetVector.getX() - fv.getX() > 0.5) {
-                                                    fv.add(0.5, 0, 0);
-                                                } else if (targetVector.getX() - fv.getX() < -0.5) {
-                                                    fv.sub(0.5, 0, 0);
-                                                } else {
-                                                    fv = new Vector3d(targetVector.getX(), fv.getY(), fv.getZ());
-                                                }
-                                                if (targetVector.getY() - fv.getY() > 0.5) {
-                                                    fv.add(0, 0.5, 0);
-                                                } else if (targetVector.getY() - fv.getY() < -0.5) {
-                                                    fv.sub(0, 0.5, 0);
-                                                } else {
-                                                    fv = new Vector3d(fv.getX(), targetVector.getY(), fv.getZ());
-                                                }
-                                                if (targetVector.getZ() - fv.getZ() > 0.5) {
-                                                    fv.add(0, 0, 0.5);
-                                                } else if (targetVector.getZ() - fv.getZ() < -0.5) {
-                                                    fv.sub(0, 0, 0.5);
-                                                } else {
-                                                    fv = new Vector3d(fv.getX(), fv.getY(), targetVector.getZ());
-                                                }
-                                                fv = fv.mul(speed); // put the original speed back in, but now along a different trajectory
-                                                fireball.setVelocity(fv);
-                                                fireball.setRotation(fv);
+                                            //TODO: SEE HACK-PATCH BELOW! Moving this higher to allow hack-patch to work. Move back after!!!
+                                            //Vector3d fireballVelocity = fireball.getVelocity();
+                                            double speed = fireballVelocity.length(); // store the speed to add it back in later, since all the values we will be using are "normalized", IE: have a speed of 1
+                                            fireballVelocity = fireballVelocity.normalize(); // you normalize it for comparison with the new direction to see if we are trying to steer too far
+                                            Movecraft.getInstance().getLogger().info("Normalised Velocity: " + fireballVelocity.toString());
+
+                                            BlockSnapshot targetBlock = null;
+                                            Optional<BlockRayHit<World>> blockRayHit = BlockRay
+                                                    .from(p)
+                                                    .distanceLimit(p.getViewDistance() * 16)
+                                                    .skipFilter(hit -> transparent.contains(hit.getLocation().getBlockType()))
+                                                    .stopFilter(BlockRay.allFilter())
+                                                    .build()
+                                                    .end();
+
+                                            if (blockRayHit.isPresent()) {
+                                                // Target is Block :)
+                                                targetBlock = blockRayHit.get().getLocation().createSnapshot();
                                             }
-                                        } else {
-                                            p = c.getNotificationPlayer();
+
+                                            Vector3d targetVector;
+                                            if (targetBlock == null) { // the player is looking at nothing, shoot in that general direction
+                                                targetVector = p.getHeadRotation();
+                                            } else { // shoot directly at the block the player is looking at (IE: with convergence)
+                                                targetVector = targetBlock.getLocation().get().getPosition().sub(fireball.getLocation().getPosition());
+                                                targetVector = targetVector.normalize();
+                                                Movecraft.getInstance().getLogger().info("Normalised Target Vector: " + targetVector.toString());
+                                            }
+
+                                            if (targetVector.getX() - fireballVelocity.getX() > 0.5) {
+                                                Movecraft.getInstance().getLogger().info("IF Fired!");
+                                                fireballVelocity = fireballVelocity.add(0.5, 0, 0);
+                                            } else if (targetVector.getX() - fireballVelocity.getX() < -0.5) {
+                                                Movecraft.getInstance().getLogger().info("IF Fired!");
+                                                fireballVelocity = fireballVelocity.sub(0.5, 0, 0);
+                                            } else {
+                                                fireballVelocity = new Vector3d(targetVector.getX(), fireballVelocity.getY(), fireballVelocity.getZ());
+                                            }
+
+                                            if (targetVector.getY() - fireballVelocity.getY() > 0.5) {
+                                                Movecraft.getInstance().getLogger().info("IF Fired!");
+                                                fireballVelocity = fireballVelocity.add(0, 0.5, 0);
+                                            } else if (targetVector.getY() - fireballVelocity.getY() < -0.5) {
+                                                Movecraft.getInstance().getLogger().info("IF Fired!");
+                                                fireballVelocity = fireballVelocity.sub(0, 0.5, 0);
+                                            } else {
+                                                fireballVelocity = new Vector3d(fireballVelocity.getX(), targetVector.getY(), fireballVelocity.getZ());
+                                            }
+
+                                            if (targetVector.getZ() - fireballVelocity.getZ() > 0.5) {
+                                                Movecraft.getInstance().getLogger().info("IF Fired!");
+                                                fireballVelocity = fireballVelocity.add(0, 0, 0.5);
+                                            } else if (targetVector.getZ() - fireballVelocity.getZ() < -0.5) {
+                                                Movecraft.getInstance().getLogger().info("IF Fired!");
+                                                fireballVelocity = fireballVelocity.sub(0, 0, 0.5);
+                                            } else {
+                                                fireballVelocity = new Vector3d(fireballVelocity.getX(), fireballVelocity.getY(), targetVector.getZ());
+                                            }
+
+                                            Movecraft.getInstance().getLogger().info("New Normalised Velocity: " + fireballVelocity.toString());
+                                            fireballVelocity = fireballVelocity.mul(speed); // put the original speed back in, but now along a different trajectory
+
+                                            fireball.setVelocity(fireballVelocity);
                                         }
                                     }
-                                    // give it a living shooter, then set the
-                                    // fireball to be deleted
-                                    fireball.setShooter(p);
-                                    FireballTracking.put(fireball, System.currentTimeMillis());
                                 }
+
+                                //TODO: Remove hacky Vector data. Waiting on fix of SpongeAPI: https://github.com/SpongePowered/SpongeAPI/issues/1981
+                                HashMap<Long, Vector3d> timeAndAcceleration = new HashMap<>();
+                                timeAndAcceleration.put(System.currentTimeMillis(), fireballVelocity.mul(5));
+                                FireballTracking.put(fireball, timeAndAcceleration);
                             }
                         }
                     }
                 }
             }
 
-            int timelimit = 20 * Settings.FireballLifespan * 50;
-            // then, removed any exploded TNT from tracking
+            int timeLimit = 20 * Settings.FireballLifespan * 50;
             Iterator<SmallFireball> fireballI = FireballTracking.keySet().iterator();
             while (fireballI.hasNext()) {
                 SmallFireball fireball = fireballI.next();
                 if (fireball != null)
-                    if (System.currentTimeMillis() - FireballTracking.get(fireball) > timelimit) {
+                    //remove any dead Fireballs from tracking
+                    if (System.currentTimeMillis() - FireballTracking.get(fireball).keySet().iterator().next() > timeLimit) {
                         fireball.remove();
                         fireballI.remove();
                     }
+
+                    //TODO: More of the hack-patch that shall not be mentioned.
+                    try {
+                        fireball.setVelocity(FireballTracking.get(fireball).entrySet().iterator().next().getValue());
+                    } catch (NullPointerException e) {}
+
+
             }
+
+            if (Settings.Debug && FireballTracking.size() > 0)
+                Movecraft.getInstance().getLogger().info("Tracking " + FireballTracking.size() + " Fireballs.");
 
             lastFireballCheck = System.currentTimeMillis();
         }
@@ -756,22 +779,22 @@ public class AsyncManager implements Runnable {
                                                 targetVector = targetBlock.getLocation().get().getPosition().sub(tnt.getLocation().getPosition());
                                                 targetVector = targetVector.normalize();
                                             }
+                                            //leave the original Y (or vertical axis) trajectory as it was
                                             if (targetVector.getX() - tntVelocity.getX() > 0.7) {
-                                                tntVelocity.add(0.7, 0, 0);
+                                                tntVelocity = tntVelocity.add(0.7, 0, 0);
                                             } else if (targetVector.getX() - tntVelocity.getX() < -0.7) {
-                                                tntVelocity.sub(0.7, 0, 0);
+                                                tntVelocity = tntVelocity.sub(0.7, 0, 0);
                                             } else {
                                                 tntVelocity = new Vector3d(targetVector.getX(), tntVelocity.getY(), tntVelocity.getZ());
                                             }
                                             if (targetVector.getZ() - tntVelocity.getZ() > 0.7) {
-                                                tntVelocity.add(0, 0, 0.7);
+                                                tntVelocity = tntVelocity.add(0, 0, 0.7);
                                             } else if (targetVector.getZ() - tntVelocity.getZ() < -0.7) {
-                                                tntVelocity.sub(0, 0, 0.7);
+                                                tntVelocity = tntVelocity.sub(0, 0, 0.7);
                                             } else {
                                                 tntVelocity = new Vector3d(tntVelocity.getX(), tntVelocity.getY(), targetVector.getZ());
                                             }
                                             tntVelocity = tntVelocity.mul(speed); // put the original speed back in, but now along a different trajectory
-                                            tntVelocity = new Vector3d(tntVelocity.getX(), tnt.getVelocity().getY(), tntVelocity.getZ()); // you leave the original Y (or vertical axis) trajectory as it was
                                             tnt.setVelocity(tntVelocity);
                                         }
                                     }
@@ -786,19 +809,24 @@ public class AsyncManager implements Runnable {
             // then, removed any exploded TNT from tracking
             TNTTracking.keySet().removeIf(tnt -> (tnt.getFuseData().ticksRemaining().get() <= 0));
 
-            // now check to see if any has abruptly changed velocity, and should
-            // explode
-            for (PrimedTNT tnt : TNTTracking.keySet()) {
-                double vel = tnt.getVelocity().lengthSquared();
-                if (vel < TNTTracking.get(tnt) / 10.0) {
-                    tnt.detonate();
-                    TNTTracking.remove(tnt);
-                } else {
-                    // update the tracking with the new velocity so gradual
-                    // changes do not make TNT explode
-                    TNTTracking.put(tnt, vel);
+            // now check to see if any has abruptly changed velocity, and should explode
+            if (!TNTTracking.isEmpty()) {
+
+                for (PrimedTNT tnt : TNTTracking.keySet()) {
+                    double vel = tnt.getVelocity().lengthSquared();
+                    if (vel < TNTTracking.get(tnt) / 10.0) {
+                        tnt.detonate();
+                        TNTTracking.remove(tnt);
+                    } else {
+                        // update the tracking with the new velocity so gradual
+                        // changes do not make TNT explode
+                        TNTTracking.put(tnt, vel);
+                    }
                 }
             }
+
+            if (Settings.Debug && TNTTracking.size() > 0)
+                Movecraft.getInstance().getLogger().info("Tracking " + TNTTracking.size() + " TNT.");
 
             lastTNTContactCheck = System.currentTimeMillis();
         }
