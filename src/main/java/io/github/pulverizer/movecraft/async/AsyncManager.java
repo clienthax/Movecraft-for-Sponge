@@ -404,22 +404,22 @@ public class AsyncManager implements Runnable {
             // if its in the FlyBlocks, total up the number
             // of them
             for (MovecraftLocation l : pcraft.getHitBox()) {
-                BlockType blockID = w.getBlock(l.getX(), l.getY(), l.getZ()).getType();
+                BlockType blockType = w.getBlock(l.getX(), l.getY(), l.getZ()).getType();
                 for (List<BlockType> flyBlockDef : pcraft.getType().getFlyBlocks().keySet()) {
-                    if (flyBlockDef.contains(blockID)) {
+                    if (flyBlockDef.contains(blockType)) {
                         foundFlyBlocks.merge(flyBlockDef, 1, (a, b) -> a + b);
                     }
                 }
                 for (List<BlockType> moveBlockDef : pcraft.getType().getMoveBlocks().keySet()) {
-                    if (moveBlockDef.contains(blockID)) {
+                    if (moveBlockDef.contains(blockType)) {
                         foundMoveBlocks.merge(moveBlockDef, 1, (a, b) -> a + b);
                     }
                 }
 
-                if (blockID != BlockTypes.AIR) {
+                if (blockType != BlockTypes.AIR) {
                     totalNonAirBlocks++;
                 }
-                if (blockID != BlockTypes.AIR && blockID != BlockTypes.FLOWING_WATER && blockID != BlockTypes.WATER) {
+                if (blockType != BlockTypes.AIR && blockType != BlockTypes.FLOWING_WATER && blockType != BlockTypes.WATER) {
                     totalNonAirWaterBlocks++;
                 }
             }
