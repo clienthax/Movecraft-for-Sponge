@@ -30,7 +30,7 @@ public class WorldHandler {
             Movecraft.getInstance().getLogger().info("Failed to move Entity of type: " + entity.getType().getName());
     }
 
-    public void rotateCraft(Craft craft, MovecraftLocation originPoint, Rotadwtion rotation) {
+    public void rotateCraft(Craft craft, MovecraftLocation originPoint, Rotation rotation) {
 
         World nativeWorld = craft.getW();
 
