@@ -17,12 +17,25 @@ import io.github.pulverizer.movecraft.utils.CollectionUtils;
 
 import java.util.*;
 
+/**
+ * An interface for all interactions with the World.
+ */
+
 public class WorldHandler {
 
+    /**
+     * Constructs an Instance of the WorldHandler.
+     */
     public WorldHandler() {}
 
-    public void moveEntity(Entity entity, Vector3d newLocation, float yaw){
-        boolean entityMoved = entity.setLocationAndRotation(new Location<>(entity.getWorld(), newLocation), entity.getRotation().add(0, yaw, 0));
+    /**
+     * Moves an Entity to the defined Location in the World that the Entity currently resides and applies to the Entity the defined Rotation.
+     * @param entity The target Entity.
+     * @param newLocation The location to move the Entity to.
+     * @param rotation The Rotation to apply to the Entity.
+     */
+    public void moveEntity(Entity entity, Vector3d newLocation, float rotation){
+        boolean entityMoved = entity.setLocationAndRotation(new Location<>(entity.getWorld(), newLocation), entity.getRotation().add(0, rotation, 0));
 
         if (Settings.Debug && entityMoved)
             Movecraft.getInstance().getLogger().info("Moved Entity of type: " + entity.getType().getName());

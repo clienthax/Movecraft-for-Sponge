@@ -22,9 +22,9 @@ public class MathUtils {
      * Checks if a given <code>Location</code> is within some distance, <code>distance</code>, from a given <code>HitBox</code>
      * @param hitBox the hitbox to check
      * @param location the location to check
+     * @param distance
      * @return True if <code>location</code> is less or equal to 3 blocks from <code>craft</code>
      */
-
     public static boolean locationNearHitBox(final HashHitBox hitBox, final Location location, double distance) {
         return !hitBox.isEmpty() &&
                 location.getX() >= hitBox.getMinX() - distance &&

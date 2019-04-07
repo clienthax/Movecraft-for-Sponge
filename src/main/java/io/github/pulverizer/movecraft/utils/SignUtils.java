@@ -9,9 +9,11 @@ import org.spongepowered.api.data.key.Keys;
 import org.spongepowered.api.util.rotation.Rotation;
 
 public class SignUtils {
+
     /**
+     *
      * @param sign
-     * @return
+     * @return The Rotation of the Sign.
      */
     public static Rotation getFacing(Sign sign) {
         BlockSnapshot block = sign.getLocation().createSnapshot();
