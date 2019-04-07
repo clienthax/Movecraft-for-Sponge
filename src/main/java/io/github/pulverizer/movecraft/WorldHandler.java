@@ -55,12 +55,12 @@ public class WorldHandler {
         //remove the old blocks from the world
         for (Vector3i blockPosition : rotatedBlockPositions.keySet()) {
             nativeWorld.getLocation(blockPosition).getScheduledUpdates().forEach(update -> nativeWorld.getLocation(blockPosition).removeScheduledUpdate(update));
-            setBlockFast(nativeWorld, blockPosition, BlockSnapshot.builder().blockState(BlockTypes.AIR.getDefaultState()).world(nativeWorld.getProperties()).position(blockPosition).build(), craft.getSinking());
+            setBlockFast(nativeWorld, blockPosition, BlockSnapshot.builder().blockState(BlockTypes.AIR.getDefaultState()).world(nativeWorld.getProperties()).position(blockPosition).build());
         }
 
         //create the new blocks
         for(Map.Entry<Vector3i,BlockSnapshot> entry : blockData.entrySet()) {
-            setBlockFast(nativeWorld, rotatedBlockPositions.get(entry.getKey()), rotation, entry.getValue(), craft.getSinking());
+            setBlockFast(nativeWorld, rotatedBlockPositions.get(entry.getKey()), rotation, entry.getValue());
             updates.get(entry.getKey()).forEach(update -> nativeWorld.getLocation(rotatedBlockPositions.get(entry.getKey())).addScheduledUpdate(update.getPriority(), update.getTicks()));
         }
     }
@@ -95,12 +95,12 @@ public class WorldHandler {
         //remove the old blocks from the world
         for (Vector3i blockPosition : blockPositions) {
             nativeWorld.getLocation(blockPosition).getScheduledUpdates().forEach(update -> nativeWorld.getLocation(blockPosition).removeScheduledUpdate(update));
-            setBlockFast(nativeWorld, blockPosition, BlockSnapshot.builder().blockState(BlockTypes.AIR.getDefaultState()).world(nativeWorld.getProperties()).position(blockPosition).build(), craft.getSinking());
+            setBlockFast(nativeWorld, blockPosition, BlockSnapshot.builder().blockState(BlockTypes.AIR.getDefaultState()).world(nativeWorld.getProperties()).position(blockPosition).build());
         }
 
         //create the new blocks
         for(int i = 0; i<newBlockPositions.size(); i++) {
-            setBlockFast(nativeWorld, newBlockPositions.get(i), blocks.get(i), craft.getSinking());
+            setBlockFast(nativeWorld, newBlockPositions.get(i), blocks.get(i));
             int finalI = i;
             updates.get(i).forEach(update -> nativeWorld.getLocation(newBlockPositions.get(finalI)).addScheduledUpdate(update.getPriority(), update.getTicks()));
         }
@@ -108,44 +108,24 @@ public class WorldHandler {
         craft.setHitBox(newHitBox);
     }
 
-    private void setBlockFast(World world, Vector3i blockPosition, BlockSnapshot block, boolean isSinking) {
+    private void setBlockFast(World world, Vector3i blockPosition, BlockSnapshot block) {
 
-        if (!isSinking) {
-            world.getLocation(blockPosition).restoreSnapshot(block, true, BlockChangeFlags.NONE);
-        } else {
-            world.getLocation(blockPosition).restoreSnapshot(block, true, BlockChangeFlags.ALL);
-        }
-
+        world.getLocation(blockPosition).restoreSnapshot(block, true, BlockChangeFlags.NONE);
     }
-    private void setBlockFast(World world, Vector3i blockPosition, Rotation rotation, BlockSnapshot block, boolean isSinking) {
+
+    private void setBlockFast(World world, Vector3i blockPosition, Rotation rotation, BlockSnapshot block) {
         BlockSnapshot rotatedBlock = rotateBlock(rotation, block);
-
-        if (!isSinking) {
-            world.getLocation(blockPosition).restoreSnapshot(rotatedBlock, true, BlockChangeFlags.NONE);
-        } else {
-            world.getLocation(blockPosition).restoreSnapshot(rotatedBlock, true, BlockChangeFlags.ALL);
-        }
-
+        world.getLocation(blockPosition).restoreSnapshot(rotatedBlock, true, BlockChangeFlags.NONE);
     }
 
-    public void setBlockFast(Location<World> location, BlockSnapshot block, boolean isSinking){
-
-        if (!isSinking) {
-            location.restoreSnapshot(block, true, BlockChangeFlags.NONE);
-        } else {
-            location.restoreSnapshot(block, true, BlockChangeFlags.ALL);
-        }
+    public void setBlockFast(Location<World> location, BlockSnapshot block){
+        location.restoreSnapshot(block, true, BlockChangeFlags.NONE);
     }
 
-    public void setBlockFast(Location<World> location, Rotation rotation, BlockSnapshot block, boolean isSinking) {
+    public void setBlockFast(Location<World> location, Rotation rotation, BlockSnapshot block) {
 
         BlockSnapshot rotatedBlock = rotateBlock(rotation, block);
-
-        if (!isSinking) {
-            location.restoreSnapshot(rotatedBlock, true, BlockChangeFlags.NONE);
-        } else {
-            location.restoreSnapshot(rotatedBlock, true, BlockChangeFlags.ALL);
-        }
+        location.restoreSnapshot(rotatedBlock, true, BlockChangeFlags.NONE);
     }
 
     public BlockSnapshot rotateBlock(Rotation rotation, BlockSnapshot block) {

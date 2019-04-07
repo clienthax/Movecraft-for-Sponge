@@ -141,12 +141,12 @@ public class CraftRotateCommand extends UpdateCommand {
                 if (!craft.getPhaseBlocks().containsKey(location)) {
                     continue;
                 }
-                handler.setBlockFast(location.toSponge(craft.getW()), craft.getPhaseBlocks().get(location), craft.getSinking());
+                handler.setBlockFast(location.toSponge(craft.getW()), craft.getPhaseBlocks().get(location));
                 craft.getPhaseBlocks().remove(location);
             }
             for(MovecraftLocation location : originalLocations.boundingHitBox()){
                 if(!to.inBounds(location) && craft.getPhaseBlocks().containsKey(location)){
-                    handler.setBlockFast(location.toSponge(craft.getW()), craft.getPhaseBlocks().remove(location), craft.getSinking());
+                    handler.setBlockFast(location.toSponge(craft.getW()), craft.getPhaseBlocks().remove(location));
                 }
             }
 
@@ -154,7 +154,7 @@ public class CraftRotateCommand extends UpdateCommand {
                 final BlockSnapshot material = location.toSponge(craft.getW()).createSnapshot();
                 if (passthroughBlocks.contains(material.getState().getType())) {
                     craft.getPhaseBlocks().put(location, material);
-                    handler.setBlockFast(location.toSponge(craft.getW()), BlockTypes.AIR.getDefaultState().snapshotFor(location.toSponge(craft.getW())), craft.getSinking());
+                    handler.setBlockFast(location.toSponge(craft.getW()), BlockTypes.AIR.getDefaultState().snapshotFor(location.toSponge(craft.getW())));
 
                 }
             }
