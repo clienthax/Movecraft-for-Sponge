@@ -4,9 +4,7 @@ import io.github.pulverizer.movecraft.Movecraft;
 import io.github.pulverizer.movecraft.MovecraftLocation;
 import io.github.pulverizer.movecraft.craft.Craft;
 import org.spongepowered.api.block.BlockSnapshot;
-import org.spongepowered.api.block.BlockState;
 import org.spongepowered.api.block.BlockType;
-import org.spongepowered.api.block.BlockTypes;
 import org.spongepowered.api.world.World;
 
 import java.util.Objects;
@@ -43,7 +41,7 @@ public class BlockCreateCommand extends UpdateCommand {
     @SuppressWarnings("deprecation")
     public void doUpdate() {
         // now do the block updates, move entities when you set the block they are on
-        Movecraft.getInstance().getWorldHandler().setBlockFast(newBlockLocation.toSponge(world), block);
+        Movecraft.getInstance().getWorldHandler().setBlock(newBlockLocation.toSponge(world), block);
         //craft.incrementBlockUpdates();
 
         //TODO: Re-add sign updating

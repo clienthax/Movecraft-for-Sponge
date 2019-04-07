@@ -1,6 +1,5 @@
 package io.github.pulverizer.movecraft.mapUpdater.update;
 
-import com.google.common.collect.Sets;
 import io.github.pulverizer.movecraft.Movecraft;
 import io.github.pulverizer.movecraft.MovecraftLocation;
 import io.github.pulverizer.movecraft.WorldHandler;
@@ -18,11 +17,9 @@ import org.spongepowered.api.Sponge;
 import org.spongepowered.api.block.BlockSnapshot;
 import org.spongepowered.api.block.BlockType;
 import org.spongepowered.api.block.BlockTypes;
-import org.spongepowered.api.block.tileentity.Sign;
 
 import java.util.HashSet;
 import java.util.LinkedList;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Queue;
 import java.util.Set;
@@ -154,13 +151,13 @@ public class CraftTranslateCommand extends UpdateCommand {
                 if (!craft.getPhaseBlocks().containsKey(location)) {
                     continue;
                 }
-                handler.setBlockFast(location.toSponge(craft.getW()), craft.getPhaseBlocks().get(location));
+                handler.setBlock(location.toSponge(craft.getW()), craft.getPhaseBlocks().get(location));
                 craft.getPhaseBlocks().remove(location);
             }
 
             for(MovecraftLocation location : originalLocations){
                 if(!craft.getHitBox().inBounds(location) && craft.getPhaseBlocks().containsKey(location)){
-                    handler.setBlockFast(location.toSponge(craft.getW()), craft.getPhaseBlocks().remove(location));
+                    handler.setBlock(location.toSponge(craft.getW()), craft.getPhaseBlocks().remove(location));
                 }
             }
 
@@ -168,7 +165,7 @@ public class CraftTranslateCommand extends UpdateCommand {
                 final BlockSnapshot material = location.toSponge(craft.getW()).createSnapshot();
                 if (passthroughBlocks.contains(material.getState().getType())) {
                     craft.getPhaseBlocks().put(location, material);
-                    handler.setBlockFast(location.toSponge(craft.getW()), BlockSnapshot.builder().blockState(BlockTypes.AIR.getDefaultState()).world(craft.getW().getProperties()).position(location).build());
+                    handler.setBlock(location.toSponge(craft.getW()), BlockSnapshot.builder().blockState(BlockTypes.AIR.getDefaultState()).world(craft.getW().getProperties()).position(location).build());
 
                 }
             }

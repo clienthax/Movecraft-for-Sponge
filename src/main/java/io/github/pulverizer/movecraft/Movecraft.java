@@ -58,6 +58,10 @@ import java.util.Map;
         version = "0.1.0",
         url = "https://github.com/Pulverizer/Movecraft-for-Sponge",
         authors = {"BernardisGood", "https://github.com/Pulverizer/Movecraft-for-Sponge/graphs/contributors"})
+
+/**
+ * Main Class. The magic starts here!
+ */
 public class Movecraft {
 
     private static Movecraft instance;
@@ -75,10 +79,18 @@ public class Movecraft {
     @ConfigDir(sharedRoot = false)
     private Path configDir;
 
+    /**
+     * Gets the PATH of the config directory.
+     * @return PATH of the config directory.
+     */
     public Path getConfigDir() {
         return configDir;
     }
 
+    /**
+     * Give you the Logger for this Plugin.
+     * @return This plugin's logger.
+     */
     public Logger getLogger() {
         return this.logger;
     }

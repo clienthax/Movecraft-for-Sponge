@@ -13,7 +13,6 @@ import org.spongepowered.api.entity.Entity;
 import org.spongepowered.api.util.Direction;
 import org.spongepowered.api.world.*;
 import io.github.pulverizer.movecraft.utils.MathUtils;
-import io.github.pulverizer.movecraft.utils.CollectionUtils;
 
 import java.util.*;
 
@@ -29,10 +28,10 @@ public class WorldHandler {
     public WorldHandler() {}
 
     /**
-     * Moves an Entity to the defined Location in the World that the Entity currently resides and applies to the Entity the defined Rotation.
-     * @param entity The target Entity.
-     * @param newLocation The location to move the Entity to.
-     * @param rotation The Rotation to apply to the Entity.
+     * Moves the Entity to the Location in the World that the Entity currently resides in and applies the Rotation to the Entity.
+     * @param entity Entity to be moved.
+     * @param newLocation Vector3d location to move the Entity to.
+     * @param rotation New Rotation of the Entity.
      */
     public void moveEntity(Entity entity, Vector3d newLocation, float rotation){
         boolean entityMoved = entity.setLocationAndRotation(new Location<>(entity.getWorld(), newLocation), entity.getRotation().add(0, rotation, 0));
@@ -43,6 +42,12 @@ public class WorldHandler {
             Movecraft.getInstance().getLogger().info("Failed to move Entity of type: " + entity.getType().getName());
     }
 
+    /**
+     * Rotates the Craft around the Location using the Rotation.
+     * @param craft Craft to be rotated.
+     * @param originPoint MovecraftLocation that the Craft will be rotated around.
+     * @param rotation Rotation tha the Craft will be rotated by.
+     */
     public void rotateCraft(Craft craft, MovecraftLocation originPoint, Rotation rotation) {
 
         World nativeWorld = craft.getW();
@@ -68,16 +73,22 @@ public class WorldHandler {
         //remove the old blocks from the world
         for (Vector3i blockPosition : rotatedBlockPositions.keySet()) {
             nativeWorld.getLocation(blockPosition).getScheduledUpdates().forEach(update -> nativeWorld.getLocation(blockPosition).removeScheduledUpdate(update));
-            setBlockFast(nativeWorld, blockPosition, BlockSnapshot.builder().blockState(BlockTypes.AIR.getDefaultState()).world(nativeWorld.getProperties()).position(blockPosition).build());
+            setBlock(nativeWorld, blockPosition, BlockSnapshot.builder().blockState(BlockTypes.AIR.getDefaultState()).world(nativeWorld.getProperties()).position(blockPosition).build());
         }
 
         //create the new blocks
         for(Map.Entry<Vector3i,BlockSnapshot> entry : blockData.entrySet()) {
-            setBlockFast(nativeWorld, rotatedBlockPositions.get(entry.getKey()), rotation, entry.getValue());
+            setBlock(nativeWorld, rotatedBlockPositions.get(entry.getKey()), rotation, entry.getValue());
             updates.get(entry.getKey()).forEach(update -> nativeWorld.getLocation(rotatedBlockPositions.get(entry.getKey())).addScheduledUpdate(update.getPriority(), update.getTicks()));
         }
     }
 
+    /**
+     * Moves the Craft using the Vector3i.
+     * @param craft Craft to be moved.
+     * @param translateBlockVector 3D direction that the Craft is to be moved in.
+     * @param newHitBox New HitBox of the Craft after moving.
+     */
     public void translateCraft(Craft craft, Vector3i translateBlockVector, HashHitBox newHitBox) {
         //TODO: Add support for rotations
 
@@ -108,12 +119,12 @@ public class WorldHandler {
         //remove the old blocks from the world
         for (Vector3i blockPosition : blockPositions) {
             nativeWorld.getLocation(blockPosition).getScheduledUpdates().forEach(update -> nativeWorld.getLocation(blockPosition).removeScheduledUpdate(update));
-            setBlockFast(nativeWorld, blockPosition, BlockSnapshot.builder().blockState(BlockTypes.AIR.getDefaultState()).world(nativeWorld.getProperties()).position(blockPosition).build());
+            setBlock(nativeWorld, blockPosition, BlockSnapshot.builder().blockState(BlockTypes.AIR.getDefaultState()).world(nativeWorld.getProperties()).position(blockPosition).build());
         }
 
         //create the new blocks
         for(int i = 0; i<newBlockPositions.size(); i++) {
-            setBlockFast(nativeWorld, newBlockPositions.get(i), blocks.get(i));
+            setBlock(nativeWorld, newBlockPositions.get(i), blocks.get(i));
             int finalI = i;
             updates.get(i).forEach(update -> nativeWorld.getLocation(newBlockPositions.get(finalI)).addScheduledUpdate(update.getPriority(), update.getTicks()));
         }
@@ -121,26 +132,56 @@ public class WorldHandler {
         craft.setHitBox(newHitBox);
     }
 
-    private void setBlockFast(World world, Vector3i blockPosition, BlockSnapshot block) {
+    /**
+     * Sets the Block at the Location in the World to the BlockSnapshot.
+     * @param world World in which the block will be placed.
+     * @param blockPosition Vector3i location at which the BlockSnapshot will be placed.
+     * @param block BlockSnapshot to be placed.
+     */
+    private void setBlock(World world, Vector3i blockPosition, BlockSnapshot block) {
 
         world.getLocation(blockPosition).restoreSnapshot(block, true, BlockChangeFlags.NONE);
     }
 
-    private void setBlockFast(World world, Vector3i blockPosition, Rotation rotation, BlockSnapshot block) {
+    /**
+     * Rotates the BlockSnapshot and then sets the Block at the Location in the World to the BlockSnapshot.
+     * @param world World in which the block will be placed.
+     * @param blockPosition Vector3i location at which the BlockSnapshot will be placed.
+     * @param rotation Rotation that the block will be rotated with.
+     * @param block BlockSnapshot to be placed.
+     */
+    private void setBlock(World world, Vector3i blockPosition, Rotation rotation, BlockSnapshot block) {
         BlockSnapshot rotatedBlock = rotateBlock(rotation, block);
         world.getLocation(blockPosition).restoreSnapshot(rotatedBlock, true, BlockChangeFlags.NONE);
     }
 
-    public void setBlockFast(Location<World> location, BlockSnapshot block){
+    /**
+     * Sets the Block at the Location to the BlockSnapshot.
+     * @param location Location at which the BlockSnapshot will be placed.
+     * @param block BlockSnapshot to be placed.
+     */
+    public void setBlock(Location<World> location, BlockSnapshot block){
         location.restoreSnapshot(block, true, BlockChangeFlags.NONE);
     }
 
-    public void setBlockFast(Location<World> location, Rotation rotation, BlockSnapshot block) {
+    /**
+     * Rotates the BlockSnapshot and then sets the Block at the Location to the BlockSnapshot.
+     * @param location Location at which the BlockSnapshot will be placed.
+     * @param rotation Rotation that the block will be rotated with.
+     * @param block BlockSnapshot to be placed.
+     */
+    public void setBlock(Location<World> location, Rotation rotation, BlockSnapshot block) {
 
         BlockSnapshot rotatedBlock = rotateBlock(rotation, block);
         location.restoreSnapshot(rotatedBlock, true, BlockChangeFlags.NONE);
     }
 
+    /**
+     * Rotates a BlockSnapshot using the Rotation.
+     * @param rotation Rotation that the BlockSnapshot will be rotated with.
+     * @param block BlockSnapshot to be rotated.
+     * @return New rotated BlockSnapshot.
+     */
     public BlockSnapshot rotateBlock(Rotation rotation, BlockSnapshot block) {
 
         if (rotation == Rotation.NONE || !block.supports(Keys.DIRECTION) || !block.get(Keys.DIRECTION).isPresent())
@@ -269,6 +310,11 @@ public class WorldHandler {
     }
     */
 
+    /**
+     * Converts a Location to a MovecraftLocation.
+     * @param worldLocation The Location to be converted.
+     * @return New MovecraftLocation equivalent to the provided Location.
+     */
     private static MovecraftLocation sponge2MovecraftLoc(Location<World> worldLocation) {
         return new MovecraftLocation(worldLocation.getBlockX(), worldLocation.getBlockY(), worldLocation.getBlockZ());
     }
