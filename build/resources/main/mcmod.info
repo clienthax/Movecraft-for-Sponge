@@ -1,19 +1,8 @@
 [
     {
         "modid": "movecraft",
-        "name": "Movecraft for Sponge",
-        "version": "0.1.0",
-        "description": "Movecraft for Sponge",
-        "url": "https://github.com/Pulverizer/Movecraft-for-Sponge",
-        "authorList": [
-            "BernardisGood",
-            "https://github.com/Pulverizer/Movecraft-for-Sponge/graphs/contributors"
-        ],
-        "dependencies": [
-            "spongeapi@7.1.0"
-        ],
-        "requiredMods": [
-            "spongeapi@7.1.0"
-        ]
+        "name": "movecraft",
+        "version": "0.0.1",
+        "description": "Movecraft for Sponge"
     }
 ]
