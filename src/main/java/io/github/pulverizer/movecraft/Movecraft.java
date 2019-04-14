@@ -80,21 +80,25 @@ public class Movecraft {
     private Path configDir;
 
     /**
-     * Gets the PATH of the config directory.
-     * @return PATH of the config directory.
+     * Fetches the PATH of the config directory.
+     * @return The PATH of the config directory.
      */
     public Path getConfigDir() {
         return configDir;
     }
 
     /**
-     * Give you the Logger for this Plugin.
-     * @return This plugin's logger.
+     * Fetches the Logger for this Plugin.
+     * @return This Plugin's logger.
      */
     public Logger getLogger() {
         return this.logger;
     }
 
+    /**
+     * Fetches this Plugin's instance.
+     * @return The instance of this Plugin.
+     */
     public static synchronized Movecraft getInstance() {
         return instance;
     }
@@ -113,6 +117,11 @@ public class Movecraft {
         shuttingDown = true;
     }
 
+
+    /**
+     * Listener for GamePreInitializationEvent. Loads the Plugin's settings.
+     * @param event GamePreInitializationEvent from Listener.
+     */
     @Listener
     public void onLoad(GamePreInitializationEvent event) {
 
@@ -248,6 +257,16 @@ public class Movecraft {
         }
     }
 
+    /**
+     * <pre>
+     * Listener for GameStartedServerEvent. Loads the Plugin's various content Managers.
+     *
+     * CraftManager
+     * AsyncManager
+     * MapUpdateManager
+     * </pre>
+     * @param event GameStartedServerEvent from Listener.
+     */
     @Listener
     public void initializeManagers(GameStartedServerEvent event) {
 
@@ -267,10 +286,18 @@ public class Movecraft {
                 .submit(this);
     }
 
+    /**
+     * Fetches the WorldHandler instance that the Plugin is using.
+     * @return WorldHandler instance.
+     */
     public WorldHandler getWorldHandler(){
         return worldHandler;
     }
 
+    /**
+     * Fetches the AsyncManager instance that the Plugin is using.
+     * @return AsyncManager instance.
+     */
     public AsyncManager getAsyncManager(){
         return asyncManager;
     }
