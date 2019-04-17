@@ -9,10 +9,8 @@ import io.github.pulverizer.movecraft.Rotation;
 import io.github.pulverizer.movecraft.events.CraftSinkEvent;
 import io.github.pulverizer.movecraft.utils.HashHitBox;
 
-import io.github.pulverizer.movecraft.Movecraft;
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.block.BlockSnapshot;
-import org.spongepowered.api.block.BlockState;
 import org.spongepowered.api.block.BlockType;
 import org.spongepowered.api.block.BlockTypes;
 import org.spongepowered.api.entity.living.player.Player;
@@ -95,8 +93,8 @@ public class Craft {
         return hitBox;
     }
 
-    public void setHitBox(HashHitBox hitBox){
-        this.hitBox = hitBox;
+    public void setHitBox(HashHitBox currentHitBox){
+        this.hitBox = currentHitBox;
     }
 
     public CraftType getType() {
@@ -115,6 +113,7 @@ public class Craft {
 
     public void translate(int dx, int dy, int dz) {
         //TODO: Rewrite to Vectors instead of int.
+
         // check to see if the craft is trying to move in a direction not permitted by the type
         if (!this.getType().allowHorizontalMovement() && !this.getSinking()) {
             dx = 0;
@@ -335,7 +334,7 @@ public class Craft {
                 if(location.toSponge(w).getBlockType()==flyBlockMaterial)
                     count++;
             }
-            return Math.max((int) (20 / (type.getCruiseTickCooldown() * (1  + type.getDynamicFlyBlockSpeedFactor() * (count /hitBox.size() - .5)))), 1);
+            return Math.max((int) (20 / (type.getCruiseTickCooldown() * (1  + type.getDynamicFlyBlockSpeedFactor() * (count / hitBox.size() - .5)))), 1);
             //return  Math.max((int)(type.getCruiseTickCooldown()* (1 - count /hitBox.size()) +chestPenalty),1);
         }
 

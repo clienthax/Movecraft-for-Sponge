@@ -90,7 +90,6 @@ public class WorldHandler {
      * @param newHitBox New HitBox of the Craft after moving.
      */
     public void translateCraft(Craft craft, Vector3i translateBlockVector, HashHitBox newHitBox) {
-        //TODO: Add support for rotations
 
         World nativeWorld = craft.getW();
 
@@ -117,13 +116,13 @@ public class WorldHandler {
         }
 
         //remove the old blocks from the world
-        for (Vector3i blockPosition : blockPositions) {
+        blockPositions.forEach(blockPosition -> {
             nativeWorld.getLocation(blockPosition).getScheduledUpdates().forEach(update -> nativeWorld.getLocation(blockPosition).removeScheduledUpdate(update));
             setBlock(nativeWorld, blockPosition, BlockSnapshot.builder().blockState(BlockTypes.AIR.getDefaultState()).world(nativeWorld.getProperties()).position(blockPosition).build());
-        }
+        });
 
         //create the new blocks
-        for(int i = 0; i<newBlockPositions.size(); i++) {
+        for(int i = 0; i < newBlockPositions.size(); i++) {
             setBlock(nativeWorld, newBlockPositions.get(i), blocks.get(i));
             int finalI = i;
             updates.get(i).forEach(update -> nativeWorld.getLocation(newBlockPositions.get(finalI)).addScheduledUpdate(update.getPriority(), update.getTicks()));

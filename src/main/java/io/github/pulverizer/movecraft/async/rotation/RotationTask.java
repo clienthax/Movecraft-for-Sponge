@@ -1,13 +1,11 @@
 package io.github.pulverizer.movecraft.async.rotation;
 
 import com.flowpowered.math.vector.Vector3d;
-import com.flowpowered.math.vector.Vector3i;
 import io.github.pulverizer.movecraft.Movecraft;
 import io.github.pulverizer.movecraft.MovecraftLocation;
 import io.github.pulverizer.movecraft.Rotation;
 import io.github.pulverizer.movecraft.craft.Craft;
 import io.github.pulverizer.movecraft.events.CraftRotateEvent;
-import io.github.pulverizer.movecraft.events.CraftTranslateEvent;
 import io.github.pulverizer.movecraft.utils.*;
 import io.github.pulverizer.movecraft.utils.HashHitBox;
 import io.github.pulverizer.movecraft.async.AsyncTask;
@@ -16,7 +14,6 @@ import io.github.pulverizer.movecraft.craft.CraftManager;
 import io.github.pulverizer.movecraft.mapUpdater.update.CraftRotateCommand;
 import io.github.pulverizer.movecraft.mapUpdater.update.EntityUpdateCommand;
 import io.github.pulverizer.movecraft.mapUpdater.update.UpdateCommand;
-import jdk.nashorn.internal.objects.NativeJSON;
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.block.BlockSnapshot;
 import org.spongepowered.api.block.BlockType;
@@ -27,7 +24,6 @@ import org.spongepowered.api.entity.EntityTypes;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.item.ItemTypes;
 import org.spongepowered.api.item.inventory.Inventory;
-import org.spongepowered.api.item.inventory.ItemStack;
 import org.spongepowered.api.item.inventory.query.QueryOperationTypes;
 import org.spongepowered.api.scheduler.Task;
 import org.spongepowered.api.text.Text;
@@ -37,7 +33,6 @@ import org.spongepowered.api.world.Location;
 import org.spongepowered.api.world.World;
 
 import java.util.HashSet;
-import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
@@ -138,7 +133,6 @@ public class RotationTask extends AsyncTask {
                 break;
             }
 
-            Location plugLoc = newLocation.toSponge(w);
 
             BlockType newMaterial = newLocation.toSponge(w).getBlockType();
             if ((newMaterial == BlockTypes.AIR) || (newMaterial == BlockTypes.PISTON_EXTENSION) || craft.getType().getPassthroughBlocks().contains(newMaterial)) {

@@ -163,7 +163,7 @@ implements <a href="../../../../../io/github/pulverizer/movecraft/utils/MutableH
 </tr>
 <tr id="i2" class="altColor">
 <td class="colFirst"><code>boolean</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../io/github/pulverizer/movecraft/utils/HeapHitBox.html#addAll-io.github.pulverizer.movecraft.utils.HitBox-">addAll</a></span>(<a href="../../../../../io/github/pulverizer/movecraft/utils/HitBox.html" title="interface in io.github.pulverizer.movecraft.utils">HitBox</a>&nbsp;hitBox)</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../io/github/pulverizer/movecraft/utils/HeapHitBox.html#addAll-io.github.pulverizer.movecraft.utils.HitBox-">addAll</a></span>(<a href="../../../../../io/github/pulverizer/movecraft/utils/HitBox.html" title="interface in io.github.pulverizer.movecraft.utils">HitBox</a>&nbsp;currentHitBox)</code>&nbsp;</td>
 </tr>
 <tr id="i3" class="rowColor">
 <td class="colFirst"><code>void</code></td>
@@ -245,7 +245,7 @@ implements <a href="../../../../../io/github/pulverizer/movecraft/utils/MutableH
 </tr>
 <tr id="i21" class="rowColor">
 <td class="colFirst"><code>boolean</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../io/github/pulverizer/movecraft/utils/HeapHitBox.html#intersects-io.github.pulverizer.movecraft.utils.HashHitBox-">intersects</a></span>(<a href="../../../../../io/github/pulverizer/movecraft/utils/HashHitBox.html" title="class in io.github.pulverizer.movecraft.utils">HashHitBox</a>&nbsp;hitBox)</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../io/github/pulverizer/movecraft/utils/HeapHitBox.html#intersects-io.github.pulverizer.movecraft.utils.HashHitBox-">intersects</a></span>(<a href="../../../../../io/github/pulverizer/movecraft/utils/HashHitBox.html" title="class in io.github.pulverizer.movecraft.utils">HashHitBox</a>&nbsp;currentHitBox)</code>&nbsp;</td>
 </tr>
 <tr id="i22" class="altColor">
 <td class="colFirst"><code>boolean</code></td>
@@ -265,7 +265,7 @@ implements <a href="../../../../../io/github/pulverizer/movecraft/utils/MutableH
 </tr>
 <tr id="i26" class="altColor">
 <td class="colFirst"><code>boolean</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../io/github/pulverizer/movecraft/utils/HeapHitBox.html#removeAll-io.github.pulverizer.movecraft.utils.HitBox-">removeAll</a></span>(<a href="../../../../../io/github/pulverizer/movecraft/utils/HitBox.html" title="interface in io.github.pulverizer.movecraft.utils">HitBox</a>&nbsp;hitBox)</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../io/github/pulverizer/movecraft/utils/HeapHitBox.html#removeAll-io.github.pulverizer.movecraft.utils.HitBox-">removeAll</a></span>(<a href="../../../../../io/github/pulverizer/movecraft/utils/HitBox.html" title="interface in io.github.pulverizer.movecraft.utils">HitBox</a>&nbsp;currentHitBox)</code>&nbsp;</td>
 </tr>
 <tr id="i27" class="rowColor">
 <td class="colFirst"><code>int</code></td>
@@ -517,7 +517,7 @@ implements <a href="../../../../../io/github/pulverizer/movecraft/utils/MutableH
 <ul class="blockList">
 <li class="blockList">
 <h4>intersects</h4>
-<pre>public&nbsp;boolean&nbsp;intersects(<a href="../../../../../io/github/pulverizer/movecraft/utils/HashHitBox.html" title="class in io.github.pulverizer.movecraft.utils">HashHitBox</a>&nbsp;hitBox)</pre>
+<pre>public&nbsp;boolean&nbsp;intersects(<a href="../../../../../io/github/pulverizer/movecraft/utils/HashHitBox.html" title="class in io.github.pulverizer.movecraft.utils">HashHitBox</a>&nbsp;currentHitBox)</pre>
 </li>
 </ul>
 <a name="size--">
@@ -647,7 +647,7 @@ implements <a href="../../../../../io/github/pulverizer/movecraft/utils/MutableH
 <ul class="blockList">
 <li class="blockList">
 <h4>addAll</h4>
-<pre>public&nbsp;boolean&nbsp;addAll(<a href="../../../../../io/github/pulverizer/movecraft/utils/HitBox.html" title="interface in io.github.pulverizer.movecraft.utils">HitBox</a>&nbsp;hitBox)</pre>
+<pre>public&nbsp;boolean&nbsp;addAll(<a href="../../../../../io/github/pulverizer/movecraft/utils/HitBox.html" title="interface in io.github.pulverizer.movecraft.utils">HitBox</a>&nbsp;currentHitBox)</pre>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
 <dd><code><a href="../../../../../io/github/pulverizer/movecraft/utils/MutableHitBox.html#addAll-io.github.pulverizer.movecraft.utils.HitBox-">addAll</a></code>&nbsp;in interface&nbsp;<code><a href="../../../../../io/github/pulverizer/movecraft/utils/MutableHitBox.html" title="interface in io.github.pulverizer.movecraft.utils">MutableHitBox</a></code></dd>
@@ -673,7 +673,7 @@ implements <a href="../../../../../io/github/pulverizer/movecraft/utils/MutableH
 <ul class="blockList">
 <li class="blockList">
 <h4>removeAll</h4>
-<pre>public&nbsp;boolean&nbsp;removeAll(<a href="../../../../../io/github/pulverizer/movecraft/utils/HitBox.html" title="interface in io.github.pulverizer.movecraft.utils">HitBox</a>&nbsp;hitBox)</pre>
+<pre>public&nbsp;boolean&nbsp;removeAll(<a href="../../../../../io/github/pulverizer/movecraft/utils/HitBox.html" title="interface in io.github.pulverizer.movecraft.utils">HitBox</a>&nbsp;currentHitBox)</pre>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
 <dd><code><a href="../../../../../io/github/pulverizer/movecraft/utils/MutableHitBox.html#removeAll-io.github.pulverizer.movecraft.utils.HitBox-">removeAll</a></code>&nbsp;in interface&nbsp;<code><a href="../../../../../io/github/pulverizer/movecraft/utils/MutableHitBox.html" title="interface in io.github.pulverizer.movecraft.utils">MutableHitBox</a></code></dd>

@@ -147,14 +147,14 @@ extends java.lang.Object</pre>
 </tr>
 <tr id="i0" class="altColor">
 <td class="colFirst"><code>static boolean</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../io/github/pulverizer/movecraft/utils/MathUtils.html#locationInHitbox-io.github.pulverizer.movecraft.utils.HashHitBox-org.spongepowered.api.world.Location-">locationInHitbox</a></span>(<a href="../../../../../io/github/pulverizer/movecraft/utils/HashHitBox.html" title="class in io.github.pulverizer.movecraft.utils">HashHitBox</a>&nbsp;hitBox,
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../io/github/pulverizer/movecraft/utils/MathUtils.html#locationInHitbox-io.github.pulverizer.movecraft.utils.HashHitBox-org.spongepowered.api.world.Location-">locationInHitbox</a></span>(<a href="../../../../../io/github/pulverizer/movecraft/utils/HashHitBox.html" title="class in io.github.pulverizer.movecraft.utils">HashHitBox</a>&nbsp;currentHitBox,
                 org.spongepowered.api.world.Location&nbsp;location)</code>
 <div class="block">checks if the given bukkit <code>location</code> is within <code>hitbox</code></div>
 </td>
 </tr>
 <tr id="i1" class="rowColor">
 <td class="colFirst"><code>static boolean</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../io/github/pulverizer/movecraft/utils/MathUtils.html#locationNearHitBox-io.github.pulverizer.movecraft.utils.HashHitBox-org.spongepowered.api.world.Location-double-">locationNearHitBox</a></span>(<a href="../../../../../io/github/pulverizer/movecraft/utils/HashHitBox.html" title="class in io.github.pulverizer.movecraft.utils">HashHitBox</a>&nbsp;hitBox,
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../io/github/pulverizer/movecraft/utils/MathUtils.html#locationNearHitBox-io.github.pulverizer.movecraft.utils.HashHitBox-org.spongepowered.api.world.Location-double-">locationNearHitBox</a></span>(<a href="../../../../../io/github/pulverizer/movecraft/utils/HashHitBox.html" title="class in io.github.pulverizer.movecraft.utils">HashHitBox</a>&nbsp;currentHitBox,
                   org.spongepowered.api.world.Location&nbsp;location,
                   double&nbsp;distance)</code>
 <div class="block">Checks if a given <code>Location</code> is within some distance, <code>distance</code>, from a given <code>HitBox</code></div>
@@ -248,12 +248,12 @@ extends java.lang.Object</pre>
 <ul class="blockList">
 <li class="blockList">
 <h4>locationInHitbox</h4>
-<pre>public static&nbsp;boolean&nbsp;locationInHitbox(<a href="../../../../../io/github/pulverizer/movecraft/utils/HashHitBox.html" title="class in io.github.pulverizer.movecraft.utils">HashHitBox</a>&nbsp;hitBox,
+<pre>public static&nbsp;boolean&nbsp;locationInHitbox(<a href="../../../../../io/github/pulverizer/movecraft/utils/HashHitBox.html" title="class in io.github.pulverizer.movecraft.utils">HashHitBox</a>&nbsp;currentHitBox,
                                        org.spongepowered.api.world.Location&nbsp;location)</pre>
 <div class="block">checks if the given bukkit <code>location</code> is within <code>hitbox</code></div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>hitBox</code> - the bounding box to check within</dd>
+<dd><code>currentHitBox</code> - the bounding box to check within</dd>
 <dd><code>location</code> - the location to check</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>True if the player is within the given bounding box</dd>
@@ -266,13 +266,13 @@ extends java.lang.Object</pre>
 <ul class="blockList">
 <li class="blockList">
 <h4>locationNearHitBox</h4>
-<pre>public static&nbsp;boolean&nbsp;locationNearHitBox(<a href="../../../../../io/github/pulverizer/movecraft/utils/HashHitBox.html" title="class in io.github.pulverizer.movecraft.utils">HashHitBox</a>&nbsp;hitBox,
+<pre>public static&nbsp;boolean&nbsp;locationNearHitBox(<a href="../../../../../io/github/pulverizer/movecraft/utils/HashHitBox.html" title="class in io.github.pulverizer.movecraft.utils">HashHitBox</a>&nbsp;currentHitBox,
                                          org.spongepowered.api.world.Location&nbsp;location,
                                          double&nbsp;distance)</pre>
 <div class="block">Checks if a given <code>Location</code> is within some distance, <code>distance</code>, from a given <code>HitBox</code></div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>hitBox</code> - the hitbox to check</dd>
+<dd><code>currentHitBox</code> - the hitbox to check</dd>
 <dd><code>location</code> - the location to check</dd>
 <dd><code>distance</code> - </dd>
 <dt><span class="returnLabel">Returns:</span></dt>

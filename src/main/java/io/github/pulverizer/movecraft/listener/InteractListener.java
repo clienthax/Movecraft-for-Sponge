@@ -11,7 +11,6 @@ import org.spongepowered.api.data.type.HandTypes;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.event.Listener;
 import org.spongepowered.api.event.block.InteractBlockEvent;
-import org.spongepowered.api.event.entity.living.humanoid.HandInteractEvent;
 import org.spongepowered.api.event.filter.cause.Root;
 import org.spongepowered.api.event.filter.type.Include;
 import org.spongepowered.api.event.item.inventory.InteractItemEvent;

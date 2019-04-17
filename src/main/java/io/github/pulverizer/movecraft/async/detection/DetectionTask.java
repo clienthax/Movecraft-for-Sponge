@@ -11,7 +11,10 @@ import org.spongepowered.api.block.BlockState;
 import org.spongepowered.api.block.BlockType;
 import org.spongepowered.api.block.BlockTypes;
 import org.spongepowered.api.block.tileentity.Sign;
+import org.spongepowered.api.data.key.Keys;
+import org.spongepowered.api.data.property.block.GravityAffectedProperty;
 import org.spongepowered.api.entity.living.player.Player;
+import org.spongepowered.api.world.BlockChangeFlags;
 import org.spongepowered.api.world.Location;
 import org.spongepowered.api.world.World;
 

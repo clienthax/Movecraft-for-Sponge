@@ -37,22 +37,6 @@ public class CraftManager implements Iterable<Craft>{
     private Set<CraftType> loadCraftTypes(){
         File craftsFile = Movecraft.getInstance().getConfigDir().resolve("types").toFile();
 
-        //TODO: Re-add defaults!
-        /*
-        if (craftsFile.mkdirs()) {
-            Movecraft.getInstance().saveResource("types/airship.craft", false);
-            Movecraft.getInstance().saveResource("types/airskiff.craft", false);
-            Movecraft.getInstance().saveResource("types/BigAirship.craft", false);
-            Movecraft.getInstance().saveResource("types/BigSubAirship.craft", false);
-            Movecraft.getInstance().saveResource("types/elevator.craft", false);
-            Movecraft.getInstance().saveResource("types/LaunchTorpedo.craft", false);
-            Movecraft.getInstance().saveResource("types/Ship.craft", false);
-            Movecraft.getInstance().saveResource("types/SubAirship.craft", false);
-            Movecraft.getInstance().saveResource("types/Submarine.craft", false);
-            Movecraft.getInstance().saveResource("types/Turret.craft", false);
-        }
-        */
-
         Set<CraftType> craftTypes = new HashSet<>();
         File[] files = craftsFile.listFiles();
         if (files == null){

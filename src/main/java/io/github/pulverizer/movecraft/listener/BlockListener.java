@@ -1,26 +1,23 @@
 package io.github.pulverizer.movecraft.listener;
 
-import com.google.common.collect.ImmutableSet;
+import io.github.pulverizer.movecraft.Movecraft;
 import io.github.pulverizer.movecraft.utils.MathUtils;
 import io.github.pulverizer.movecraft.MovecraftLocation;
 import io.github.pulverizer.movecraft.craft.Craft;
 import io.github.pulverizer.movecraft.config.Settings;
 import io.github.pulverizer.movecraft.craft.CraftManager;
 import org.spongepowered.api.block.BlockSnapshot;
-import org.spongepowered.api.block.BlockType;
 import org.spongepowered.api.block.BlockTypes;
 import org.spongepowered.api.data.Transaction;
-import org.spongepowered.api.entity.Item;
 import org.spongepowered.api.entity.explosive.PrimedTNT;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.entity.projectile.explosive.fireball.SmallFireball;
 import org.spongepowered.api.event.Listener;
 import org.spongepowered.api.event.block.ChangeBlockEvent;
-import org.spongepowered.api.event.entity.SpawnEntityEvent;
+import org.spongepowered.api.event.block.NotifyNeighborBlockEvent;
+import org.spongepowered.api.event.filter.cause.Root;
 import org.spongepowered.api.text.Text;
 import org.spongepowered.api.world.World;
-
-import java.util.*;
 
 import static org.spongepowered.api.event.Order.FIRST;
 import static org.spongepowered.api.event.Order.LAST;
@@ -30,69 +27,38 @@ public class BlockListener {
     private long lastDamagesUpdate = 0;
 
     @Listener(order = LAST)
-    public void onBlockBreak(final ChangeBlockEvent.Break event) {
+    public void onBlockBreak(ChangeBlockEvent.Break event) {
 
-        if (event.getCause().root() instanceof PrimedTNT || event.getCause().root() instanceof SmallFireball)
+        if (event.getCause().root() instanceof Movecraft || event.getCause().root() instanceof PrimedTNT || event.getCause().root() instanceof SmallFireball)
             return;
 
         for (Transaction<BlockSnapshot> transaction : event.getTransactions()) {
             BlockSnapshot blockSnapshot = transaction.getOriginal();
 
-            if (event.getCause().root() instanceof Player) {
+            MovecraftLocation mloc = MathUtils.sponge2MovecraftLoc(blockSnapshot.getLocation().get());
+            World blockWorld = blockSnapshot.getLocation().get().getExtent();
+            for (Craft craft : CraftManager.getInstance().getCraftsInWorld(blockWorld)) {
 
-                Player player = (Player) event.getCause().root();
+                if (craft == null || craft.getDisabled()) {
+                    continue;
+                }
 
-                if (Settings.ProtectPilotedCrafts) {
-                    MovecraftLocation mloc = MathUtils.sponge2MovecraftLoc(blockSnapshot.getLocation().get());
-                    World blockWorld = blockSnapshot.getLocation().get().getExtent();
-                    for (Craft craft : CraftManager.getInstance().getCraftsInWorld(blockWorld)) {
-                        if (craft == null) {
-                            continue;
+                for (MovecraftLocation tloc : craft.getHitBox()) {
+                    if (tloc.equals(mloc)) {
+
+                        transaction.setValid(false);
+
+                        if (!Settings.ProtectPilotedCrafts && event.getCause().root() instanceof Player) {
+
+                            Player player = (Player) event.getCause().root();
+                            player.sendMessage(Text.of("BLOCK IS PART OF A PILOTED CRAFT"));
                         }
-                        for (MovecraftLocation tloc : craft.getHitBox()) {
-                            if (tloc.equals(mloc)) {
-                                player.sendMessage(Text.of("BLOCK IS PART OF A PILOTED CRAFT"));
-                                transaction.setValid(false);
-                            }
-                        }
+
+                        break;
                     }
                 }
-
-            } else {
-
-                for (Craft craft : CraftManager.getInstance().getCraftsInWorld(blockSnapshot.getLocation().get().getExtent())) {
-                    MovecraftLocation mLoc = MathUtils.sponge2MovecraftLoc(blockSnapshot.getLocation().get());
-                    if (!MathUtils.locIsNearCraftFast(craft, mLoc))
-                        transaction.setValid(false);
-                }
-
             }
         }
-    }
-
-    // prevent items from dropping from moving crafts
-    @Listener(order = FIRST)
-    public void onItemSpawn(SpawnEntityEvent event) {
-
-        event.filterEntities(entity -> {
-
-            try {
-                CraftManager.getInstance().getCraftsInWorld(entity.getWorld());
-            } catch (NullPointerException e) {
-                return true;
-            }
-
-            if (!(entity instanceof Item)) {
-                return true;
-            }
-
-            for (Craft tcraft : CraftManager.getInstance().getCraftsInWorld(entity.getWorld())) {
-                if ((!tcraft.isNotProcessing()) && MathUtils.locationInHitbox(tcraft.getHitBox(), entity.getLocation())) {
-                    return false;
-                }
-            }
-            return true;
-        });
     }
 
     // prevent water and lava from spreading on moving crafts

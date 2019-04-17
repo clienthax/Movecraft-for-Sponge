@@ -1,6 +1,5 @@
 package io.github.pulverizer.movecraft.async.translation;
 
-import com.flowpowered.math.vector.Vector3d;
 import com.google.common.collect.ImmutableSet;
 import io.github.pulverizer.movecraft.Movecraft;
 import io.github.pulverizer.movecraft.MovecraftLocation;
@@ -9,23 +8,15 @@ import io.github.pulverizer.movecraft.config.Settings;
 import io.github.pulverizer.movecraft.craft.Craft;
 import io.github.pulverizer.movecraft.craft.CraftManager;
 import io.github.pulverizer.movecraft.events.CraftTranslateEvent;
-import io.github.pulverizer.movecraft.mapUpdater.MapUpdateManager;
 import io.github.pulverizer.movecraft.mapUpdater.update.*;
 import io.github.pulverizer.movecraft.utils.HashHitBox;
 import io.github.pulverizer.movecraft.utils.HitBox;
 import io.github.pulverizer.movecraft.utils.MutableHitBox;
-import jdk.nashorn.internal.ir.Block;
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.block.BlockSnapshot;
-import org.spongepowered.api.block.BlockState;
 import org.spongepowered.api.block.BlockType;
 import org.spongepowered.api.block.BlockTypes;
-import org.spongepowered.api.block.tileentity.TileEntityType;
-import org.spongepowered.api.block.tileentity.TileEntityTypes;
-import org.spongepowered.api.block.tileentity.carrier.Chest;
 import org.spongepowered.api.block.tileentity.carrier.Furnace;
-import org.spongepowered.api.block.tileentity.carrier.TileEntityCarrier;
-import org.spongepowered.api.data.Property;
 import org.spongepowered.api.effect.sound.SoundTypes;
 import org.spongepowered.api.entity.Entity;
 import org.spongepowered.api.entity.EntityTypes;
@@ -33,8 +24,6 @@ import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.item.ItemTypes;
 import org.spongepowered.api.item.inventory.Inventory;
 import org.spongepowered.api.item.inventory.ItemStack;
-import org.spongepowered.api.item.inventory.Slot;
-import org.spongepowered.api.item.inventory.query.QueryOperationType;
 import org.spongepowered.api.item.inventory.query.QueryOperationTypes;
 import org.spongepowered.api.scheduler.Task;
 import org.spongepowered.api.util.AABB;
@@ -43,7 +32,6 @@ import org.spongepowered.api.world.World;
 
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
-import java.util.stream.StreamSupport;
 
 public class TranslationTask extends AsyncTask {
     private static final ImmutableSet<BlockType> FALL_THROUGH_BLOCKS = ImmutableSet.of(BlockTypes.AIR, BlockTypes.FLOWING_WATER, BlockTypes.FLOWING_LAVA, BlockTypes.TALLGRASS, BlockTypes.YELLOW_FLOWER, BlockTypes.RED_FLOWER, BlockTypes.BROWN_MUSHROOM, BlockTypes.RED_MUSHROOM, BlockTypes.TORCH, BlockTypes.FIRE, BlockTypes.REDSTONE_WIRE, BlockTypes.WHEAT, BlockTypes.STANDING_SIGN, BlockTypes.LADDER, BlockTypes.WALL_SIGN, BlockTypes.LEVER, BlockTypes.LIGHT_WEIGHTED_PRESSURE_PLATE, BlockTypes.HEAVY_WEIGHTED_PRESSURE_PLATE, BlockTypes.STONE_PRESSURE_PLATE, BlockTypes.WOODEN_PRESSURE_PLATE, BlockTypes.UNLIT_REDSTONE_TORCH, BlockTypes.REDSTONE_TORCH, BlockTypes.STONE_BUTTON, BlockTypes.SNOW_LAYER, BlockTypes.REEDS, BlockTypes.FENCE, BlockTypes.ACACIA_FENCE, BlockTypes.BIRCH_FENCE, BlockTypes.DARK_OAK_FENCE, BlockTypes.JUNGLE_FENCE, BlockTypes.NETHER_BRICK_FENCE, BlockTypes.SPRUCE_FENCE, BlockTypes.UNPOWERED_REPEATER, BlockTypes.POWERED_REPEATER, BlockTypes.WATERLILY, BlockTypes.CARROTS, BlockTypes.POTATOES, BlockTypes.WOODEN_BUTTON, BlockTypes.CARPET);
