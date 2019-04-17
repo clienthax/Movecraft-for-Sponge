@@ -18,6 +18,7 @@ import org.spongepowered.api.event.block.NotifyNeighborBlockEvent;
 import org.spongepowered.api.event.filter.cause.Root;
 import org.spongepowered.api.text.Text;
 import org.spongepowered.api.world.World;
+import org.spongepowered.api.world.explosion.Explosion;
 
 import static org.spongepowered.api.event.Order.FIRST;
 import static org.spongepowered.api.event.Order.LAST;
@@ -29,7 +30,7 @@ public class BlockListener {
     @Listener(order = LAST)
     public void onBlockBreak(ChangeBlockEvent.Break event) {
 
-        if (event.getCause().root() instanceof Movecraft || event.getCause().root() instanceof PrimedTNT || event.getCause().root() instanceof SmallFireball)
+        if (event.getCause().root() instanceof Movecraft || event.getCause().root() instanceof Explosion)
             return;
 
         for (Transaction<BlockSnapshot> transaction : event.getTransactions()) {
@@ -45,6 +46,8 @@ public class BlockListener {
 
                 for (MovecraftLocation tloc : craft.getHitBox()) {
                     if (tloc.equals(mloc)) {
+
+                        Movecraft.getInstance().getLogger().info(event.getCause().toString());
 
                         transaction.setValid(false);
 
