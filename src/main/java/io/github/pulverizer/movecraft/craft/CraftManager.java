@@ -48,6 +48,7 @@ public class CraftManager implements Iterable<Craft>{
             if (file.isFile()) {
 
                 if (file.getName().contains(".craft")) {
+                    Movecraft.getInstance().getLogger().info("Loading CraftType: " + file.getName());
                     CraftType type = new CraftType(file);
                     craftTypes.add(type);
                 }

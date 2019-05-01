@@ -54,7 +54,7 @@ import java.util.Map;
 @Plugin(
         id = "movecraft",
         name = "Movecraft for Sponge",
-        description = "Movecraft for Sponge",
+        description = "Allows players to create moving things out of blocks. Airships, Defensive Turrets, Submarines, Etc.",
         version = "0.1.0",
         url = "https://github.com/Pulverizer/Movecraft-for-Sponge",
         authors = {"BernardisGood", "https://github.com/Pulverizer/Movecraft-for-Sponge/graphs/contributors"})
@@ -253,7 +253,7 @@ public class Movecraft {
             Sponge.getEventManager().registerListeners(this, new SubcraftRotateSign());
             Sponge.getEventManager().registerListeners(this, new TeleportSign());
 
-            logger.info("Movecraft Enabled. Version: " + "0.1.0");
+            logger.info("Movecraft Enabled.");
         }
     }
 
