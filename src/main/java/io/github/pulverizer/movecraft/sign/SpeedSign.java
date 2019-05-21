@@ -15,7 +15,7 @@ import org.spongepowered.api.world.World;
 public final class SpeedSign {
     @Listener
     public void onCraftDetect(CraftDetectEvent event){
-        World world = event.getCraft().getW();
+        World world = event.getCraft().getWorld();
         for(MovecraftLocation location: event.getCraft().getHitBox()){
             BlockSnapshot block = location.toSponge(world).createSnapshot();
             if(block.getState().getType() != BlockTypes.WALL_SIGN && block.getState().getType() != BlockTypes.STANDING_SIGN) {

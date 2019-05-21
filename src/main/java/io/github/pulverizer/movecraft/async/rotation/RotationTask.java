@@ -81,7 +81,7 @@ public class RotationTask extends AsyncTask {
             if (getCraft().getBurningFuel() < fuelBurnRate) {
                 Furnace fuelHolder = null;
                 for (MovecraftLocation bTest : oldHitBox) {
-                    BlockSnapshot b = getCraft().getW().createSnapshot(bTest.getX(), bTest.getY(), bTest.getZ());
+                    BlockSnapshot b = getCraft().getWorld().createSnapshot(bTest.getX(), bTest.getY(), bTest.getZ());
                     if (b.getState().getType() == BlockTypes.FURNACE || b.getState().getType() == BlockTypes.LIT_FURNACE) {
                         Optional<Furnace> furnaceOptional = b.getLocation()
                                 .flatMap(Location::getTileEntity)
@@ -111,7 +111,7 @@ public class RotationTask extends AsyncTask {
             }
         }
         // if a subcraft, find the parent craft. If not a subcraft, it is it's own parent
-        Set<Craft> craftsInWorld = CraftManager.getInstance().getCraftsInWorld(getCraft().getW());
+        Set<Craft> craftsInWorld = CraftManager.getInstance().getCraftsInWorld(getCraft().getWorld());
         Craft parentCraft = getCraft();
         for (Craft craft : craftsInWorld) {
             if ( craft != getCraft() && craft.getHitBox().intersects(oldHitBox)) {
@@ -173,7 +173,7 @@ public class RotationTask extends AsyncTask {
 
             Task.builder()
                     .execute(() -> {
-                        for (Entity entity : craft.getW().getIntersectingEntities(new AABB(oldHitBox.getMinX() -0.5, oldHitBox.getMinY() -0.5, oldHitBox.getMinZ() -0.5, oldHitBox.getMaxX() +0.5, oldHitBox.getMaxY() +0.5, oldHitBox.getMaxZ() +0.5))) {
+                        for (Entity entity : craft.getWorld().getIntersectingEntities(new AABB(oldHitBox.getMinX() -0.5, oldHitBox.getMinY() -0.5, oldHitBox.getMinZ() -0.5, oldHitBox.getMaxX() +0.5, oldHitBox.getMaxY() +0.5, oldHitBox.getMaxZ() +0.5))) {
 
                             if (entity.getType() == EntityTypes.PLAYER || entity.getType() == EntityTypes.PRIMED_TNT || !craft.getType().getOnlyMovePlayers()) {
                                 if (Settings.Debug) {
@@ -264,23 +264,23 @@ public class RotationTask extends AsyncTask {
             }
             if (Math.abs(farthestX) > Math.abs(farthestZ)) {
                 if (farthestX > 0) {
-                    if (getCraft().getNotificationPlayer() != null)
-                        getCraft().getNotificationPlayer().sendMessage(Text.of("The farthest extent now faces East"));
+                    if (getCraft().getPilot() != null)
+                        getCraft().getPilot().sendMessage(Text.of("The farthest extent now faces East"));
                 } else {
-                    if (getCraft().getNotificationPlayer() != null)
-                        getCraft().getNotificationPlayer().sendMessage(Text.of("The farthest extent now faces West"));
+                    if (getCraft().getPilot() != null)
+                        getCraft().getPilot().sendMessage(Text.of("The farthest extent now faces West"));
                 }
             } else {
                 if (farthestZ > 0) {
-                    if (getCraft().getNotificationPlayer() != null)
-                        getCraft().getNotificationPlayer().sendMessage(Text.of("The farthest extent now faces South"));
+                    if (getCraft().getPilot() != null)
+                        getCraft().getPilot().sendMessage(Text.of("The farthest extent now faces South"));
                 } else {
-                    if (getCraft().getNotificationPlayer() != null)
-                        getCraft().getNotificationPlayer().sendMessage(Text.of("The farthest extent now faces North"));
+                    if (getCraft().getPilot() != null)
+                        getCraft().getPilot().sendMessage(Text.of("The farthest extent now faces North"));
                 }
             }
 
-            craftsInWorld = CraftManager.getInstance().getCraftsInWorld(getCraft().getW());
+            craftsInWorld = CraftManager.getInstance().getCraftsInWorld(getCraft().getWorld());
             for (Craft craft : craftsInWorld) {
                 if (newHitBox.intersects(craft.getHitBox()) && craft != getCraft()) {
                     //newHitBox.addAll(CollectionUtils.filter(craft.getHitBox(),newHitBox));
@@ -334,7 +334,7 @@ public class RotationTask extends AsyncTask {
         MovecraftLocation aroundNewLoc;
 
         aroundNewLoc = newLoc.translate(1, 0, 0);
-        testMaterial = craft.getW().getBlockType(aroundNewLoc.getX(), aroundNewLoc.getY(), aroundNewLoc.getZ());
+        testMaterial = craft.getWorld().getBlockType(aroundNewLoc.getX(), aroundNewLoc.getY(), aroundNewLoc.getZ());
         if (testMaterial.equals(mBlock)) {
             if (!oldHitBox.contains(aroundNewLoc)) {
                 return false;
@@ -342,7 +342,7 @@ public class RotationTask extends AsyncTask {
         }
 
         aroundNewLoc = newLoc.translate(-1, 0, 0);
-        testMaterial = craft.getW().getBlockType(aroundNewLoc.getX(), aroundNewLoc.getY(), aroundNewLoc.getZ());
+        testMaterial = craft.getWorld().getBlockType(aroundNewLoc.getX(), aroundNewLoc.getY(), aroundNewLoc.getZ());
         if (testMaterial.equals(mBlock)) {
             if (!oldHitBox.contains(aroundNewLoc)) {
                 return false;
@@ -350,7 +350,7 @@ public class RotationTask extends AsyncTask {
         }
 
         aroundNewLoc = newLoc.translate(0, 0, 1);
-        testMaterial = craft.getW().getBlockType(aroundNewLoc.getX(), aroundNewLoc.getY(), aroundNewLoc.getZ());
+        testMaterial = craft.getWorld().getBlockType(aroundNewLoc.getX(), aroundNewLoc.getY(), aroundNewLoc.getZ());
         if (testMaterial.equals(mBlock)) {
             if (!oldHitBox.contains(aroundNewLoc)) {
                 return false;
@@ -358,7 +358,7 @@ public class RotationTask extends AsyncTask {
         }
 
         aroundNewLoc = newLoc.translate(0, 0, -1);
-        testMaterial = craft.getW().getBlockType(aroundNewLoc.getX(), aroundNewLoc.getY(), aroundNewLoc.getZ());
+        testMaterial = craft.getWorld().getBlockType(aroundNewLoc.getX(), aroundNewLoc.getY(), aroundNewLoc.getZ());
         return !testMaterial.equals(mBlock) || oldHitBox.contains(aroundNewLoc);
     }
 

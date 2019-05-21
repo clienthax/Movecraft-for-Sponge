@@ -65,7 +65,7 @@ public final class InteractListener {
 
                 // if the craft should go slower underwater, make time
                 // pass more slowly there
-                if (craft.getType().getHalfSpeedUnderwater() && craft.getHitBox().getMinY() < craft.getW().getSeaLevel())
+                if (craft.getType().getHalfSpeedUnderwater() && craft.getHitBox().getMinY() < craft.getWorld().getSeaLevel())
                     ticksElapsed = ticksElapsed >> 1;
 
                 if (Math.abs(ticksElapsed) < craft.getType().getTickCooldown()) {
@@ -81,7 +81,7 @@ public final class InteractListener {
                 player.sendMessage(Text.of("Insufficient Permissions"));
                 return;
             }
-            if (craft.getPilotLocked()) {
+            if (craft.getDirectControl()) {
                 // right click moves up or down if using direct
                 // control
                 int DY = 1;
@@ -90,7 +90,7 @@ public final class InteractListener {
 
                 craft.translate(0, DY, 0);
                 timeMap.put(player, System.currentTimeMillis());
-                craft.setLastCruiseUpdate(System.currentTimeMillis());
+                craft.setLastCruiseUpdateTime(System.currentTimeMillis());
                 return;
             }
             // Player is onboard craft and right clicking
@@ -114,7 +114,7 @@ public final class InteractListener {
 
             craft.translate(dx, dy, dz);
             timeMap.put(player, System.currentTimeMillis());
-            craft.setLastCruiseUpdate(System.currentTimeMillis());
+            craft.setLastCruiseUpdateTime(System.currentTimeMillis());
             return;
         }
         if (event instanceof InteractItemEvent.Primary) {
@@ -126,8 +126,8 @@ public final class InteractListener {
                 return;
             }
 
-            if (craft.getPilotLocked()) {
-                craft.setPilotLocked(false);
+            if (craft.getDirectControl()) {
+                craft.setDirectControl(false);
                 player.sendMessage(Text.of("Leaving Direct Control Mode"));
                 event.setCancelled(true);
                 return;
@@ -137,7 +137,7 @@ public final class InteractListener {
                 player.sendMessage(Text.of("Insufficient Permissions"));
                 return;
             }
-            craft.setPilotLocked(true);
+            craft.setDirectControl(true);
             craft.setPilotLockedX(player.getLocation().getBlockX() + 0.5);
             craft.setPilotLockedY(player.getLocation().getY());
             craft.setPilotLockedZ(player.getLocation().getBlockZ() + 0.5);

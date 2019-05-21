@@ -50,7 +50,7 @@ public class WorldHandler {
      */
     public void rotateCraft(Craft craft, MovecraftLocation originPoint, Rotation rotation) {
 
-        World nativeWorld = craft.getW();
+        World nativeWorld = craft.getWorld();
 
         //*******************************************
         //*      Step one: Convert to Positions     *
@@ -91,7 +91,7 @@ public class WorldHandler {
      */
     public void translateCraft(Craft craft, Vector3i translateBlockVector, HashHitBox newHitBox) {
 
-        World nativeWorld = craft.getW();
+        World nativeWorld = craft.getWorld();
 
         //A craftTranslateCommand should only occur if the craft is moving to a valid position
         //*******************************************

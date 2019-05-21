@@ -20,7 +20,7 @@ public class AscendSign {
 
     @Listener
     public void onCraftDetect(CraftDetectEvent event){
-        World world = event.getCraft().getW();
+        World world = event.getCraft().getWorld();
         for(MovecraftLocation location: event.getCraft().getHitBox()){
             BlockSnapshot block = location.toSponge(world).createSnapshot();
             if(block.getState().getType() == BlockTypes.WALL_SIGN || block.getState().getType() == BlockTypes.STANDING_SIGN){
@@ -66,7 +66,7 @@ public class AscendSign {
             sign.offer(lines);
 
             c.setCruiseDirection(Direction.UP);
-            c.setLastCruiseUpdate(System.currentTimeMillis());
+            c.setLastCruiseUpdateTime(System.currentTimeMillis());
             c.setCruising(true);
 
             if (!c.getType().getMoveEntities()) {

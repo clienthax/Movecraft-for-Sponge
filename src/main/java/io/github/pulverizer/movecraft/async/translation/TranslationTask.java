@@ -75,7 +75,7 @@ public class TranslationTask extends AsyncTask {
             int testY = minY;
             while (testY > 0){
                 testY -= 1;
-                if (craft.getW().getBlockType(middle.getX(),testY,middle.getZ()) != BlockTypes.AIR)
+                if (craft.getWorld().getBlockType(middle.getX(),testY,middle.getZ()) != BlockTypes.AIR)
                     break;
             }
             if (minY - testY > craft.getType().getMaxHeightAboveGround()) {
@@ -110,11 +110,11 @@ public class TranslationTask extends AsyncTask {
                 newHitBox.add(newLocation);
                 continue;
             }
-            final BlockType testMaterial = newLocation.toSponge(craft.getW()).getBlockType();
+            final BlockType testMaterial = newLocation.toSponge(craft.getWorld()).getBlockType();
 
             if ((testMaterial.equals(BlockTypes.CHEST) || testMaterial.equals(BlockTypes.TRAPPED_CHEST)) && checkChests(testMaterial, newLocation)) {
                 //prevent chests collision
-                fail(String.format("Translation Failed - Craft is obstructed" + " @ %d,%d,%d,%s", newLocation.getX(), newLocation.getY(), newLocation.getZ(), newLocation.toSponge(craft.getW()).getBlock().getType().toString()));
+                fail(String.format("Translation Failed - Craft is obstructed" + " @ %d,%d,%d,%s", newLocation.getX(), newLocation.getY(), newLocation.getZ(), newLocation.toSponge(craft.getWorld()).getBlock().getType().toString()));
                 return;
             }
 
@@ -127,15 +127,15 @@ public class TranslationTask extends AsyncTask {
 
             boolean ignoreBlock = false;
             // air never obstructs anything (changed 4/18/2017 to prevent drilling machines)
-            if (oldLocation.toSponge(craft.getW()).getBlock().getType().equals(BlockTypes.AIR) && blockObstructed) {
+            if (oldLocation.toSponge(craft.getWorld()).getBlock().getType().equals(BlockTypes.AIR) && blockObstructed) {
                 ignoreBlock = true;
             }
 
             if (blockObstructed && !harvestBlocks.isEmpty() && harvestBlocks.contains(testMaterial)) {
-                BlockType tmpType = oldLocation.toSponge(craft.getW()).getBlockType();
+                BlockType tmpType = oldLocation.toSponge(craft.getWorld()).getBlockType();
                 if (harvesterBladeBlocks.size() > 0 && harvesterBladeBlocks.contains(tmpType)) {
                     blockObstructed = false;
-                    harvestedBlocks.add(newLocation.toSponge(craft.getW()));
+                    harvestedBlocks.add(newLocation.toSponge(craft.getWorld()));
                 }
             }
 
@@ -163,10 +163,10 @@ public class TranslationTask extends AsyncTask {
         if(craft.getSinking()){
             for(MovecraftLocation location : collisionBox){
                 if (craft.getType().getExplodeOnCrash() > 0.0F) {
-                    if (System.currentTimeMillis() - craft.getOrigPilotTime() <= 1000) {
+                    if (System.currentTimeMillis() - craft.getOriginalPilotTime() <= 1000) {
                         continue;
                     }
-                    Location<World> loc = location.toSponge(craft.getW());
+                    Location<World> loc = location.toSponge(craft.getWorld());
                     if (!loc.getBlock().getType().equals(BlockTypes.AIR)  && ThreadLocalRandom.current().nextDouble(1) < .05) {
                         updates.add(new ExplosionUpdateCommand( loc, craft.getType().getExplodeOnCrash()));
                         collisionExplosion=true;
@@ -184,7 +184,7 @@ public class TranslationTask extends AsyncTask {
 
         }else{
             for(MovecraftLocation location : collisionBox){
-                if (!(craft.getType().getCollisionExplosion() != 0.0F) || System.currentTimeMillis() - craft.getOrigPilotTime() <= 1000) {
+                if (!(craft.getType().getCollisionExplosion() != 0.0F) || System.currentTimeMillis() - craft.getOriginalPilotTime() <= 1000) {
                     continue;
                 }
                 float explosionKey;
@@ -197,7 +197,7 @@ public class TranslationTask extends AsyncTask {
                     explosionForce += 25;//TODO: find the correct amount
                 }*/
                 explosionKey = explosionForce;
-                Location<World> loc = location.toSponge(craft.getW());
+                Location<World> loc = location.toSponge(craft.getWorld());
                 if (!loc.getBlock().getType().equals(BlockTypes.AIR)) {
                     updates.add(new ExplosionUpdateCommand(loc, explosionKey));
                     collisionExplosion = true;
@@ -211,7 +211,7 @@ public class TranslationTask extends AsyncTask {
         if(!collisionBox.isEmpty() && craft.getType().getCruiseOnPilot()){
             CraftManager.getInstance().removeCraft(craft);
             for(MovecraftLocation location : oldHitBox){
-                updates.add(new BlockCreateCommand(craft.getW(), location, BlockTypes.AIR));
+                updates.add(new BlockCreateCommand(craft.getWorld(), location, BlockTypes.AIR));
             }
             newHitBox = new HashHitBox();
         }
@@ -229,7 +229,7 @@ public class TranslationTask extends AsyncTask {
 
                         Movecraft.getInstance().getLogger().info("Searching for Entities on Craft.");
 
-                        for(Entity entity : craft.getW().getIntersectingEntities(new AABB(oldHitBox.getMinX() - 0.5, oldHitBox.getMinY() - 0.5, oldHitBox.getMinZ() - 0.5, oldHitBox.getMaxX() + 1.5, oldHitBox.getMaxY() + 1.5, oldHitBox.getMaxZ()+1.5))){
+                        for(Entity entity : craft.getWorld().getIntersectingEntities(new AABB(oldHitBox.getMinX() - 0.5, oldHitBox.getMinY() - 0.5, oldHitBox.getMinZ() - 0.5, oldHitBox.getMaxX() + 1.5, oldHitBox.getMaxY() + 1.5, oldHitBox.getMaxZ()+1.5))){
 
                             if (entity.getType() == EntityTypes.PLAYER || entity.getType() == EntityTypes.PRIMED_TNT || !craft.getType().getOnlyMovePlayers()) {
                                 if (Settings.Debug) {
@@ -284,10 +284,10 @@ public class TranslationTask extends AsyncTask {
         if (craftPilot != null) {
             Location location = craftPilot.getLocation();
             if (!craft.getDisabled()) {
-                craft.getW().playSound(SoundTypes.BLOCK_ANVIL_LAND, location.getPosition(), 1.0f, 0.25f);
+                craft.getWorld().playSound(SoundTypes.BLOCK_ANVIL_LAND, location.getPosition(), 1.0f, 0.25f);
                 //craft.setCurTickCooldown(craft.getType().getCruiseTickCooldown());
             } else {
-                craft.getW().playSound(SoundTypes.ENTITY_IRONGOLEM_DEATH, location.getPosition(), 5.0f, 5.0f);
+                craft.getWorld().playSound(SoundTypes.ENTITY_IRONGOLEM_DEATH, location.getPosition(), 5.0f, 5.0f);
                 //craft.setCurTickCooldown(craft.getType().getCruiseTickCooldown());
             }
         }
@@ -302,7 +302,7 @@ public class TranslationTask extends AsyncTask {
     private boolean checkChests(BlockType mBlock, MovecraftLocation newLoc) {
         for(MovecraftLocation shift : SHIFTS){
             MovecraftLocation aroundNewLoc = newLoc.add(shift);
-            BlockType testMaterial = craft.getW().getBlockType(aroundNewLoc.getX(), aroundNewLoc.getY(), aroundNewLoc.getZ());
+            BlockType testMaterial = craft.getWorld().getBlockType(aroundNewLoc.getX(), aroundNewLoc.getY(), aroundNewLoc.getZ());
             if (testMaterial.equals(mBlock) && !oldHitBox.contains(aroundNewLoc)) {
                 return true;
             }
@@ -319,7 +319,7 @@ public class TranslationTask extends AsyncTask {
         ArrayList<Inventory> chests = new ArrayList<>();
         //find chests
         for (MovecraftLocation loc : oldHitBox) {
-            BlockSnapshot block = craft.getW().createSnapshot(loc.getX(), loc.getY(), loc.getZ());
+            BlockSnapshot block = craft.getWorld().createSnapshot(loc.getX(), loc.getY(), loc.getZ());
             block.getLocation().ifPresent(worldLocation -> {
                 worldLocation.getTileEntity().ifPresent(tileEntity -> {
                     if (tileEntity.getType() == TileEntityTypes.CHEST) {
@@ -330,7 +330,7 @@ public class TranslationTask extends AsyncTask {
         }
 
         for (MovecraftLocation harvestedBlock : harvestedBlocks) {
-            BlockSnapshot block = craft.getW().createSnapshot(harvestedBlock.getX(), harvestedBlock.getY(), harvestedBlock.getZ());
+            BlockSnapshot block = craft.getWorld().createSnapshot(harvestedBlock.getX(), harvestedBlock.getY(), harvestedBlock.getZ());
             List<ItemStack> drops = new ArrayList<>(block.getDrops());
             //generate seed drops
             if (block.getState().getType() == BlockTypes.CROPS) {
@@ -357,7 +357,7 @@ public class TranslationTask extends AsyncTask {
                 ItemStack retStack = putInToChests(drop, chests);
                 if (retStack != null)
                     //drop items on position
-                    updates.add(new ItemDropUpdateCommand(new Location<>(craft.getW(), harvestedBlock.getX(), harvestedBlock.getY(), harvestedBlock.getZ()), retStack));
+                    updates.add(new ItemDropUpdateCommand(new Location<>(craft.getWorld(), harvestedBlock.getX(), harvestedBlock.getY(), harvestedBlock.getZ()), retStack));
             }
         }
     }
@@ -397,7 +397,7 @@ public class TranslationTask extends AsyncTask {
 
         Furnace fuelHolder = null;
         for (MovecraftLocation bTest : oldHitBox) {
-            BlockSnapshot b = getCraft().getW().createSnapshot(bTest.getX(), bTest.getY(), bTest.getZ());
+            BlockSnapshot b = getCraft().getWorld().createSnapshot(bTest.getX(), bTest.getY(), bTest.getZ());
             if (b.getState().getType() == BlockTypes.FURNACE || b.getState().getType() == BlockTypes.LIT_FURNACE) {
                 Optional<Furnace> furnaceOptional = b.getLocation()
                         .flatMap(Location::getTileEntity)

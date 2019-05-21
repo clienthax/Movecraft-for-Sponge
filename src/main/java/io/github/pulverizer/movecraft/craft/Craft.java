@@ -1,5 +1,8 @@
 package io.github.pulverizer.movecraft.craft;
 
+import com.flowpowered.math.vector.Vector3d;
+import com.flowpowered.math.vector.Vector3i;
+import io.github.pulverizer.movecraft.CraftState;
 import io.github.pulverizer.movecraft.Movecraft;
 import io.github.pulverizer.movecraft.async.detection.DetectionTask;
 import io.github.pulverizer.movecraft.async.rotation.RotationTask;
@@ -19,60 +22,59 @@ import org.spongepowered.api.util.Direction;
 import org.spongepowered.api.world.Location;
 import org.spongepowered.api.world.World;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.spongepowered.api.text.chat.ChatTypes.ACTION_BAR;
 
 public class Craft {
 
-    protected final CraftType type;
-    protected HashHitBox hitBox;
-
-    protected World w;
-    private final AtomicBoolean processing = new AtomicBoolean();
-    private boolean cruising;
-    private boolean sinking;
-    private boolean disabled;
-    private Direction cruiseDirection;
-    private long lastCruiseUpdate;
-    private long lastBlockCheck;
-    private long lastRotateTime=0;
-    private long origPilotTime;
-    private int lastDX, lastDY, lastDZ;
-    private double burningFuel;
-    private boolean pilotLocked;
-    private double pilotLockedX;
-    private double pilotLockedY;
-    private int origBlockCount;
-    private double pilotLockedZ;
-    private Player notificationPlayer;
-    private Player cannonDirector;
-    private Player AADirector;
-    private float meanMoveTime;
-    private int numMoves;
-    private final Map<MovecraftLocation, BlockSnapshot> phaseBlocks = new HashMap<>();
-    private final HashMap<UUID, Location<World>> crewSigns = new HashMap<>();
+    //Facts
+    private final CraftType type;
     private final UUID id = UUID.randomUUID();
+    private final HashHitBox initialHitbox;
+    private final Long originalPilotTime;
+
+
+    //State
+    private AtomicBoolean processing = new AtomicBoolean();
+    private HashHitBox currentHitbox;
+    private CraftState state;
+    private Long lastCheckTime;
+    private World world;
+
+
+    //Crew
+    private Player pilot;
+    private Player AADirector;
+    private Player cannonDirector;
+    private Set<Player> crew = new HashSet<>();
+
+
+    //Direct Control
+    private boolean directControl = false;
+    private Vector3d pilotPosition;
+
+
+    //Movement
+    private long lastCruiseUpdateTime;
+    private Direction cruiseDirection;
+    private Vector3i lastMoveVector;
+    private Set<BlockSnapshot> phasedBlocks = new HashSet<>();
+    private double burningFuel;
+    private int fuelStored;
+    private int numberOfMoves = 0;
+    private long lastRotateTime = 0;
+    private float meanMoveTime;
+
+    //TODO: Rewrite these variables
+    private final HashMap<UUID, Location<World>> crewSigns = new HashMap<>();
 
     public Craft(CraftType type, World world) {
         this.type = type;
-        this.w = world;
-        this.hitBox = new HashHitBox();
-        this.pilotLocked = false;
-        this.pilotLockedX = 0.0;
-        this.pilotLockedY = 0.0;
-        this.pilotLockedZ = 0.0;
-        this.cannonDirector = null;
-        this.AADirector = null;
-        this.lastCruiseUpdate = System.currentTimeMillis() - 10000;
-        this.cruising = false;
-        this.sinking = false;
-        this.disabled = false;
-        this.origPilotTime = System.currentTimeMillis();
-        numMoves = 0;
+        setWorld(world);
+        setLastCruiseUpdateTime(System.currentTimeMillis() - 10000);
+        this.originalPilotTime = System.currentTimeMillis();
     }
 
     public boolean isNotProcessing() {
@@ -84,24 +86,28 @@ public class Craft {
     }
 
     public HashHitBox getHitBox() {
-        return hitBox;
+        return currentHitbox;
     }
 
-    public void setHitBox(HashHitBox currentHitBox){
-        this.hitBox = currentHitBox;
+    public void setHitBox(HashHitBox newHitBox){
+        currentHitbox = newHitBox;
     }
 
     public CraftType getType() {
         return type;
     }
 
-    public World getW() {
-        return w;
+    private void setWorld(World world) {
+        this.world = world;
+    }
+
+    public World getWorld() {
+        return world;
     }
 
 
-    public void detect(Player player, Player notificationPlayer, MovecraftLocation startPoint) {
-        this.setNotificationPlayer(notificationPlayer);
+    public void detect(Player player, Location<World> startPoint) {
+        setPilot(player);
         Movecraft.getInstance().getAsyncManager().submitTask(new DetectionTask(this, startPoint, player), this);
     }
 
@@ -109,18 +115,18 @@ public class Craft {
         //TODO: Rewrite to Vectors instead of int.
 
         // check to see if the craft is trying to move in a direction not permitted by the type
-        if (!this.getType().allowHorizontalMovement() && !this.getSinking()) {
+        if (!this.getType().allowHorizontalMovement() && this.getState() != CraftState.SINKING) {
             dx = 0;
             dz = 0;
         }
-        if (!this.getType().allowVerticalMovement() && !this.getSinking()) {
+        if (!this.getType().allowVerticalMovement() && this.getState() != CraftState.SINKING) {
             dy = 0;
         }
         if (dx == 0 && dy == 0 && dz == 0) {
             return;
         }
 
-        if (!this.getType().allowVerticalTakeoffAndLanding() && dy != 0 && !this.getSinking()) {
+        if (!this.getType().allowVerticalTakeoffAndLanding() && dy != 0 && this.getState() != CraftState.SINKING) {
             if (dx == 0 && dz == 0) {
                 return;
             }
@@ -131,31 +137,31 @@ public class Craft {
 
     public void rotate(Rotation rotation, MovecraftLocation originPoint) {
         if(getLastRotateTime()+1e9>System.nanoTime()){
-            if(getNotificationPlayer()!=null)
-                getNotificationPlayer().sendMessage(Text.of("You're turning too quickly!"));
+            if(getPilot()!=null)
+                getPilot().sendMessage(Text.of("You're turning too quickly!"));
             return;
         }
         setLastRotateTime(System.nanoTime());
-        Movecraft.getInstance().getAsyncManager().submitTask(new RotationTask(this, originPoint, rotation, this.getW()), this);
+        Movecraft.getInstance().getAsyncManager().submitTask(new RotationTask(this, originPoint, rotation, this.getWorld()), this);
     }
 
     public void rotate(Rotation rotation, MovecraftLocation originPoint, boolean isSubCraft) {
-        Movecraft.getInstance().getAsyncManager().submitTask(new RotationTask(this, originPoint, rotation, this.getW(), isSubCraft), this);
+        Movecraft.getInstance().getAsyncManager().submitTask(new RotationTask(this, originPoint, rotation, this.getWorld(), isSubCraft), this);
     }
 
-    public boolean getCruising() {
-        return cruising;
+    public CraftState getState() {
+        return this.state;
     }
 
     public void setCruising(boolean cruising) {
-        if(notificationPlayer!=null){
-            notificationPlayer.sendMessage(ACTION_BAR, Text.of("Cruising " + (cruising ? "enabled" : "disabled")));
+        if(pilot != null){
+            pilot.sendMessage(ACTION_BAR, Text.of("Cruising " + (cruising ? "enabled" : "disabled")));
         }
-        this.cruising = cruising;
-    }
-
-    public boolean getSinking() {
-        return sinking;
+        if (cruising)
+            state = CraftState.CRUISING;
+        else if (getState() != CraftState.DISABLED && getState() != CraftState.SINKING){
+            state = CraftState.STOPPED;
+        }
     }
 
     public void sink(){
@@ -164,16 +170,12 @@ public class Craft {
         if(event.isCancelled()){
             return;
         }
-        this.sinking = true;
+        this.state = CraftState.SINKING;
 
     }
 
-    public boolean getDisabled() {
-        return disabled;
-    }
-
-    public void setDisabled(boolean disabled) {
-        this.disabled = disabled;
+    public void setDisabled() {
+        this.state = CraftState.DISABLED;
     }
 
     public Direction getCruiseDirection() {
@@ -184,76 +186,44 @@ public class Craft {
         this.cruiseDirection = cruiseDirection;
     }
 
-    public void setLastCruiseUpdate(long update) {
-        this.lastCruiseUpdate = update;
+    public void setLastCruiseUpdateTime(long update) {
+        this.lastCruiseUpdateTime = update;
     }
 
-    public long getLastCruiseUpdate() {
-        return lastCruiseUpdate;
+    public long getLastCruiseUpdateTime() {
+        return lastCruiseUpdateTime;
     }
 
-    public long getLastBlockCheck() {
-        return lastBlockCheck;
+    public long getLastCheckTime() {
+        return lastCheckTime;
     }
 
-    public void setLastBlockCheck(long update) {
-        this.lastBlockCheck = update;
+    public void setLastCheckTime(long update) {
+        this.lastCheckTime = update;
     }
 
-    public int getLastDX() {
-        return lastDX;
+    public void setLastMoveVector(Vector3i lastMoveVector) {
+        this.lastMoveVector = lastMoveVector;
     }
 
-    public void setLastDX(int dX) {
-        this.lastDX = dX;
+    public Vector3i getLastMoveVector() {
+        return lastMoveVector;
     }
 
-    public int getLastDY() {
-        return lastDY;
+    public boolean getDirectControl() {
+        return directControl;
     }
 
-    public void setLastDY(int dY) {
-        this.lastDY = dY;
+    public void setDirectControl(boolean directControl) {
+        this.directControl = directControl;
     }
 
-    public int getLastDZ() {
-        return lastDZ;
+    public Vector3d getPilotPosition() {
+        return pilotPosition;
     }
 
-    public void setLastDZ(int dZ) {
-        this.lastDZ = dZ;
-    }
-
-    public boolean getPilotLocked() {
-        return pilotLocked;
-    }
-
-    public void setPilotLocked(boolean pilotLocked) {
-        this.pilotLocked = pilotLocked;
-    }
-
-    public double getPilotLockedX() {
-        return pilotLockedX;
-    }
-
-    public void setPilotLockedX(double pilotLockedX) {
-        this.pilotLockedX = pilotLockedX;
-    }
-
-    public double getPilotLockedY() {
-        return pilotLockedY;
-    }
-
-    public void setPilotLockedY(double pilotLockedY) {
-        this.pilotLockedY = pilotLockedY;
-    }
-
-    public double getPilotLockedZ() {
-        return pilotLockedZ;
-    }
-
-    public void setPilotLockedZ(double pilotLockedZ) {
-        this.pilotLockedZ = pilotLockedZ;
+    public void setPilotPosition(Vector3d pilotPosition) {
+        this.pilotPosition = pilotPosition;
     }
 
     public double getBurningFuel() {
@@ -264,40 +234,36 @@ public class Craft {
         this.burningFuel = burningFuel;
     }
 
-    public int getOrigBlockCount() {
-        return origBlockCount;
+    public int getInitialSize() {
+        return initialHitbox.size();
     }
 
-    public void setOrigBlockCount(int origBlockCount) {
-        this.origBlockCount = origBlockCount;
+    public Player getPilot() {
+        return pilot;
     }
 
-    public Player getNotificationPlayer() {
-        return notificationPlayer;
-    }
-
-    public void setNotificationPlayer(Player notificationPlayer) {
-        this.notificationPlayer = notificationPlayer;
+    public void setPilot(Player player) {
+        pilot = player;
     }
 
     public Player getCannonDirector() {
         return cannonDirector;
     }
 
-    public void setCannonDirector(Player cannonDirector) {
-        this.cannonDirector = cannonDirector;
+    public void setCannonDirector(Player player) {
+        cannonDirector = player;
     }
 
     public Player getAADirector() {
         return AADirector;
     }
 
-    public void setAADirector(Player AADirector) {
-        this.AADirector = AADirector;
+    public void setAADirector(Player player) {
+        AADirector = player;
     }
 
-    public long getOrigPilotTime() {
-        return origPilotTime;
+    public long getOriginalPilotTime() {
+        return originalPilotTime;
     }
 
     public float getMeanMoveTime() {
@@ -305,30 +271,30 @@ public class Craft {
     }
 
     public void addMoveTime(float moveTime){
-        meanMoveTime = (meanMoveTime*numMoves + moveTime)/(++numMoves);
+        meanMoveTime = (meanMoveTime* numberOfMoves + moveTime)/(++numberOfMoves);
     }
 
     public int getTickCooldown() {
-        if(sinking)
+        if(state == CraftState.SINKING)
             return type.getSinkRateTicks();
         double chestPenalty = 0;
-        for(MovecraftLocation location : hitBox){
-            if(location.toSponge(w).getBlockType()==BlockTypes.CHEST)
+        for(MovecraftLocation location : currentHitbox){
+            if(location.toSponge(world).getBlockType()==BlockTypes.CHEST)
                 chestPenalty++;
         }
         chestPenalty*=type.getChestPenalty();
         if(meanMoveTime==0)
             return type.getCruiseTickCooldown()+(int)chestPenalty;
-        if(!cruising)
+        if(state != CraftState.CRUISING)
             return type.getTickCooldown()+(int)chestPenalty;
-        if(type.getDynamicFlyBlockSpeedFactor()!=0){
+        if(type.getDynamicFlyBlockSpeedFactor() != 0){
             double count = 0;
             BlockType flyBlockMaterial = type.getDynamicFlyBlock();
-            for(MovecraftLocation location : hitBox){
-                if(location.toSponge(w).getBlockType()==flyBlockMaterial)
+            for(MovecraftLocation location : currentHitbox){
+                if(location.toSponge(world).getBlockType()==flyBlockMaterial)
                     count++;
             }
-            return Math.max((int) (20 / (type.getCruiseTickCooldown() * (1  + type.getDynamicFlyBlockSpeedFactor() * (count / hitBox.size() - .5)))), 1);
+            return Math.max((int) (20 / (type.getCruiseTickCooldown() * (1  + type.getDynamicFlyBlockSpeedFactor() * (count / currentHitbox.size() - .5)))), 1);
             //return  Math.max((int)(type.getCruiseTickCooldown()* (1 - count /hitBox.size()) +chestPenalty),1);
         }
 
@@ -358,43 +324,43 @@ public class Craft {
         //TODO: Remove this temporary system in favor of passthrough blocks
         // Find the waterline from the surrounding terrain or from the static level in the craft type
         int waterLine = 0;
-        if (type.getStaticWaterLevel() != 0 || hitBox.isEmpty()) {
+        if (type.getStaticWaterLevel() != 0 || currentHitbox.isEmpty()) {
             return type.getStaticWaterLevel();
         }
 
         // figure out the water level by examining blocks next to the outer boundaries of the craft
-        for (int posY = hitBox.getMaxY() + 1; posY >= hitBox.getMinY() - 1; posY--) {
+        for (int posY = currentHitbox.getMaxY() + 1; posY >= currentHitbox.getMinY() - 1; posY--) {
             int numWater = 0;
             int numAir = 0;
             int posX;
             int posZ;
-            posZ = hitBox.getMinZ() - 1;
-            for (posX = hitBox.getMinX() - 1; posX <= hitBox.getMaxX() + 1; posX++) {
-                BlockType typeID = w.getBlock(posX, posY, posZ).getType();
+            posZ = currentHitbox.getMinZ() - 1;
+            for (posX = currentHitbox.getMinX() - 1; posX <= currentHitbox.getMaxX() + 1; posX++) {
+                BlockType typeID = world.getBlock(posX, posY, posZ).getType();
                 if (typeID == BlockTypes.WATER)
                     numWater++;
                 if (typeID == BlockTypes.AIR)
                     numAir++;
             }
-            posZ = hitBox.getMaxZ() + 1;
-            for (posX = hitBox.getMinX() - 1; posX <= hitBox.getMaxX() + 1; posX++) {
-                BlockType typeID = w.getBlock(posX, posY, posZ).getType();
+            posZ = currentHitbox.getMaxZ() + 1;
+            for (posX = currentHitbox.getMinX() - 1; posX <= currentHitbox.getMaxX() + 1; posX++) {
+                BlockType typeID = world.getBlock(posX, posY, posZ).getType();
                 if (typeID == BlockTypes.WATER)
                     numWater++;
                 if (typeID == BlockTypes.AIR)
                     numAir++;
             }
-            posX = hitBox.getMinX() - 1;
-            for (posZ = hitBox.getMinZ(); posZ <= hitBox.getMaxZ(); posZ++) {
-                BlockType typeID = w.getBlock(posX, posY, posZ).getType();
+            posX = currentHitbox.getMinX() - 1;
+            for (posZ = currentHitbox.getMinZ(); posZ <= currentHitbox.getMaxZ(); posZ++) {
+                BlockType typeID = world.getBlock(posX, posY, posZ).getType();
                 if (typeID == BlockTypes.WATER)
                     numWater++;
                 if (typeID == BlockTypes.AIR)
                     numAir++;
             }
-            posX = hitBox.getMaxX() + 1;
-            for (posZ = hitBox.getMinZ(); posZ <= hitBox.getMaxZ(); posZ++) {
-                BlockType typeID = w.getBlock(posX, posY, posZ).getType();
+            posX = currentHitbox.getMaxX() + 1;
+            for (posZ = currentHitbox.getMinZ(); posZ <= currentHitbox.getMaxZ(); posZ++) {
+                BlockType typeID = world.getBlock(posX, posY, posZ).getType();
                 if (typeID == BlockTypes.WATER)
                     numWater++;
                 if (typeID == BlockTypes.AIR)
@@ -407,8 +373,8 @@ public class Craft {
         return waterLine;
     }
 
-    public Map<MovecraftLocation,BlockSnapshot> getPhaseBlocks(){
-        return phaseBlocks;
+    public Set<BlockSnapshot> getPhasedBlocks(){
+        return this.phasedBlocks;
     }
 
     public Map<UUID, Location<World>> getCrewSigns(){

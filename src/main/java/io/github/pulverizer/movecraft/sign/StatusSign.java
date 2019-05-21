@@ -26,7 +26,7 @@ public final class StatusSign {
 
     @Listener
     public void onCraftDetect(CraftDetectEvent event){
-        World world = event.getCraft().getW();
+        World world = event.getCraft().getWorld();
         for(MovecraftLocation location: event.getCraft().getHitBox()){
             BlockSnapshot block = location.toSponge(world).createSnapshot();
 
@@ -69,7 +69,7 @@ public final class StatusSign {
         int totalBlocks=0;
         Map<BlockType, Integer> foundBlocks = new HashMap<>();
         for (MovecraftLocation ml : craft.getHitBox()) {
-            BlockType blockType = craft.getW().getBlockType(ml.getX(), ml.getY(), ml.getZ());
+            BlockType blockType = craft.getWorld().getBlockType(ml.getX(), ml.getY(), ml.getZ());
 
             if (foundBlocks.containsKey(blockType)) {
                 Integer count = foundBlocks.get(blockType);
@@ -83,7 +83,7 @@ public final class StatusSign {
             }
 
             if (blockType == BlockTypes.FURNACE || blockType == BlockTypes.LIT_FURNACE) {
-                Inventory inventory = ((TileEntityCarrier) craft.getW().getTileEntity(ml.getX(), ml.getY(), ml.getZ()).get()).getInventory();
+                Inventory inventory = ((TileEntityCarrier) craft.getWorld().getTileEntity(ml.getX(), ml.getY(), ml.getZ()).get()).getInventory();
                 if (inventory.contains(ItemTypes.COAL) || inventory.contains(ItemTypes.COAL_BLOCK)) {
 
                     int coal = inventory.query(QueryOperationTypes.ITEM_TYPE.of(ItemTypes.COAL)).totalItems();

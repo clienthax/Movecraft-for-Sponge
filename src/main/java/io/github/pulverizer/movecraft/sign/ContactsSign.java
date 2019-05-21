@@ -18,7 +18,7 @@ public class ContactsSign {
 
     @Listener
     public void onCraftDetect(CraftDetectEvent event){
-        World world = event.getCraft().getW();
+        World world = event.getCraft().getWorld();
         for(MovecraftLocation location: event.getCraft().getHitBox()){
             BlockSnapshot block = location.toSponge(world).createSnapshot();
             if(block.getState().getType() == BlockTypes.WALL_SIGN || block.getState().getType() == BlockTypes.STANDING_SIGN){
@@ -54,7 +54,7 @@ public class ContactsSign {
 
         boolean foundContact = false;
         int signLine = 1;
-        for(Craft tcraft : CraftManager.getInstance().getCraftsInWorld(craft.getW())) {
+        for(Craft tcraft : CraftManager.getInstance().getCraftsInWorld(craft.getWorld())) {
             long cposx=craft.getHitBox().getMaxX()+craft.getHitBox().getMinX();
             long cposy=craft.getHitBox().getMaxY()+craft.getHitBox().getMinY();
             long cposz=craft.getHitBox().getMaxZ()+craft.getHitBox().getMinZ();
@@ -74,12 +74,12 @@ public class ContactsSign {
             distsquared+= diffy * diffy;
             distsquared+= diffz * diffz;
             long detectionRange = 0;
-            if(tposy>tcraft.getW().getSeaLevel()) {
-                detectionRange=(long) (Math.sqrt(tcraft.getOrigBlockCount())*tcraft.getType().getDetectionMultiplier());
+            if(tposy>tcraft.getWorld().getSeaLevel()) {
+                detectionRange=(long) (Math.sqrt(tcraft.getInitialSize())*tcraft.getType().getDetectionMultiplier());
             } else {
-                detectionRange=(long) (Math.sqrt(tcraft.getOrigBlockCount())*tcraft.getType().getUnderwaterDetectionMultiplier());
+                detectionRange=(long) (Math.sqrt(tcraft.getInitialSize())*tcraft.getType().getUnderwaterDetectionMultiplier());
             }
-            if(distsquared<detectionRange*detectionRange && tcraft.getNotificationPlayer()!=craft.getNotificationPlayer()) {
+            if(distsquared<detectionRange*detectionRange && tcraft.getPilot()!=craft.getPilot()) {
                 // craft has been detected
                 foundContact = true;
                 String notification = TextColors.BLUE + tcraft.getType().getCraftName();

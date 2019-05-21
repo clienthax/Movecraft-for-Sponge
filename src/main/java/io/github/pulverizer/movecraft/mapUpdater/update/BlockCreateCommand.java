@@ -19,7 +19,7 @@ public class BlockCreateCommand extends UpdateCommand {
     public BlockCreateCommand(MovecraftLocation newBlockLocation, BlockSnapshot block, Craft craft) {
         this.newBlockLocation = newBlockLocation;
         this.block = block;
-        this.world = craft.getW();
+        this.world = craft.getWorld();
     }
 
     public BlockCreateCommand(World world, MovecraftLocation newBlockLocation, BlockSnapshot block) {

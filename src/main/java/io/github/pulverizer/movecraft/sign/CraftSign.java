@@ -90,7 +90,7 @@ public final class CraftSign {
             }
 
             c.setCruiseDirection(cruiseDirection);
-            c.setLastCruiseUpdate(System.currentTimeMillis());
+            c.setLastCruiseUpdateTime(System.currentTimeMillis());
             c.setCruising(true);
 
             Task.builder()

@@ -60,7 +60,7 @@ public final class MoveSign {
         if (CraftManager.getInstance().getCraftByPlayer(player).getType().getCanStaticMove()) {
             CraftManager.getInstance().getCraftByPlayer(player).translate(dx, dy, dz);
             //timeMap.put(player, System.currentTimeMillis());
-            CraftManager.getInstance().getCraftByPlayer(player).setLastCruiseUpdate(System.currentTimeMillis());
+            CraftManager.getInstance().getCraftByPlayer(player).setLastCruiseUpdateTime(System.currentTimeMillis());
         }
     }
 }

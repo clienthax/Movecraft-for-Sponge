@@ -44,7 +44,7 @@ public class MathUtils {
 
     public static boolean locIsNearCraftFast(final Craft craft, final MovecraftLocation location) {
         // optimized to be as fast as possible, it checks the easy ones first, then the more computationally intensive later
-        return locationNearHitBox(craft.getHitBox(), location.toSponge(craft.getW()), 3);
+        return locationNearHitBox(craft.getHitBox(), location.toSponge(craft.getWorld()), 3);
     }
 
     /**

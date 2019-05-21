@@ -79,7 +79,7 @@ public class CraftManager implements Iterable<Craft>{
         if(!c.getHitBox().isEmpty()) {
             if (player != null) {
                 player.sendMessage(Text.of("You have released your craft."));
-                Movecraft.getInstance().getLogger().info(String.format(c.getNotificationPlayer().getName() + " has released a craft of type %s with size %d at coordinates : %d x , %d z", c.getType().getCraftName(), c.getHitBox().size(), c.getHitBox().getMinX(), c.getHitBox().getMinZ()));
+                Movecraft.getInstance().getLogger().info(String.format(c.getPilot().getName() + " has released a craft of type %s with size %d at coordinates : %d x , %d z", c.getType().getCraftName(), c.getHitBox().size(), c.getHitBox().getMinX(), c.getHitBox().getMinZ()));
             } else {
                 Movecraft.getInstance().getLogger().info(String.format("NULL Player has released a craft of type %s with size %d at coordinates : %d x , %d z", c.getType().getCraftName(), c.getHitBox().size(), c.getHitBox().getMinX(), c.getHitBox().getMinZ()));
             }
@@ -97,7 +97,7 @@ public class CraftManager implements Iterable<Craft>{
     public Set<Craft> getCraftsInWorld(World w) {
         Set<Craft> crafts = new HashSet<>();
         for(Craft c : this.craftList){
-            if(c.getW() == w)
+            if(c.getWorld() == w)
                 crafts.add(c);
         }
         return crafts;
@@ -123,7 +123,7 @@ public class CraftManager implements Iterable<Craft>{
     public void removeCraftByPlayer(Player player){
         List<Craft> crafts = new ArrayList<>();
         for(Craft c : craftList){
-            if(c.getNotificationPlayer() != null && c.getNotificationPlayer().equals(player)){
+            if(c.getPilot() != null && c.getPilot().equals(player)){
                 releaseEvents.remove(c);
                 crafts.add(c);
             }
@@ -149,7 +149,7 @@ public class CraftManager implements Iterable<Craft>{
         Player p = getPlayerFromCraft(c);
         p.sendMessage(Text.of("You have released your craft."));
         Movecraft.getInstance().getLogger().info(String.format(p.getName() + " has released a craft of type %s with size %d at coordinates : %d x , %d z", c.getType().getCraftName(), c.getHitBox().size(), c.getHitBox().getMinX(), c.getHitBox().getMinZ()));
-        c.setNotificationPlayer(null);
+        c.setPilot(null);
         craftPlayerIndex.remove(p);
     }
 
