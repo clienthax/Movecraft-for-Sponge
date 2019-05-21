@@ -33,7 +33,6 @@ public class Craft {
 
     protected World w;
     private final AtomicBoolean processing = new AtomicBoolean();
-    private int maxHeightLimit;
     private boolean cruising;
     private boolean sinking;
     private boolean disabled;
@@ -62,11 +61,6 @@ public class Craft {
         this.type = type;
         this.w = world;
         this.hitBox = new HashHitBox();
-        if (type.getMaxHeightLimit() > w.getDimension().getBuildHeight() - 1) {
-            this.maxHeightLimit = w.getDimension().getBuildHeight() - 1;
-        } else {
-            this.maxHeightLimit = type.getMaxHeightLimit();
-        }
         this.pilotLocked = false;
         this.pilotLockedX = 0.0;
         this.pilotLockedY = 0.0;
