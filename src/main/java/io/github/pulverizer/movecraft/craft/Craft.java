@@ -3,11 +3,12 @@ package io.github.pulverizer.movecraft.craft;
 import com.flowpowered.math.vector.Vector3d;
 import com.flowpowered.math.vector.Vector3i;
 import io.github.pulverizer.movecraft.CraftState;
+import io.github.pulverizer.movecraft.events.CraftSinkEvent;
 import io.github.pulverizer.movecraft.utils.HashHitBox;
 
+import org.spongepowered.api.Sponge;
 import org.spongepowered.api.block.BlockSnapshot;
 import org.spongepowered.api.entity.living.player.Player;
-import org.spongepowered.api.text.Text;
 import org.spongepowered.api.util.Direction;
 import org.spongepowered.api.world.Location;
 import org.spongepowered.api.world.World;
@@ -41,7 +42,7 @@ public class Craft {
 
     //Direct Control
     private boolean directControl = false;
-    private Vector3d pilotPosition;
+    private Vector3d pilotOffset;
 
 
     //Movement
@@ -289,11 +290,127 @@ public class Craft {
     }
 
     /**
-     * Fetches the time when the craft was piloted.
-     * @return Time when craft was piloted.
+     * Fetches the time when the craft last cruised.
+     * @return Time when craft last cruised.
      */
     public long getLastCruiseUpdateTime() {
         return lastCruiseUpdateTime;
+    }
+
+    /**
+     * Fetches the time when the craft last cruised.
+     * @param time Time when the craft last cruised.
+     */
+    public void setLastCruiseUpdateTime(Long time) {
+        lastCruiseUpdateTime = time;
+    }
+
+    /**
+     * Fetches the unique id of the craft.
+     * @return Craft's unique id.
+     */
+    public UUID getID() {
+        return id;
+    }
+
+    /**
+     * <pre>
+     *     Sets the current state of the craft.
+     *     If the craft is SINKING it cannot be changed.
+     * </pre>
+     * @param newState The proposed new state of the craft.
+     * @return The actual state of the craft.
+     */
+    public CraftState setState(CraftState newState) {
+        if (state == CraftState.SINKING)
+            return state;
+
+        if (newState == CraftState.SINKING) {
+            CraftSinkEvent event = new CraftSinkEvent(this);
+            Sponge.getEventManager().post(event);
+
+            if (event.isCancelled()) {
+                return state;
+            } else {
+                state = CraftState.SINKING;
+                return state;
+            }
+        }
+
+        state = newState;
+        return state;
+
+    }
+
+    /**
+     * Fetches the current state of the craft.
+     * @return Current state of the craft.
+     */
+    public CraftState getState() {
+        return state;
+    }
+
+    /**
+     * Checks if the craft is not processing.
+     * @return False if the craft is processing.
+     */
+    public boolean isNotProcessing() {
+        return !processing.get();
+    }
+
+    /**
+     * Sets if the craft is currently processing or not.
+     */
+    public void setProcessing(boolean processing) {
+        this.processing.set(processing);
+    }
+
+    /**
+     * Sets if the craft is in direct control mode.
+     * @param setting True if the craft entering direct control mode. False if exiting direct control mode.
+     */
+    public void setDirectControl(boolean setting) {
+        directControl = setting;
+    }
+
+    /**
+     * Fetches if the craft is in direct control mode or not.
+     * @return True if the craft is in direct control mode.
+     */
+    public boolean underDirectControl() {
+        return directControl;
+    }
+
+    /**
+     * Used to calculate the next translation of the craft while in direct control mode.
+     * @param newPilotOffset The combined move requests made by the pilot.
+     */
+    public void setPilotOffset(Vector3d newPilotOffset) {
+        pilotOffset = newPilotOffset;
+    }
+
+    /**
+     * Fetches the current total offset of the pilot.
+     * @return
+     */
+    public Vector3d getPilotOffset() {
+        return pilotOffset;
+    }
+
+    /**
+     *
+     * @param lastMoveVector
+     */
+    public void setLastMoveVector(Vector3i lastMoveVector) {
+        this.lastMoveVector = lastMoveVector;
+    }
+
+    /**
+     *
+     * @return
+     */
+    public Vector3i getLastMoveVector() {
+        return lastMoveVector;
     }
 
     //--------------------------//
