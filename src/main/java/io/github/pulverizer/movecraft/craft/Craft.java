@@ -8,7 +8,13 @@ import io.github.pulverizer.movecraft.utils.HashHitBox;
 
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.block.BlockSnapshot;
+import org.spongepowered.api.block.BlockType;
+import org.spongepowered.api.block.BlockTypes;
+import org.spongepowered.api.block.tileentity.carrier.Furnace;
 import org.spongepowered.api.entity.living.player.Player;
+import org.spongepowered.api.item.ItemTypes;
+import org.spongepowered.api.item.inventory.Inventory;
+import org.spongepowered.api.item.inventory.query.QueryOperationTypes;
 import org.spongepowered.api.util.Direction;
 import org.spongepowered.api.world.Location;
 import org.spongepowered.api.world.World;
@@ -34,15 +40,15 @@ public class Craft {
 
 
     //Crew
-    private Player pilot;
-    private Player AADirector;
-    private Player cannonDirector;
-    private Set<Player> crewList = new HashSet<>();
+    private UUID pilot;
+    private UUID AADirector;
+    private UUID cannonDirector;
+    private Set<UUID> crewList = new HashSet<>();
 
 
     //Direct Control
     private boolean directControl = false;
-    private Vector3d pilotOffset;
+    private Vector3d pilotOffset = new Vector3d(0,0,0);
 
 
     //Movement
@@ -51,7 +57,6 @@ public class Craft {
     private Vector3i lastMoveVector;
     private Set<BlockSnapshot> phasedBlocks = new HashSet<>();
     private double burningFuel;
-    private int fuelStored;
     private int numberOfMoves = 0;
     private long lastRotateTime = 0;
     private float meanMoveTime;
@@ -83,7 +88,7 @@ public class Craft {
      * Adds the player to the craft's crew.
      * @param player The player to be added.
      */
-    public void addCrewMember(Player player) {
+    public void addCrewMember(UUID player) {
         crewList.add(player);
     }
 
@@ -91,7 +96,7 @@ public class Craft {
      * Removes the player from the craft's crew.
      * @param player The player to be removed.
      */
-    public void removeCrewMember(Player player) {
+    public void removeCrewMember(UUID player) {
         crewList.remove(player);
 
         if (getPilot() == player)
@@ -108,7 +113,7 @@ public class Craft {
      * Fetches the list of players that are registered as members of the craft's crew.
      * @return The list of players that are registered as members of the craft's crew.
      */
-    public Set<Player> getCrewList() {
+    public Set<UUID> getCrewList() {
         return crewList;
     }
 
@@ -117,7 +122,7 @@ public class Craft {
      * @param player Player to look for.
      * @return True if the player is a part of the crew.
      */
-    public boolean isCrewMember(Player player) {
+    public boolean isCrewMember(UUID player) {
         return crewList.contains(player);
     }
 
@@ -215,7 +220,7 @@ public class Craft {
      * @param player The player to be set as the pilot. Use null to remove but not replace the existing pilot.
      * @return False if you are attempting to set a player as the pilot but the player is not a member of the crew.
      */
-    public boolean setPilot(Player player) {
+    public boolean setPilot(UUID player) {
         if (!isCrewMember(player) && player != null)
             return false;
 
@@ -227,7 +232,7 @@ public class Craft {
      * Fetches the current pilot of the craft.
      * @return The current pilot of the craft.
      */
-    public Player getPilot() {
+    public UUID getPilot() {
         return pilot;
     }
 
@@ -236,7 +241,7 @@ public class Craft {
      * @param player The player to be set as the AA director. Use null to remove but not replace the existing AA director.
      * @return False if you are attempting to set a player as the AA director but the player is not a member of the crew.
      */
-    public boolean setAADirector(Player player) {
+    public boolean setAADirector(UUID player) {
         if (!isCrewMember(player) && player != null)
             return false;
 
@@ -248,7 +253,7 @@ public class Craft {
      * Fetches the current AA director of the craft.
      * @return The current AA director of the craft.
      */
-    public Player getAADirector() {
+    public UUID getAADirector() {
         return AADirector;
     }
 
@@ -257,7 +262,7 @@ public class Craft {
      * @param player The player to be set as the cannon director. Use null to remove but not replace the existing cannon director.
      * @return False if you are attempting to set a player as the cannon director but the player is not a member of the crew.
      */
-    public boolean setCannonDirector(Player player) {
+    public boolean setCannonDirector(UUID player) {
         if (!isCrewMember(player) && player != null)
             return false;
 
@@ -269,7 +274,7 @@ public class Craft {
      * Fetches the current cannon director of the craft.
      * @return The current cannon director of the craft.
      */
-    public Player getCannonDirector() {
+    public UUID getCannonDirector() {
         return cannonDirector;
     }
 
@@ -390,27 +395,182 @@ public class Craft {
     }
 
     /**
-     * Fetches the current total offset of the pilot.
-     * @return
+     * Fetches the current combined total of the move requests made by the pilot.
+     * @return Combined total of the move requests made by the pilot.
      */
     public Vector3d getPilotOffset() {
         return pilotOffset;
     }
 
     /**
-     *
-     * @param lastMoveVector
+     * Records the craft's last move as a Vector3i.
+     * @param lastMoveVector The craft's last move.
      */
     public void setLastMoveVector(Vector3i lastMoveVector) {
         this.lastMoveVector = lastMoveVector;
     }
 
     /**
-     *
-     * @return
+     * Fetches the craft's last move.
+     * @return The craft's last move.
      */
     public Vector3i getLastMoveVector() {
         return lastMoveVector;
+    }
+
+    /**
+     * <pre>
+     *     Sets the blocks that the craft is currently flying through.
+     *     These blocks will be placed back in the world after the craft has flown through them.
+     * </pre>
+     * @param phasedBlocks The blocks currently being flown through.
+     */
+    public void setPhasedBlocks(HashSet<BlockSnapshot> phasedBlocks) {
+        this.phasedBlocks = phasedBlocks;
+    }
+
+    /**
+     * Fetches the blocks that the craft is currently flying through.
+     * @return The blocks currently being flown through.
+     */
+    public Set<BlockSnapshot> getPhasedBlocks() {
+        return phasedBlocks;
+    }
+
+    /**
+     * Sets the direction of the craft's cruising.
+     * @param cruiseDirection The direction the craft will cruise in.
+     */
+    public void setCruiseDirection(Direction cruiseDirection) {
+        this.cruiseDirection = cruiseDirection;
+    }
+
+    /**
+     * Fetches the direction the craft is currently set to cruise in.
+     * @return The direction the craft is currently set to cruise in.
+     */
+    public Direction getCruiseDirection() {
+        return cruiseDirection;
+    }
+
+    /**
+     * Fetches the number of move points the craft currently has.
+     * @return The craft's move points.
+     */
+    public double getBurningFuel() {
+        return burningFuel;
+    }
+
+    /**
+     *
+     * @param movePoints
+     * @return
+     */
+    public boolean burnFuel(double movePoints) {
+
+        if (movePoints < 0)
+            return false;
+
+        if (burningFuel >= movePoints) {
+            burningFuel -= movePoints;
+            return true;
+        }
+
+        if (burningFuel < movePoints) {
+
+            //TODO: Edit CraftType configs to allow setting of furnace blocks and fuel items.
+            HashSet<Location<World>> furnaceBlocks = new HashSet<>();
+
+            //Find all the furnace blocks
+            furnaceBlocks.addAll(findBlockType(BlockTypes.FURNACE));
+            furnaceBlocks.addAll(findBlockType(BlockTypes.LIT_FURNACE));
+
+            //Find and burn fuel
+            Iterator<Location<World>> workingList = furnaceBlocks.iterator();
+            Optional<Furnace> furnaceOptional;
+            while (burningFuel < movePoints && workingList.hasNext()) {
+                furnaceOptional = workingList.next()
+                        .getTileEntity()
+                        .filter(Furnace.class::isInstance)
+                        .map(Furnace.class::cast)
+                        .filter(furnace -> furnace.getInventory().contains(ItemTypes.COAL) || furnace.getInventory().contains(ItemTypes.COAL_BLOCK));
+
+                if (furnaceOptional.isPresent()) {
+                    Inventory furnaceInventory = furnaceOptional.get().getInventory();
+                    if (furnaceInventory.contains(ItemTypes.COAL_BLOCK)) {
+                        //TODO: Make move points per fuel type configurable.
+                        int oldValue = (int) Math.ceil((movePoints - burningFuel) / 72);
+                        int newValue = furnaceInventory.query(QueryOperationTypes.ITEM_TYPE.of(ItemTypes.COAL_BLOCK)).poll(oldValue).get().getQuantity();
+
+                        burningFuel += (oldValue - newValue) * 72;
+
+                    } else {
+                        int oldValue = (int) Math.ceil((movePoints - burningFuel) / 8);
+                        int newValue = furnaceInventory.query(QueryOperationTypes.ITEM_TYPE.of(ItemTypes.COAL)).poll(oldValue).get().getQuantity();
+
+                        burningFuel += (oldValue - newValue) * 8;
+                    }
+                }
+            }
+
+            if (burningFuel >= movePoints) {
+                burningFuel -= movePoints;
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     *
+     * @return
+     */
+    public int checkFuelStored() {
+
+        int fuelStored = 0;
+        HashSet<Location<World>> furnaceBlocks = new HashSet<>();
+
+        //Find all the furnace blocks
+        furnaceBlocks.addAll(findBlockType(BlockTypes.FURNACE));
+        furnaceBlocks.addAll(findBlockType(BlockTypes.LIT_FURNACE));
+
+        //Find fuel
+        Iterator<Location<World>> workingList = furnaceBlocks.iterator();
+        Optional<Furnace> furnaceOptional;
+        Inventory furnaceInventory;
+
+        while (workingList.hasNext()) {
+            furnaceOptional = workingList.next()
+                    .getTileEntity()
+                    .filter(Furnace.class::isInstance)
+                    .map(Furnace.class::cast)
+                    .filter(furnace -> furnace.getInventory().contains(ItemTypes.COAL) || furnace.getInventory().contains(ItemTypes.COAL_BLOCK));
+
+            if (furnaceOptional.isPresent()) {
+                furnaceInventory = furnaceOptional.get().getInventory();
+
+                fuelStored += furnaceInventory.query(QueryOperationTypes.ITEM_TYPE.of(ItemTypes.COAL_BLOCK)).totalItems() * 72;
+                fuelStored += furnaceInventory.query(QueryOperationTypes.ITEM_TYPE.of(ItemTypes.COAL)).totalItems() * 8;
+            }
+        }
+
+        return fuelStored;
+    }
+
+    /**
+     *
+     * @param blockType
+     * @return
+     */
+    public HashSet<Location<World>> findBlockType(BlockType blockType) {
+        HashSet<Location<World>> foundBlocks = new HashSet<>();
+        getHitbox().forEach(mLoc -> {
+            if (getWorld().getBlockType(mLoc) == blockType)
+                foundBlocks.add(getWorld().getLocation(mLoc));
+        });
+
+        return foundBlocks;
     }
 
     //--------------------------//

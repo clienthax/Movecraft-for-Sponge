@@ -27,7 +27,7 @@ public final class StatusSign {
     @Listener
     public void onCraftDetect(CraftDetectEvent event){
         World world = event.getCraft().getWorld();
-        for(MovecraftLocation location: event.getCraft().getHitBox()){
+        for(MovecraftLocation location: event.getCraft().getHitbox()){
             BlockSnapshot block = location.toSponge(world).createSnapshot();
 
             if(block.getState().getType() != BlockTypes.WALL_SIGN && block.getState().getType() != BlockTypes.STANDING_SIGN)
@@ -68,7 +68,7 @@ public final class StatusSign {
         int fuel=0;
         int totalBlocks=0;
         Map<BlockType, Integer> foundBlocks = new HashMap<>();
-        for (MovecraftLocation ml : craft.getHitBox()) {
+        for (MovecraftLocation ml : craft.getHitbox()) {
             BlockType blockType = craft.getWorld().getBlockType(ml.getX(), ml.getY(), ml.getZ());
 
             if (foundBlocks.containsKey(blockType)) {
