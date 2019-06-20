@@ -3,6 +3,8 @@ package io.github.pulverizer.movecraft.craft;
 import com.flowpowered.math.vector.Vector3d;
 import com.flowpowered.math.vector.Vector3i;
 import io.github.pulverizer.movecraft.CraftState;
+import io.github.pulverizer.movecraft.Movecraft;
+import io.github.pulverizer.movecraft.async.detection.DetectionTask;
 import io.github.pulverizer.movecraft.events.CraftSinkEvent;
 import io.github.pulverizer.movecraft.utils.HashHitBox;
 
@@ -11,7 +13,6 @@ import org.spongepowered.api.block.BlockSnapshot;
 import org.spongepowered.api.block.BlockType;
 import org.spongepowered.api.block.BlockTypes;
 import org.spongepowered.api.block.tileentity.carrier.Furnace;
-import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.item.ItemTypes;
 import org.spongepowered.api.item.inventory.Inventory;
 import org.spongepowered.api.item.inventory.query.QueryOperationTypes;
@@ -29,6 +30,7 @@ public class Craft {
     private final UUID id = UUID.randomUUID();
     private HashHitBox initialHitbox;
     private final Long originalPilotTime;
+    private UUID originalPilot;
 
 
     //State
@@ -65,15 +67,23 @@ public class Craft {
     private final HashMap<UUID, Location<World>> crewSigns = new HashMap<>();
 
     /**
-     * Initialises the craft.
+     * Initialises the craft and detects the craft's hitbox.
      * @param type The type of the craft.
      * @param world The world the craft is currently in.
      */
-    public Craft(CraftType type, World world) {
+    /**
+     *
+     * @param type
+     * @param player
+     * @param startLocation
+     */
+    public Craft(CraftType type, UUID player, Location<World> startLocation) {
         this.type = type;
-        setWorld(world);
+        setWorld(startLocation.getExtent());
+        addCrewMember(player);
         setLastCruiseUpdateTime(System.currentTimeMillis() - 10000);
         this.originalPilotTime = System.currentTimeMillis();
+        Movecraft.getInstance().getAsyncManager().submitTask(new DetectionTask(this, startLocation, player), this);
     }
 
     /**
@@ -146,12 +156,12 @@ public class Craft {
      * @param detectedHitbox The first ever hitbox of the craft.
      * @return False if the initial hitbox has already been set.
      */
-    public boolean setInitialHitbox(HashHitBox detectedHitbox) {
+    public boolean setInitialHitBox(HashHitBox detectedHitbox) {
         if (!initialHitbox.isEmpty())
             return false;
 
         initialHitbox = detectedHitbox;
-        setHitbox(detectedHitbox);
+        setHitBox(detectedHitbox);
         return true;
     }
 
@@ -159,7 +169,7 @@ public class Craft {
      * Fetches the initial hitbox of the craft.
      * @return The initial hitbox of the craft.
      */
-    public HashHitBox getInitialHitbox() {
+    public HashHitBox getInitialHitBox() {
         return initialHitbox;
     }
 
@@ -175,7 +185,7 @@ public class Craft {
      * Sets the current hitbox of the craft.
      * @param newHitbox The craft's new hitbox.
      */
-    public void setHitbox(HashHitBox newHitbox) {
+    public void setHitBox(HashHitBox newHitbox) {
         currentHitbox = newHitbox;
     }
 
@@ -183,7 +193,7 @@ public class Craft {
      * Fetches the craft's current hitbox.
      * @return The craft's current hitbox.
      */
-    public HashHitBox getHitbox() {
+    public HashHitBox getHitBox() {
         return currentHitbox;
     }
 
@@ -492,8 +502,7 @@ public class Craft {
                 furnaceOptional = workingList.next()
                         .getTileEntity()
                         .filter(Furnace.class::isInstance)
-                        .map(Furnace.class::cast)
-                        .filter(furnace -> furnace.getInventory().contains(ItemTypes.COAL) || furnace.getInventory().contains(ItemTypes.COAL_BLOCK));
+                        .map(Furnace.class::cast);
 
                 if (furnaceOptional.isPresent()) {
                     Inventory furnaceInventory = furnaceOptional.get().getInventory();
@@ -544,8 +553,7 @@ public class Craft {
             furnaceOptional = workingList.next()
                     .getTileEntity()
                     .filter(Furnace.class::isInstance)
-                    .map(Furnace.class::cast)
-                    .filter(furnace -> furnace.getInventory().contains(ItemTypes.COAL) || furnace.getInventory().contains(ItemTypes.COAL_BLOCK));
+                    .map(Furnace.class::cast);
 
             if (furnaceOptional.isPresent()) {
                 furnaceInventory = furnaceOptional.get().getInventory();
@@ -560,17 +568,48 @@ public class Craft {
 
     /**
      *
+     * @return
+     */
+    public int getNumberOfMoves() {
+        return numberOfMoves;
+    }
+
+
+
+    /**
+     *
      * @param blockType
      * @return
      */
     public HashSet<Location<World>> findBlockType(BlockType blockType) {
         HashSet<Location<World>> foundBlocks = new HashSet<>();
-        getHitbox().forEach(mLoc -> {
+        getHitBox().forEach(mLoc -> {
             if (getWorld().getBlockType(mLoc) == blockType)
                 foundBlocks.add(getWorld().getLocation(mLoc));
         });
 
         return foundBlocks;
+    }
+
+    /**
+     *
+     * @param player
+     * @return
+     */
+    public boolean setOriginalPilot(UUID player) {
+        if (originalPilot != null)
+            return false;
+
+        originalPilot = player;
+        return true;
+    }
+
+    /**
+     *
+     * @return
+     */
+    public UUID getOriginalPilot() {
+        return originalPilot;
     }
 
     //--------------------------//

@@ -3,6 +3,7 @@ package io.github.pulverizer.movecraft.async;
 import com.flowpowered.math.vector.Vector3d;
 import com.flowpowered.math.vector.Vector3i;
 import com.google.common.collect.Lists;
+import io.github.pulverizer.movecraft.CraftState;
 import io.github.pulverizer.movecraft.Movecraft;
 import io.github.pulverizer.movecraft.MovecraftLocation;
 import io.github.pulverizer.movecraft.async.detection.DetectionTask;
@@ -126,8 +127,8 @@ public class AsyncManager implements Runnable {
                 DetectionTask task = (DetectionTask) poll;
                 DetectionTaskData data = task.getData();
 
-                Player p = data.getPlayer();
-                Player notifyP = data.getNotificationPlayer();
+                Player p = Sponge.getServer().getPlayer(data.getPlayer()).orElse(null);
+                Player notifyP = Sponge.getServer().getPlayer(data.getNotificationPlayer()).orElse(null);
                 Craft pCraft = CraftManager.getInstance().getCraftByPlayer(p);
 
                 if (pCraft != null && p != null) {
@@ -149,8 +150,7 @@ public class AsyncManager implements Runnable {
                             if(craft.getHitBox().intersects(data.getBlockList())){
                                 isSubcraft = true;
                                 if (c.getType().getCruiseOnPilot() || p != null) {
-                                    if (craft.getType() == c.getType()
-                                            || craft.getHitBox().size() <= data.getBlockList().size()) {
+                                    if (craft.getType() == c.getType() || craft.getHitBox().size() <= data.getBlockList().size()) {
                                         notifyP.sendMessage(Text.of("Detection Failed. Craft is already being controlled by another player."));
                                         failed = true;
                                     } else {
@@ -176,9 +176,8 @@ public class AsyncManager implements Runnable {
                             notifyP.sendMessage(Text.of("Craft must be part of another craft!"));
                         }
                         if (!failed) {
-                            c.setHitBox(task.getData().getBlockList());
-                            c.setOrigBlockCount(data.getBlockList().size());
-                            c.setPilot(notifyP);
+                            c.setInitialHitBox(task.getData().getBlockList());
+                            c.setPilot(notifyP.getUniqueId());
                             final int waterLine = c.getWaterLine();
                             if(!c.getType().blockedByWater() && c.getHitBox().getMinY() <= waterLine){
                                 for(MovecraftLocation location : c.getHitBox().boundingHitBox()){
@@ -206,7 +205,7 @@ public class AsyncManager implements Runnable {
                 // Process translation task
 
                 TranslationTask task = (TranslationTask) poll;
-                Player notifyP = c.getPilot();
+                Player notifyP = Sponge.getServer().getPlayer(c.getPilot()).orElse(null);
 
                 // Check that the craft hasn't been sneakily unpiloted
                 // if ( p != null ) { cruiseOnPilot crafts don't have player
@@ -214,7 +213,7 @@ public class AsyncManager implements Runnable {
 
                 if (task.failed()) {
                     // The craft translation failed
-                    if (notifyP != null && !c.getSinking())
+                    if (notifyP != null && c.getState() != CraftState.SINKING)
                         notifyP.sendMessage(Text.of(task.getFailMessage()));
 
                     if (task.isCollisionExplosion()) {
@@ -235,7 +234,7 @@ public class AsyncManager implements Runnable {
             } else if (poll instanceof RotationTask) {
                 // Process rotation task
                 RotationTask task = (RotationTask) poll;
-                Player notifyP = c.getPilot();
+                Player notifyP = Sponge.getServer().getPlayer(c.getPilot()).orElse(null);
 
                 // Check that the craft hasn't been sneakily unpiloted
                 if (notifyP != null || task.getIsSubCraft()) {
@@ -279,7 +278,7 @@ public class AsyncManager implements Runnable {
 
     private void processCruise() {
         for (Craft pcraft : CraftManager.getInstance()) {
-            if (pcraft == null || !pcraft.isNotProcessing() || !pcraft.getCruising()) {
+            if (pcraft == null || !pcraft.isNotProcessing() || pcraft.getState() != CraftState.CRUISING) {
                 continue;
             }
             long ticksElapsed = (System.currentTimeMillis() - pcraft.getLastCruiseUpdateTime()) / 50;
@@ -292,12 +291,13 @@ public class AsyncManager implements Runnable {
             boolean bankLeft = false;
             boolean bankRight = false;
             boolean dive = false;
-            if (pcraft.getDirectControl()) {
-                if (pcraft.getPilot().get(Keys.IS_SNEAKING).get())
+            if (pcraft.underDirectControl()) {
+                Player pilot = Sponge.getServer().getPlayer(pcraft.getPilot()).get();
+                if (pilot.get(Keys.IS_SNEAKING).get())
                     dive = true;
-                if (((PlayerInventory) pcraft.getPilot().getInventory()).getHotbar().getSelectedSlotIndex() == 3)
+                if (((PlayerInventory) pilot.getInventory()).getHotbar().getSelectedSlotIndex() == 3)
                     bankLeft = true;
-                if (((PlayerInventory) pcraft.getPilot().getInventory()).getHotbar().getSelectedSlotIndex() == 5)
+                if (((PlayerInventory) pilot.getInventory()).getHotbar().getSelectedSlotIndex() == 5)
                     bankRight = true;
             }
 
@@ -368,8 +368,7 @@ public class AsyncManager implements Runnable {
                 dy = pcraft.getType().getCruiseOnPilotVertMove();
             }
             pcraft.translate(dx, dy, dz);
-            pcraft.setLastMoveVector(dx);
-            pcraft.setLastDZ(dz);
+            pcraft.setLastMoveVector(new Vector3i(dx, dy, dz));
             if (pcraft.getLastCruiseUpdateTime() != -1) {
                 pcraft.setLastCruiseUpdateTime(System.currentTimeMillis());
             } else {
@@ -381,7 +380,7 @@ public class AsyncManager implements Runnable {
     private void detectSinking(){
         List<Craft> crafts = Lists.newArrayList(CraftManager.getInstance());
         for(Craft pcraft : crafts) {
-            if (pcraft.getSinking()) {
+            if (pcraft.getState() == CraftState.SINKING) {
                 continue;
             }
             if (pcraft.getType().getSinkPercent() == 0.0 || !pcraft.isNotProcessing()) {
@@ -447,10 +446,10 @@ public class AsyncManager implements Runnable {
                 double percent = ((double) numfound / (double) totalNonAirBlocks) * 100.0;
                 double movePercent = pcraft.getType().getMoveBlocks().get(i).get(0);
                 double disablePercent = movePercent * pcraft.getType().getSinkPercent() / 100.0;
-                if (percent < disablePercent && !pcraft.getDisabled() && pcraft.isNotProcessing()) {
-                    pcraft.setDisabled(true);
+                if (percent < disablePercent && pcraft.getState() != CraftState.DISABLED && pcraft.isNotProcessing()) {
+                    pcraft.setState(CraftState.DISABLED);
                     if (pcraft.getPilot() != null) {
-                        Location loc = pcraft.getPilot().getLocation();
+                        Location loc = Sponge.getServer().getPlayer(pcraft.getPilot()).get().getLocation();
                         pcraft.getWorld().playSound(SoundTypes.ENTITY_IRONGOLEM_DEATH, loc.getPosition(),  5.0f, 5.0f);
                     }
                 }
@@ -479,12 +478,11 @@ public class AsyncManager implements Runnable {
             // know and release the craft. Otherwise
             // update the time for the next check
             if (isSinking && pcraft.isNotProcessing()) {
-                Player notifyP = pcraft.getPilot();
+                Player notifyP = Sponge.getServer().getPlayer(pcraft.getPilot()).orElse(null);
                 if (notifyP != null) {
                     notifyP.sendMessage(Text.of("Craft is sinking!"));
                 }
-                pcraft.setCruising(false);
-                pcraft.sink();
+                pcraft.setState(CraftState.SINKING);
                 CraftManager.getInstance().removePlayerFromCraft(pcraft);
             } else {
                 pcraft.setLastCheckTime(System.currentTimeMillis());
@@ -497,7 +495,7 @@ public class AsyncManager implements Runnable {
         //copy the crafts before iteration to prevent concurrent modifications
         List<Craft> crafts = Lists.newArrayList(CraftManager.getInstance());
         for(Craft craft : crafts){
-            if (craft == null || !craft.getSinking()) {
+            if (craft == null || craft.getState() != CraftState.SINKING) {
                 continue;
             }
             if (craft.getHitBox().isEmpty() || craft.getHitBox().getMinY() < 5) {
@@ -511,8 +509,8 @@ public class AsyncManager implements Runnable {
             int dx = 0;
             int dz = 0;
             if (craft.getType().getKeepMovingOnSink()) {
-                dx = craft.getLastMoveVector();
-                dz = craft.getLastDZ();
+                dx = craft.getLastMoveVector().getX();
+                dz = craft.getLastMoveVector().getZ();
             }
             craft.translate(dx, -1, dz);
             craft.setLastCruiseUpdateTime(System.currentTimeMillis() - (craft.getLastCruiseUpdateTime() != -1 ? 0 : 30000));
@@ -598,7 +596,7 @@ public class AsyncManager implements Runnable {
                                     distZ = Math.abs(distZ - fireball.getLocation().getBlockZ());
                                     boolean inRange = (distX < 50) && (distY < 50) && (distZ < 50);
                                     if ((c.getAADirector() != null) && inRange) {
-                                        Player p = c.getAADirector();
+                                        Player p = Sponge.getServer().getPlayer(c.getAADirector()).orElse(null);
                                         if (p.getItemInHand(HandTypes.MAIN_HAND).get().getType() == Settings.PilotTool) {
 
                                             //TODO: SEE HACK-PATCH BELOW! Moving this higher to allow hack-patch to work. Move back after!!!
@@ -750,7 +748,7 @@ public class AsyncManager implements Runnable {
                                     distZ = Math.abs(distZ - tnt.getLocation().getBlockZ());
                                     boolean inRange = (distX < 100) && (distY < 100) && (distZ < 100);
                                     if ((c.getCannonDirector() != null) && inRange) {
-                                        Player p = c.getCannonDirector();
+                                        Player p = Sponge.getServer().getPlayer(c.getCannonDirector()).orElse(null);
                                         if (p.getItemInHand(HandTypes.MAIN_HAND).get().getType() == Settings.PilotTool) {
                                             Vector3d tntVelocity = tnt.getVelocity();
                                             double speed = tntVelocity.length(); // store the speed to add it back in later, since all the values we will be using are "normalized", IE: have a speed of 1
@@ -832,14 +830,14 @@ public class AsyncManager implements Runnable {
     private void processDetection() {
         long ticksElapsed = (System.currentTimeMillis() - lastContactCheck) / 50;
         if (ticksElapsed > 21) {
-            for (World w : Sponge.getServer().getWorlds()) {
-                if (w != null) {
-                    for (Craft ccraft : CraftManager.getInstance().getCraftsInWorld(w)) {
+            for (World world : Sponge.getServer().getWorlds()) {
+                if (world != null) {
+                    for (Craft ccraft : CraftManager.getInstance().getCraftsInWorld(world)) {
                         if (CraftManager.getInstance().getPlayerFromCraft(ccraft) != null) {
                             if (!recentContactTracking.containsKey(ccraft)) {
                                 recentContactTracking.put(ccraft, new HashMap<>());
                             }
-                            for (Craft tcraft : CraftManager.getInstance().getCraftsInWorld(w)) {
+                            for (Craft tcraft : CraftManager.getInstance().getCraftsInWorld(world)) {
                                 long cposx = ccraft.getHitBox().getMaxX() + ccraft.getHitBox().getMinX();
                                 long cposy = ccraft.getHitBox().getMaxY() + ccraft.getHitBox().getMinY();
                                 long cposz = ccraft.getHitBox().getMaxZ() + ccraft.getHitBox().getMinZ();
@@ -879,7 +877,7 @@ public class AsyncManager implements Runnable {
                                         notification += tcraft.getType().getCraftName();
                                         notification += " commanded by ";
                                         if (tcraft.getPilot() != null) {
-                                            notification += tcraft.getPilot().getDisplayNameData().displayName().toString();
+                                            notification += Sponge.getServer().getPlayer(tcraft.getPilot()).get().getDisplayNameData().displayName().toString();
                                         } else {
                                             notification += "NULL";
                                         }
@@ -898,8 +896,8 @@ public class AsyncManager implements Runnable {
                                         else
                                             notification += " north.";
 
-                                        ccraft.getPilot().sendMessage(Text.of(notification));
-                                        w.playSound(SoundTypes.BLOCK_ANVIL_LAND, ccraft.getPilot().getLocation().getPosition(), 1.0f, 2.0f);
+                                        Sponge.getServer().getPlayer(ccraft.getPilot()).get().sendMessage(Text.of(notification));
+                                        world.playSound(SoundTypes.BLOCK_ANVIL_LAND, Sponge.getServer().getPlayer(ccraft.getPilot()).get().getLocation().getPosition(), 1.0f, 2.0f);
                                     }
 
                                     long timestamp = System.currentTimeMillis();
@@ -935,7 +933,7 @@ public class AsyncManager implements Runnable {
                 }
             }
             if (!pcraft.isNotProcessing()) {
-                if (pcraft.getCruising()) {
+                if (pcraft.getState() == CraftState.CRUISING) {
                     if (pcraft.getLastCruiseUpdateTime() < System.currentTimeMillis() - 5000) {
                         pcraft.setProcessing(false);
                     }

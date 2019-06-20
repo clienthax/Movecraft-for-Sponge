@@ -94,9 +94,8 @@ public final class SubcraftRotateSign {
         }
 
         final Location<World> loc = event.getTargetBlock().getLocation().get();
-        final Craft subCraft = new Craft(type, loc.getExtent());
+        final Craft subCraft = new Craft(type, player.getUniqueId(), loc);
         MovecraftLocation startPoint = new MovecraftLocation(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
-        subCraft.detect(null, player, startPoint);
         rotatingPlayers.add(player.getUniqueId());
 
         Task.builder()

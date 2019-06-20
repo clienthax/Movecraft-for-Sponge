@@ -3,8 +3,9 @@ package io.github.pulverizer.movecraft.async.detection;
 import io.github.pulverizer.movecraft.utils.HashHitBox;
 import io.github.pulverizer.movecraft.utils.HitBox;
 import org.spongepowered.api.block.BlockType;
-import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.world.World;
+
+import java.util.UUID;
 
 @Deprecated
 public class DetectionTaskData {
@@ -14,13 +15,13 @@ public class DetectionTaskData {
     private boolean waterContact;
     private String failMessage;
     private HashHitBox hitBox;
-    private Player player;
-    private Player notificationPlayer;
+    private UUID player;
+    private UUID notificationPlayer;
     private int minX, minZ;
     private BlockType[] allowedBlocks, forbiddenBlocks;
     private String[] forbiddenSignStrings;
 
-    public DetectionTaskData(World w, Player player, Player notificationPlayer, BlockType[] allowedBlocks, BlockType[] forbiddenBlocks, String[] forbiddenSignStrings) {
+    public DetectionTaskData(World w, UUID player, UUID notificationPlayer, BlockType[] allowedBlocks, BlockType[] forbiddenBlocks, String[] forbiddenSignStrings) {
         this.w = w;
         this.player = player;
         this.notificationPlayer = notificationPlayer;
@@ -83,19 +84,19 @@ public class DetectionTaskData {
         this.hitBox = blockList;
     }
 
-    public Player getPlayer() {
+    public UUID getPlayer() {
         return player;
     }
 
-    void setPlayer(Player player) {
+    void setPlayer(UUID player) {
         this.player = player;
     }
 
-    public Player getNotificationPlayer() {
+    public UUID getNotificationPlayer() {
         return notificationPlayer;
     }
 
-    void setNotificationPlayer(Player notificationPlayer) {
+    void setNotificationPlayer(UUID notificationPlayer) {
         this.notificationPlayer = notificationPlayer;
     }
 

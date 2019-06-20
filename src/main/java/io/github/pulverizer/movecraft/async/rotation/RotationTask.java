@@ -1,6 +1,7 @@
 package io.github.pulverizer.movecraft.async.rotation;
 
 import com.flowpowered.math.vector.Vector3d;
+import io.github.pulverizer.movecraft.CraftState;
 import io.github.pulverizer.movecraft.Movecraft;
 import io.github.pulverizer.movecraft.MovecraftLocation;
 import io.github.pulverizer.movecraft.Rotation;
@@ -70,7 +71,7 @@ public class RotationTask extends AsyncTask {
             return;
         Player craftPilot = CraftManager.getInstance().getPlayerFromCraft(getCraft());
 
-        if (getCraft().getDisabled() && (!getCraft().getSinking())) {
+        if (getCraft().getDisabled() && !getCraft().getSinking()) {
             failed = true;
             failMessage = "Craft is disabled!";
         }
@@ -209,7 +210,7 @@ public class RotationTask extends AsyncTask {
                 Movecraft.getInstance().getLogger().info("Processed Entities.");
         }
 
-        if (getCraft().getCruising()) {
+        if (getCraft().getState() == CraftState.CRUISING) {
             if (rotation == Rotation.ANTICLOCKWISE) {
 
                 switch (getCraft().getCruiseDirection()) {
@@ -262,21 +263,22 @@ public class RotationTask extends AsyncTask {
                 if (Math.abs(loc.getZ() - originPoint.getZ()) > Math.abs(farthestZ))
                     farthestZ = loc.getZ() - originPoint.getZ();
             }
-            if (Math.abs(farthestX) > Math.abs(farthestZ)) {
-                if (farthestX > 0) {
-                    if (getCraft().getPilot() != null)
-                        getCraft().getPilot().sendMessage(Text.of("The farthest extent now faces East"));
+
+            Player pilot = Sponge.getServer().getPlayer(getCraft().getPilot()).orElse(null);
+
+            if (pilot != null) {
+                if (Math.abs(farthestX) > Math.abs(farthestZ)) {
+                    if (farthestX > 0) {
+                        pilot.sendMessage(Text.of("The farthest extent now faces East"));
+                    } else {
+                        pilot.sendMessage(Text.of("The farthest extent now faces West"));
+                    }
                 } else {
-                    if (getCraft().getPilot() != null)
-                        getCraft().getPilot().sendMessage(Text.of("The farthest extent now faces West"));
-                }
-            } else {
-                if (farthestZ > 0) {
-                    if (getCraft().getPilot() != null)
-                        getCraft().getPilot().sendMessage(Text.of("The farthest extent now faces South"));
-                } else {
-                    if (getCraft().getPilot() != null)
-                        getCraft().getPilot().sendMessage(Text.of("The farthest extent now faces North"));
+                    if (farthestZ > 0) {
+                        pilot.sendMessage(Text.of("The farthest extent now faces South"));
+                    } else {
+                        pilot.sendMessage(Text.of("The farthest extent now faces North"));
+                    }
                 }
             }
 

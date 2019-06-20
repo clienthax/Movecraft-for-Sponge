@@ -5,23 +5,26 @@ import io.github.pulverizer.movecraft.async.AsyncTask;
 import io.github.pulverizer.movecraft.craft.Craft;
 import io.github.pulverizer.movecraft.utils.*;
 
+import org.spongepowered.api.Server;
+import org.spongepowered.api.Sponge;
 import org.spongepowered.api.block.BlockSnapshot;
 import org.spongepowered.api.block.BlockType;
 import org.spongepowered.api.block.BlockTypes;
 import org.spongepowered.api.block.tileentity.Sign;
 import org.spongepowered.api.entity.living.player.Player;
+import org.spongepowered.api.util.Direction;
 import org.spongepowered.api.world.Location;
 import org.spongepowered.api.world.World;
 
 import java.util.*;
 
 public class DetectionTask extends AsyncTask {
-    private final MovecraftLocation startLocation;
+    private final Location<World> startLocation;
     private final int minSize;
     private final int maxSize;
-    private final Stack<MovecraftLocation> blockStack = new Stack<>();
+    private final Stack<Location<World>> blockStack = new Stack<>();
     private final HashHitBox blockList = new HashHitBox();
-    private final HashSet<MovecraftLocation> visited = new HashSet<>();
+    private final HashSet<Location<World>> visited = new HashSet<>();
     private final HashMap<List<BlockType>, Integer> blockTypeCount = new HashMap<>();
     private final DetectionTaskData data;
     private final World world;
@@ -32,7 +35,7 @@ public class DetectionTask extends AsyncTask {
     private Map<List<BlockType>, List<Double>> dFlyBlocks;
     private int foundDynamicFlyBlock = 0;
 
-    public DetectionTask(Craft c, MovecraftLocation startLocation, Player player) {
+    public DetectionTask(Craft c, Location<World> startLocation, UUID player) {
         super(c);
         this.startLocation = startLocation;
         this.minSize = craft.getType().getMinSize();
@@ -75,15 +78,13 @@ public class DetectionTask extends AsyncTask {
         }
     }
 
-    private void detectBlock(int x, int y, int z) {
-
-        MovecraftLocation workingLocation = new MovecraftLocation(x, y, z);
+    private void detectBlock(Location<World> workingLocation) {
 
         if (notVisited(workingLocation, visited)) {
 
             BlockType testID = BlockTypes.AIR;
             try {
-                testID = data.getWorld().getBlockType(x, y, z);
+                testID = workingLocation.getBlockType();
             } catch (Exception e) {
                 fail("Detection Failed - Craft too large! Max Size: " + maxSize);
             }
@@ -92,19 +93,19 @@ public class DetectionTask extends AsyncTask {
                 data.setWaterContact(true);
             }
             if (testID == BlockTypes.STANDING_SIGN || testID == BlockTypes.WALL_SIGN) {
-                BlockSnapshot snapshot = data.getWorld().createSnapshot(x, y, z);
+                BlockSnapshot snapshot = workingLocation.createSnapshot();
 
                 if(snapshot.getLocation().isPresent() && snapshot.getLocation().get().getTileEntity().isPresent()) {
 
                     Sign s = (Sign) snapshot.getLocation().get().getTileEntity().get();
                     if (s.lines().get(0).toString().equalsIgnoreCase("Pilot:") && data.getPlayer() != null) {
-                        String playerName = data.getPlayer().getName();
+                        String playerName = Sponge.getServer().getPlayer(data.getPlayer()).get().getName();
                         boolean foundPilot = false;
                         if (s.lines().get(1).toString().equalsIgnoreCase(playerName) || s.lines().get(2).toString().equalsIgnoreCase(playerName)
                                 || s.lines().get(3).toString().equalsIgnoreCase(playerName)) {
                             foundPilot = true;
                         }
-                        if (!foundPilot && (!data.getPlayer().hasPermission("movecraft.bypasslock"))) {
+                        if (!foundPilot && (!Sponge.getServer().getPlayer(data.getPlayer()).get().hasPermission("movecraft.bypasslock"))) {
                             fail("Not one of the registered pilots on this craft.");
                         }
                     }
@@ -118,53 +119,14 @@ public class DetectionTask extends AsyncTask {
             if (isForbiddenBlock(testID)) {
                 fail("Detection Failed- Forbidden block found.");
             } else if (isAllowedBlock(testID)) {
-                // check for double chests
-                if (testID == BlockTypes.CHEST) {
-                    boolean foundDoubleChest = false;
-                    if (data.getWorld().getBlockType(x - 1, y, z) == BlockTypes.CHEST) {
-                        foundDoubleChest = true;
-                    }
-                    if (data.getWorld().getBlockType(x + 1, y, z) == BlockTypes.CHEST) {
-                        foundDoubleChest = true;
-                    }
-                    if (data.getWorld().getBlockType(x, y, z - 1) == BlockTypes.CHEST) {
-                        foundDoubleChest = true;
-                    }
-                    if (data.getWorld().getBlockType(x, y, z + 1) == BlockTypes.CHEST) {
-                        foundDoubleChest = true;
-                    }
-                    if (foundDoubleChest) {
-                        fail("Detection Failed - Double chest found.");
-                    }
-                }
-                // check for double trapped chests
-                if (testID == BlockTypes.TRAPPED_CHEST) {
-                    boolean foundDoubleChest = false;
-                    if (data.getWorld().getBlockType(x - 1, y, z) == BlockTypes.TRAPPED_CHEST) {
-                        foundDoubleChest = true;
-                    }
-                    if (data.getWorld().getBlockType(x + 1, y, z) == BlockTypes.TRAPPED_CHEST) {
-                        foundDoubleChest = true;
-                    }
-                    if (data.getWorld().getBlockType(x, y, z - 1) == BlockTypes.TRAPPED_CHEST) {
-                        foundDoubleChest = true;
-                    }
-                    if (data.getWorld().getBlockType(x, y, z + 1) == BlockTypes.TRAPPED_CHEST) {
-                        foundDoubleChest = true;
-                    }
-                    if (foundDoubleChest) {
-                        fail("Detection Failed - Double chest found.");
-                    }
-                }
 
-                Location loc = new Location<>(data.getWorld(), x, y, z);
-                Player p;
+                UUID player;
                 if (data.getPlayer() == null) {
-                    p = data.getNotificationPlayer();
+                    player = data.getNotificationPlayer();
                 } else {
-                    p = data.getPlayer();
+                    player = data.getPlayer();
                 }
-                if (p != null) {
+                if (player != null) {
 
                     addToBlockList(workingLocation);
                     BlockType blockID = testID;
@@ -230,21 +192,21 @@ public class DetectionTask extends AsyncTask {
         return data;
     }
 
-    private boolean notVisited(MovecraftLocation l, HashSet<MovecraftLocation> locations) {
-        if (locations.contains(l)) {
+    private boolean notVisited(Location<World> location, HashSet<Location<World>> locations) {
+        if (locations.contains(location)) {
             return false;
         } else {
-            locations.add(l);
+            locations.add(location);
             return true;
         }
     }
 
-    private void addToBlockList(MovecraftLocation l) {
-        blockList.add(l);
+    private void addToBlockList(Location<World> location) {
+        blockList.add(new MovecraftLocation(location.getBlockX(), location.getBlockY(), location.getBlockZ()));
     }
 
-    private void addToDetectionStack(MovecraftLocation l) {
-        blockStack.push(l);
+    private void addToDetectionStack(Location<World> location) {
+        blockStack.push(location);
     }
 
     private void addToBlockCount(List<BlockType> id) {
@@ -257,57 +219,64 @@ public class DetectionTask extends AsyncTask {
         blockTypeCount.put(id, count + 1);
     }
 
-    private void detectSurrounding(MovecraftLocation l) {
-        int x = l.getX();
-        int y = l.getY();
-        int z = l.getZ();
+    private void detectSurrounding(Location<World> location) {
 
-        for (int xMod = -1; xMod < 2; xMod += 2) {
+        HashSet<Location<World>> surroundingLocations = new HashSet<>();
 
-            for (int yMod = -1; yMod < 2; yMod++) {
+        //Above
+        surroundingLocations.add(location.getBlockRelative(Direction.UP));
+        surroundingLocations.add(location.getBlockRelative(Direction.UP).getBlockRelative(Direction.NORTH));
+        surroundingLocations.add(location.getBlockRelative(Direction.UP).getBlockRelative(Direction.NORTHEAST));
+        surroundingLocations.add(location.getBlockRelative(Direction.UP).getBlockRelative(Direction.EAST));
+        surroundingLocations.add(location.getBlockRelative(Direction.UP).getBlockRelative(Direction.SOUTHEAST));
+        surroundingLocations.add(location.getBlockRelative(Direction.UP).getBlockRelative(Direction.SOUTH));
+        surroundingLocations.add(location.getBlockRelative(Direction.UP).getBlockRelative(Direction.SOUTHWEST));
+        surroundingLocations.add(location.getBlockRelative(Direction.UP).getBlockRelative(Direction.WEST));
+        surroundingLocations.add(location.getBlockRelative(Direction.UP).getBlockRelative(Direction.NORTHWEST));
 
-                detectBlock(x + xMod, y + yMod, z);
+        //Vertical
+        surroundingLocations.add(location.getBlockRelative(Direction.NORTH));
+        surroundingLocations.add(location.getBlockRelative(Direction.NORTHEAST));
+        surroundingLocations.add(location.getBlockRelative(Direction.EAST));
+        surroundingLocations.add(location.getBlockRelative(Direction.SOUTHEAST));
+        surroundingLocations.add(location.getBlockRelative(Direction.SOUTH));
+        surroundingLocations.add(location.getBlockRelative(Direction.SOUTHWEST));
+        surroundingLocations.add(location.getBlockRelative(Direction.WEST));
+        surroundingLocations.add(location.getBlockRelative(Direction.NORTHWEST));
 
-            }
+        //Below
+        surroundingLocations.add(location.getBlockRelative(Direction.DOWN).getBlockRelative(Direction.NORTH));
+        surroundingLocations.add(location.getBlockRelative(Direction.DOWN).getBlockRelative(Direction.NORTHEAST));
+        surroundingLocations.add(location.getBlockRelative(Direction.DOWN).getBlockRelative(Direction.EAST));
+        surroundingLocations.add(location.getBlockRelative(Direction.DOWN).getBlockRelative(Direction.SOUTHEAST));
+        surroundingLocations.add(location.getBlockRelative(Direction.DOWN).getBlockRelative(Direction.SOUTH));
+        surroundingLocations.add(location.getBlockRelative(Direction.DOWN).getBlockRelative(Direction.SOUTHWEST));
+        surroundingLocations.add(location.getBlockRelative(Direction.DOWN).getBlockRelative(Direction.WEST));
+        surroundingLocations.add(location.getBlockRelative(Direction.DOWN).getBlockRelative(Direction.NORTHWEST));
 
-        }
-
-        for (int zMod = -1; zMod < 2; zMod += 2) {
-
-            for (int yMod = -1; yMod < 2; yMod++) {
-
-                detectBlock(x, y + yMod, z + zMod);
-
-            }
-
-        }
-
-        for (int yMod = -1; yMod < 2; yMod += 2) {
-
-            detectBlock(x, y + yMod, z);
-
-        }
+        //Detect blocks in surrounding locations.
+        surroundingLocations.forEach(this::detectBlock);
 
     }
 
-    private void calculateBounds(MovecraftLocation l) {
-        if (l.getX() > maxX) {
-            maxX = l.getX();
+    private void calculateBounds(Location<World> location) {
+        if (location.getX() > maxX) {
+            maxX = location.getBlockX();
         }
-        if (l.getY() > maxY) {
-            maxY = l.getY();
+        if (location.getY() > maxY) {
+            maxY = location.getBlockY();
         }
-        if (l.getZ() > maxZ) {
-            maxZ = l.getZ();
+        if (location.getZ() > maxZ) {
+            maxZ = location.getBlockZ();
         }
-        if (data.getMinX() == null || l.getX() < data.getMinX()) {
-            data.setMinX(l.getX());
+        if (data.getMinX() == null || location.getX() < data.getMinX()) {
+            data.setMinX(location.getBlockX());
         }
-        if (l.getY() < minY) {
-            minY = l.getY();
+        if (location.getY() < minY) {
+            minY = location.getBlockY();
         }
-        if (data.getMinZ() == null || l.getZ() < data.getMinZ()) {
-            data.setMinZ(l.getZ());
+        if (data.getMinZ() == null || location.getZ() < data.getMinZ()) {
+            data.setMinZ(location.getBlockZ());
         }
     }
 
