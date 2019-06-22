@@ -1,6 +1,7 @@
 package io.github.pulverizer.movecraft.craft;
 
 import io.github.pulverizer.movecraft.Movecraft;
+import org.spongepowered.api.Sponge;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.scheduler.Task;
 import org.spongepowered.api.text.Text;
@@ -79,7 +80,7 @@ public class CraftManager implements Iterable<Craft>{
         if(!c.getHitBox().isEmpty()) {
             if (player != null) {
                 player.sendMessage(Text.of("You have released your craft."));
-                Movecraft.getInstance().getLogger().info(String.format(c.getPilot().getName() + " has released a craft of type %s with size %d at coordinates : %d x , %d z", c.getType().getCraftName(), c.getHitBox().size(), c.getHitBox().getMinX(), c.getHitBox().getMinZ()));
+                Movecraft.getInstance().getLogger().info(String.format(player.getName() + " has released a craft of type %s with size %d at coordinates : %d x , %d z", c.getType().getCraftName(), c.getHitBox().size(), c.getHitBox().getMinX(), c.getHitBox().getMinZ()));
             } else {
                 Movecraft.getInstance().getLogger().info(String.format("NULL Player has released a craft of type %s with size %d at coordinates : %d x , %d z", c.getType().getCraftName(), c.getHitBox().size(), c.getHitBox().getMinX(), c.getHitBox().getMinZ()));
             }

@@ -1,5 +1,6 @@
 package io.github.pulverizer.movecraft.sign;
 
+import io.github.pulverizer.movecraft.CraftState;
 import io.github.pulverizer.movecraft.MovecraftLocation;
 import io.github.pulverizer.movecraft.craft.Craft;
 import io.github.pulverizer.movecraft.craft.CraftManager;
@@ -47,7 +48,7 @@ public class AscendSign {
             return;
         }
 
-        Craft c = CraftManager.getInstance().getCraftByPlayer(player);
+        Craft craft = CraftManager.getInstance().getCraftByPlayer(player);
 
         if (!block.getLocation().isPresent() || !block.getLocation().get().getTileEntity().isPresent())
             return;
@@ -55,7 +56,7 @@ public class AscendSign {
         Sign sign = (Sign) block.getLocation().get().getTileEntity().get();
         ListValue<Text> lines = sign.lines();
         if (lines.get(0).toPlain().equalsIgnoreCase("Ascend: OFF")) {
-            if (c == null || !c.getType().getCanCruise()) {
+            if (craft == null || !craft.getType().getCanCruise()) {
                 player.sendMessage(Text.of("You are not piloting a craft!"));
                 return;
             }
@@ -65,24 +66,24 @@ public class AscendSign {
             lines.set(0, Text.of("Ascend: ON"));
             sign.offer(lines);
 
-            c.setCruiseDirection(Direction.UP);
-            c.setLastCruiseUpdateTime(System.currentTimeMillis());
-            c.setCruising(true);
+            craft.setCruiseDirection(Direction.UP);
+            craft.setLastCruiseUpdateTime(System.currentTimeMillis());
+            craft.setState(CraftState.CRUISING);
 
-            if (!c.getType().getMoveEntities()) {
-                CraftManager.getInstance().addReleaseTask(c);
+            if (!craft.getType().getMoveEntities()) {
+                CraftManager.getInstance().addReleaseTask(craft);
             }
             return;
         }
         if (lines.get(0).toPlain().equalsIgnoreCase("Ascend: ON")) {
-            if (c == null || !c.getType().getCanCruise()) {
+            if (craft == null || !craft.getType().getCanCruise()) {
                 player.sendMessage(Text.of("You are not piloting a craft!"));
                 return;
             }
             event.setCancelled(true);
             lines.set(0, Text.of("Ascend: OFF"));
             sign.offer(lines);
-            c.setCruising(false);
+            craft.setState(CraftState.STOPPED);
         }
     }
 }

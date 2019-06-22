@@ -54,16 +54,19 @@ public class AntiAircraftDirectorSign {
             if (player != null) {player.sendMessage(Text.of("ERROR: AA Director Signs not allowed on this craft!"));}
             return;
         }
-        if(event instanceof InteractBlockEvent.Primary && player == foundCraft.getAADirector()){
+        if(event instanceof InteractBlockEvent.Primary && player.getUniqueId() == foundCraft.getAADirector()){
             foundCraft.setAADirector(null);
             if (player != null) {player.sendMessage(Text.of("You are no longer directing the AA of this craft."));}
             return;
         }
 
-        foundCraft.setAADirector(player);
+        foundCraft.setAADirector(player.getUniqueId());
         if(player != null) {player.sendMessage(Text.of("You are now directing the AA of this craft."));}
-        if (foundCraft.getCannonDirector() == player) {
+
+        if (foundCraft.getCannonDirector() == player.getUniqueId())
             foundCraft.setCannonDirector(null);
-        }
+
+        if (foundCraft.getPilot() == player.getUniqueId())
+            foundCraft.setPilot(null);
     }
 }

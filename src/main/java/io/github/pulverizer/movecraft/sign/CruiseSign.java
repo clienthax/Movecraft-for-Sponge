@@ -1,5 +1,6 @@
 package io.github.pulverizer.movecraft.sign;
 
+import io.github.pulverizer.movecraft.CraftState;
 import io.github.pulverizer.movecraft.MovecraftLocation;
 import io.github.pulverizer.movecraft.config.Settings;
 import io.github.pulverizer.movecraft.craft.Craft;
@@ -62,9 +63,9 @@ public final class CruiseSign {
                 return;
             }
 
-            Craft c = CraftManager.getInstance().getCraftByPlayer(player);
+            Craft craft = CraftManager.getInstance().getCraftByPlayer(player);
 
-            if (!c.getType().getCanCruise()) {
+            if (!craft.getType().getCanCruise()) {
                 return;
             }
 
@@ -89,11 +90,11 @@ public final class CruiseSign {
             lines.set(0, Text.of("Cruise: ON"));
             sign.offer(lines);
 
-            c.setCruiseDirection(cruiseDirection);
-            c.setLastCruiseUpdateTime(System.currentTimeMillis());
-            c.setCruising(true);
-            if (!c.getType().getMoveEntities()) {
-                CraftManager.getInstance().addReleaseTask(c);
+            craft.setCruiseDirection(cruiseDirection);
+            craft.setLastCruiseUpdateTime(System.currentTimeMillis());
+            craft.setState(CraftState.CRUISING);
+            if (!craft.getType().getMoveEntities()) {
+                CraftManager.getInstance().addReleaseTask(craft);
             }
             return;
         }
@@ -103,7 +104,7 @@ public final class CruiseSign {
             event.setCancelled(true);
             lines.set(0, Text.of("Cruise: OFF"));
             sign.offer(lines);
-            CraftManager.getInstance().getCraftByPlayer(player).setCruising(false);
+            CraftManager.getInstance().getCraftByPlayer(player).setState(CraftState.STOPPED);
         }
     }
 

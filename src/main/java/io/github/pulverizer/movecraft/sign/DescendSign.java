@@ -1,5 +1,6 @@
 package io.github.pulverizer.movecraft.sign;
 
+import io.github.pulverizer.movecraft.CraftState;
 import io.github.pulverizer.movecraft.MovecraftLocation;
 import io.github.pulverizer.movecraft.craft.Craft;
 import io.github.pulverizer.movecraft.craft.CraftManager;
@@ -57,8 +58,8 @@ public final class DescendSign {
                 return;
             }
 
-            Craft c = CraftManager.getInstance().getCraftByPlayer(player);
-            if (!c.getType().getCanCruise()) {
+            Craft craft = CraftManager.getInstance().getCraftByPlayer(player);
+            if (!craft.getType().getCanCruise()) {
                 return;
             }
 
@@ -66,21 +67,21 @@ public final class DescendSign {
             lines.set(0, Text.of("Descend: ON"));
             sign.offer(lines);
 
-            c.setCruiseDirection(Direction.DOWN);
-            c.setLastCruiseUpdateTime(System.currentTimeMillis());
-            c.setCruising(true);
+            craft.setCruiseDirection(Direction.DOWN);
+            craft.setLastCruiseUpdateTime(System.currentTimeMillis());
+            craft.setState(CraftState.CRUISING);
 
-            if (!c.getType().getMoveEntities()) {
-                CraftManager.getInstance().addReleaseTask(c);
+            if (!craft.getType().getMoveEntities()) {
+                CraftManager.getInstance().addReleaseTask(craft);
             }
             return;
         }
         if (lines.get(0).toPlain().equalsIgnoreCase("Descend: ON")) {
-            Craft c = CraftManager.getInstance().getCraftByPlayer(player);
-            if (c != null && c.getType().getCanCruise()) {
+            Craft craft = CraftManager.getInstance().getCraftByPlayer(player);
+            if (craft != null && craft.getType().getCanCruise()) {
                 lines.set(0, Text.of("Descend: OFF"));
                 sign.offer(lines);
-                c.setCruising(false);
+                craft.setState(CraftState.STOPPED);
             }
         }
     }

@@ -1,5 +1,6 @@
 package io.github.pulverizer.movecraft.sign;
 
+import io.github.pulverizer.movecraft.CraftState;
 import io.github.pulverizer.movecraft.MovecraftLocation;
 import io.github.pulverizer.movecraft.craft.Craft;
 import io.github.pulverizer.movecraft.craft.CraftManager;
@@ -130,7 +131,7 @@ public class CrewSign {
         if (craft == null) {
             return;
         }
-        if(craft.getSinking() || craft.getDisabled() || !craft.getCrewSigns().containsKey(player.getUniqueId())) {
+        if(craft.getState() == CraftState.SINKING || craft.getState() == CraftState.DISABLED || !craft.getCrewSigns().containsKey(player.getUniqueId())) {
             return;
         }
         player.sendMessage(Text.of("Respawning at crew bed!"));

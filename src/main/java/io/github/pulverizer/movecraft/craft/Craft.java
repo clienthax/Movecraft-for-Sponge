@@ -45,7 +45,7 @@ public class Craft {
     private UUID pilot;
     private UUID AADirector;
     private UUID cannonDirector;
-    private Set<UUID> crewList = new HashSet<>();
+    private HashSet<UUID> crewList = new HashSet<>();
 
 
     //Direct Control
@@ -57,7 +57,7 @@ public class Craft {
     private long lastCruiseUpdateTime;
     private Direction cruiseDirection;
     private Vector3i lastMoveVector;
-    private Set<BlockSnapshot> phasedBlocks = new HashSet<>();
+    private HashSet<BlockSnapshot> phasedBlocks = new HashSet<>();
     private double burningFuel;
     private int numberOfMoves = 0;
     private long lastRotateTime = 0;
@@ -443,7 +443,7 @@ public class Craft {
      * Fetches the blocks that the craft is currently flying through.
      * @return The blocks currently being flown through.
      */
-    public Set<BlockSnapshot> getPhasedBlocks() {
+    public HashSet<BlockSnapshot> getPhasedBlocks() {
         return phasedBlocks;
     }
 

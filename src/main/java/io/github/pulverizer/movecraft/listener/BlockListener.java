@@ -1,5 +1,6 @@
 package io.github.pulverizer.movecraft.listener;
 
+import io.github.pulverizer.movecraft.CraftState;
 import io.github.pulverizer.movecraft.Movecraft;
 import io.github.pulverizer.movecraft.utils.MathUtils;
 import io.github.pulverizer.movecraft.MovecraftLocation;
@@ -36,7 +37,7 @@ public class BlockListener {
             World blockWorld = blockSnapshot.getLocation().get().getExtent();
             for (Craft craft : CraftManager.getInstance().getCraftsInWorld(blockWorld)) {
 
-                if (craft == null || craft.getDisabled()) {
+                if (craft == null || craft.getState() == CraftState.DISABLED) {
                     continue;
                 }
 

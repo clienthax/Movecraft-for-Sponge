@@ -1,5 +1,6 @@
 package io.github.pulverizer.movecraft.listener;
 
+import com.flowpowered.math.vector.Vector3d;
 import io.github.pulverizer.movecraft.utils.MathUtils;
 import io.github.pulverizer.movecraft.craft.Craft;
 import io.github.pulverizer.movecraft.config.Settings;
@@ -81,7 +82,7 @@ public final class InteractListener {
                 player.sendMessage(Text.of("Insufficient Permissions"));
                 return;
             }
-            if (craft.getDirectControl()) {
+            if (craft.underDirectControl()) {
                 // right click moves up or down if using direct
                 // control
                 int DY = 1;
@@ -126,7 +127,7 @@ public final class InteractListener {
                 return;
             }
 
-            if (craft.getDirectControl()) {
+            if (craft.underDirectControl()) {
                 craft.setDirectControl(false);
                 player.sendMessage(Text.of("Leaving Direct Control Mode"));
                 event.setCancelled(true);
@@ -138,9 +139,6 @@ public final class InteractListener {
                 return;
             }
             craft.setDirectControl(true);
-            craft.setPilotLockedX(player.getLocation().getBlockX() + 0.5);
-            craft.setPilotLockedY(player.getLocation().getY());
-            craft.setPilotLockedZ(player.getLocation().getBlockZ() + 0.5);
             player.sendMessage(Text.of("Entering Direct Control Mode"));
             event.setCancelled(true);
         }

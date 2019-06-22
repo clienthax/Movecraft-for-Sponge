@@ -1,5 +1,6 @@
 package io.github.pulverizer.movecraft.mapUpdater.update;
 
+import io.github.pulverizer.movecraft.CraftState;
 import io.github.pulverizer.movecraft.Movecraft;
 import io.github.pulverizer.movecraft.MovecraftLocation;
 import io.github.pulverizer.movecraft.WorldHandler;
@@ -45,7 +46,7 @@ public class CraftTranslateCommand extends UpdateCommand {
         }
         long time = System.nanoTime();
         final Set<BlockType> passthroughBlocks = new HashSet<>(craft.getType().getPassthroughBlocks());
-        if(craft.getSinking()){
+        if(craft.getState() == CraftState.SINKING){
             passthroughBlocks.add(BlockTypes.WATER);
             passthroughBlocks.add(BlockTypes.FLOWING_WATER);
             passthroughBlocks.add(BlockTypes.LEAVES);
@@ -73,7 +74,7 @@ public class CraftTranslateCommand extends UpdateCommand {
             for (MovecraftLocation location : to) {
                 BlockSnapshot material = location.toSponge(craft.getWorld()).createSnapshot();
                 if (passthroughBlocks.contains(material.getState().getType())) {
-                    craft.getPhasedBlocks().put(location, material);
+                    craft.getPhasedBlocks().add(material);
                 }
             }
 
@@ -134,7 +135,7 @@ public class CraftTranslateCommand extends UpdateCommand {
                 if (!passthroughBlocks.contains(material.getState().getType())) {
                     continue;
                 }
-                craft.getPhasedBlocks().put(location, material);
+                craft.getPhasedBlocks().add(material);
             }
             //translate the craft
             handler.translateCraft(craft, displacement, newHitBox);
@@ -147,24 +148,25 @@ public class CraftTranslateCommand extends UpdateCommand {
             }
 
             //place confirmed blocks if they have been un-phased
-            for (MovecraftLocation location : exterior) {
-                if (!craft.getPhasedBlocks().containsKey(location)) {
-                    continue;
-                }
-                handler.setBlock(location.toSponge(craft.getWorld()), craft.getPhasedBlocks().get(location));
-                craft.getPhasedBlocks().remove(location);
-            }
+            craft.getPhasedBlocks().forEach(block -> {
 
-            for(MovecraftLocation location : originalLocations){
-                if(!craft.getHitBox().inBounds(location) && craft.getPhasedBlocks().containsKey(location)){
-                    handler.setBlock(location.toSponge(craft.getWorld()), craft.getPhasedBlocks().remove(location));
+                if (exterior.contains((MovecraftLocation) block.getPosition())) {
+
+                    handler.setBlock(block.getLocation().get(), block);
+                    craft.getPhasedBlocks().remove(block);
                 }
-            }
+
+                if (originalLocations.contains((MovecraftLocation) block.getPosition()) && !craft.getHitBox().inBounds((MovecraftLocation) block.getPosition())) {
+
+                    handler.setBlock(block.getLocation().get(), block);
+                    craft.getPhasedBlocks().remove(block);
+                }
+            });
 
             for (MovecraftLocation location : interior) {
                 final BlockSnapshot material = location.toSponge(craft.getWorld()).createSnapshot();
                 if (passthroughBlocks.contains(material.getState().getType())) {
-                    craft.getPhasedBlocks().put(location, material);
+                    craft.getPhasedBlocks().add(material);
                     handler.setBlock(location.toSponge(craft.getWorld()), BlockSnapshot.builder().blockState(BlockTypes.AIR.getDefaultState()).world(craft.getWorld().getProperties()).position(location).build());
 
                 }

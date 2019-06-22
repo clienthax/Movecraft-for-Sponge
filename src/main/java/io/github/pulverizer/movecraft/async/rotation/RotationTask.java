@@ -71,46 +71,23 @@ public class RotationTask extends AsyncTask {
             return;
         Player craftPilot = CraftManager.getInstance().getPlayerFromCraft(getCraft());
 
-        if (getCraft().getDisabled() && !getCraft().getSinking()) {
+        if (getCraft().getState() == CraftState.DISABLED) {
             failed = true;
             failMessage = "Craft is disabled!";
         }
 
         // check for fuel, burn some from a furnace if needed. Blocks of coal are supported, in addition to coal and charcoal
         double fuelBurnRate = getCraft().getType().getFuelBurnRate();
-        if (fuelBurnRate != 0.0 && !getCraft().getSinking()) {
-            if (getCraft().getBurningFuel() < fuelBurnRate) {
-                Furnace fuelHolder = null;
-                for (MovecraftLocation bTest : oldHitBox) {
-                    BlockSnapshot b = getCraft().getWorld().createSnapshot(bTest.getX(), bTest.getY(), bTest.getZ());
-                    if (b.getState().getType() == BlockTypes.FURNACE || b.getState().getType() == BlockTypes.LIT_FURNACE) {
-                        Optional<Furnace> furnaceOptional = b.getLocation()
-                                .flatMap(Location::getTileEntity)
-                                .filter(Furnace.class::isInstance)
-                                .map(Furnace.class::cast)
-                                .filter(furnace -> furnace.getInventory().contains(ItemTypes.COAL) || furnace.getInventory().contains(ItemTypes.COAL_BLOCK));
-                        if (furnaceOptional.isPresent())
-                            fuelHolder = furnaceOptional.get();
-                    }
-                }
-                if (fuelHolder == null) {
-                    failed = true;
-                    failMessage = "Translation Failed - Craft out of fuel";
-                } else {
-                    Inventory inventory = fuelHolder.getInventory();
-                    if (inventory.contains(ItemTypes.COAL)) {
-                        inventory.query(QueryOperationTypes.ITEM_TYPE.of(ItemTypes.COAL)).poll(1);
-                        getCraft().setBurningFuel(getCraft().getBurningFuel() + 7.0);
-                    } else {
-                        inventory.query(QueryOperationTypes.ITEM_TYPE.of(ItemTypes.COAL_BLOCK)).poll(1);
-                        getCraft().setBurningFuel(getCraft().getBurningFuel() + 79.0);
+        if (fuelBurnRate != 0.0 && getCraft().getState() != CraftState.SINKING) {
 
-                    }
-                }
-            } else {
-                getCraft().setBurningFuel(getCraft().getBurningFuel() - fuelBurnRate);
+            boolean fuelBurned = getCraft().burnFuel(fuelBurnRate);
+
+            if (!fuelBurned) {
+                failed = true;
+                failMessage = "Translation Failed - Craft out of fuel";
             }
         }
+
         // if a subcraft, find the parent craft. If not a subcraft, it is it's own parent
         Set<Craft> craftsInWorld = CraftManager.getInstance().getCraftsInWorld(getCraft().getWorld());
         Craft parentCraft = getCraft();
@@ -167,7 +144,7 @@ public class RotationTask extends AsyncTask {
         final Vector3d tOP = originPoint.toVector3i().toDouble().add(0.5, 0, 0.5);
 
         //prevents torpedo and rocket passengers
-        if (craft.getType().getMoveEntities() && !(craft.getSinking())) {
+        if (craft.getType().getMoveEntities() && craft.getState() != CraftState.SINKING) {
 
             if (Settings.Debug)
                 Movecraft.getInstance().getLogger().info("Craft moves Entities.");
