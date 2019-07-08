@@ -48,7 +48,7 @@ public class AscendSign {
             return;
         }
 
-        Craft craft = CraftManager.getInstance().getCraftByPlayer(player);
+        Craft craft = CraftManager.getInstance().getCraftByPlayer(player.getUniqueId());
 
         if (!block.getLocation().isPresent() || !block.getLocation().get().getTileEntity().isPresent())
             return;

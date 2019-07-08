@@ -59,11 +59,11 @@ public final class CruiseSign {
 
             event.setCancelled(true);
 
-            if (CraftManager.getInstance().getCraftByPlayer(player) == null) {
+            if (CraftManager.getInstance().getCraftByPlayer(player.getUniqueId()) == null) {
                 return;
             }
 
-            Craft craft = CraftManager.getInstance().getCraftByPlayer(player);
+            Craft craft = CraftManager.getInstance().getCraftByPlayer(player.getUniqueId());
 
             if (!craft.getType().getCanCruise()) {
                 return;
@@ -99,12 +99,12 @@ public final class CruiseSign {
             return;
         }
         if (lines.get(0).toPlain().equalsIgnoreCase("Cruise: ON")
-                && CraftManager.getInstance().getCraftByPlayer(player) != null
-                && CraftManager.getInstance().getCraftByPlayer(player).getType().getCanCruise()) {
+                && CraftManager.getInstance().getCraftByPlayer(player.getUniqueId()) != null
+                && CraftManager.getInstance().getCraftByPlayer(player.getUniqueId()).getType().getCanCruise()) {
             event.setCancelled(true);
             lines.set(0, Text.of("Cruise: OFF"));
             sign.offer(lines);
-            CraftManager.getInstance().getCraftByPlayer(player).setState(CraftState.STOPPED);
+            CraftManager.getInstance().getCraftByPlayer(player.getUniqueId()).setState(CraftState.STOPPED);
         }
     }
 

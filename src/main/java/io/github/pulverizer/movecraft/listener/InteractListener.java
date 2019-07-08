@@ -1,6 +1,8 @@
 package io.github.pulverizer.movecraft.listener;
 
 import com.flowpowered.math.vector.Vector3d;
+import com.flowpowered.math.vector.Vector3i;
+import io.github.pulverizer.movecraft.Rotation;
 import io.github.pulverizer.movecraft.utils.MathUtils;
 import io.github.pulverizer.movecraft.craft.Craft;
 import io.github.pulverizer.movecraft.config.Settings;
@@ -42,13 +44,13 @@ public final class InteractListener {
     @Include({InteractItemEvent.Primary.class, InteractItemEvent.Secondary.MainHand.class})
     public void onPlayerInteractStick(InteractItemEvent event, @Root Player player) {
 
-        Craft c = CraftManager.getInstance().getCraftByPlayer(player);
+        Craft c = CraftManager.getInstance().getCraftByPlayer(player.getUniqueId());
         // if not in command of craft, don't process pilot tool clicks
         if (c == null)
             return;
 
         if (event instanceof InteractItemEvent.Secondary) {
-            Craft craft = CraftManager.getInstance().getCraftByPlayer(player);
+            Craft craft = CraftManager.getInstance().getCraftByPlayer(player.getUniqueId());
 
             if (player.getItemInHand(HandTypes.MAIN_HAND).get().getType() != Settings.PilotTool) {
                 return;
@@ -89,7 +91,7 @@ public final class InteractListener {
                 if (player.get(Keys.IS_SNEAKING).get())
                     DY = -1;
 
-                craft.translate(0, DY, 0);
+                craft.translate(Rotation.NONE, new Vector3i(0, DY, 0), false);
                 timeMap.put(player, System.currentTimeMillis());
                 craft.setLastCruiseUpdateTime(System.currentTimeMillis());
                 return;
@@ -113,7 +115,7 @@ public final class InteractListener {
                 dz = 0;
             }
 
-            craft.translate(dx, dy, dz);
+            craft.translate(Rotation.NONE, new Vector3i(dx, dy, dz), false);
             timeMap.put(player, System.currentTimeMillis());
             craft.setLastCruiseUpdateTime(System.currentTimeMillis());
             return;
@@ -122,7 +124,7 @@ public final class InteractListener {
             if (player.getItemInHand(HandTypes.MAIN_HAND).get().getType() != Settings.PilotTool) {
                 return;
             }
-            Craft craft = CraftManager.getInstance().getCraftByPlayer(player);
+            Craft craft = CraftManager.getInstance().getCraftByPlayer(player.getUniqueId());
             if (craft == null) {
                 return;
             }

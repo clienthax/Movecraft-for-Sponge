@@ -64,7 +64,7 @@ public class WorldHandler {
 
         }
 
-        //get the old blocks and rotate them
+        //get the old blocks and translate them
         HashMap<Vector3i,BlockSnapshot> blockData = new HashMap<>();
         for(Vector3i blockPosition : rotatedBlockPositions.keySet()){
             blockData.put(blockPosition,nativeWorld.createSnapshot(blockPosition));

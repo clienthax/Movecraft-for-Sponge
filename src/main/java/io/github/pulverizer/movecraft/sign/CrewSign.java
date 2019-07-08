@@ -103,7 +103,7 @@ public class CrewSign {
             player.sendMessage(Text.of("You don't own this crew sign!"));
             return;
         }
-        if(CraftManager.getInstance().getCraftByPlayer(player) != null){
+        if(CraftManager.getInstance().getCraftByPlayer(player.getUniqueId()) != null){
             player.sendMessage(Text.of("You can't set your priority crew sign to a piloted craft."));
             return;
         }
@@ -127,7 +127,7 @@ public class CrewSign {
             return;
 
         Player player = event.getTargetEntity();
-        Craft craft = CraftManager.getInstance().getCraftByPlayer(player);
+        Craft craft = CraftManager.getInstance().getCraftByPlayer(player.getUniqueId());
         if (craft == null) {
             return;
         }

@@ -98,10 +98,10 @@ public final class CraftSign {
                     .submit(Movecraft.getInstance());
 
         } else {
-            if (CraftManager.getInstance().getCraftByPlayer(player) == null) {
+            if (CraftManager.getInstance().getCraftByPlayer(player.getUniqueId()) == null) {
                 final Craft craft = new Craft(type, player.getUniqueId(), loc);
             } else {
-                Craft oldCraft = CraftManager.getInstance().getCraftByPlayer(player);
+                Craft oldCraft = CraftManager.getInstance().getCraftByPlayer(player.getUniqueId());
                 if (oldCraft.isNotProcessing()) {
                     CraftManager.getInstance().removeCraft(oldCraft);
                     final Craft craft = new Craft(type, player.getUniqueId(), loc);

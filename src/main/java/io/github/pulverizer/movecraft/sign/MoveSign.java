@@ -1,5 +1,7 @@
 package io.github.pulverizer.movecraft.sign;
 
+import com.flowpowered.math.vector.Vector3i;
+import io.github.pulverizer.movecraft.Rotation;
 import io.github.pulverizer.movecraft.craft.CraftManager;
 import org.spongepowered.api.block.BlockSnapshot;
 import org.spongepowered.api.block.BlockTypes;
@@ -30,7 +32,7 @@ public final class MoveSign {
         if (!lines.get(0).toPlain().equalsIgnoreCase(HEADER)) {
             return;
         }
-        if (CraftManager.getInstance().getCraftByPlayer(player) == null) {
+        if (CraftManager.getInstance().getCraftByPlayer(player.getUniqueId()) == null) {
             return;
         }
 
@@ -38,7 +40,7 @@ public final class MoveSign {
         int dx = Integer.parseInt(numbers[0]);
         int dy = Integer.parseInt(numbers[1]);
         int dz = Integer.parseInt(numbers[2]);
-        int maxMove = CraftManager.getInstance().getCraftByPlayer(player).getType().maxStaticMove();
+        int maxMove = CraftManager.getInstance().getCraftByPlayer(player.getUniqueId()).getType().maxStaticMove();
 
         if (dx > maxMove)
             dx = maxMove;
@@ -53,14 +55,14 @@ public final class MoveSign {
         if (dz < 0 - maxMove)
             dz = 0 - maxMove;
 
-        if (!player.hasPermission("movecraft." + CraftManager.getInstance().getCraftByPlayer(player).getType().getCraftName() + ".move")) {
+        if (!player.hasPermission("movecraft." + CraftManager.getInstance().getCraftByPlayer(player.getUniqueId()).getType().getCraftName() + ".move")) {
             player.sendMessage(Text.of("Insufficient Permissions"));
             return;
         }
-        if (CraftManager.getInstance().getCraftByPlayer(player).getType().getCanStaticMove()) {
-            CraftManager.getInstance().getCraftByPlayer(player).translate(dx, dy, dz);
+        if (CraftManager.getInstance().getCraftByPlayer(player.getUniqueId()).getType().getCanStaticMove()) {
+            CraftManager.getInstance().getCraftByPlayer(player.getUniqueId()).translate(Rotation.NONE, new Vector3i(dx, dy, dz), false);
             //timeMap.put(player, System.currentTimeMillis());
-            CraftManager.getInstance().getCraftByPlayer(player).setLastCruiseUpdateTime(System.currentTimeMillis());
+            CraftManager.getInstance().getCraftByPlayer(player.getUniqueId()).setLastCruiseUpdateTime(System.currentTimeMillis());
         }
     }
 }

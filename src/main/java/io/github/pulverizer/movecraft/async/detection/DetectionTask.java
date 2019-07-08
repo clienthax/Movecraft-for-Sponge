@@ -46,7 +46,7 @@ public class DetectionTask extends AsyncTask {
     }
 
     @Override
-    public void excecute() {
+    public void execute() {
         Map<List<BlockType>, List<Double>> flyBlocks = getCraft().getType().getFlyBlocks();
         dFlyBlocks = flyBlocks;
 

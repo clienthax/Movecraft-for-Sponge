@@ -1,5 +1,6 @@
 package io.github.pulverizer.movecraft.async.translation;
 
+import com.flowpowered.math.vector.Vector3i;
 import com.google.common.collect.ImmutableSet;
 import io.github.pulverizer.movecraft.CraftState;
 import io.github.pulverizer.movecraft.Movecraft;
@@ -45,17 +46,17 @@ public class TranslationTask extends AsyncTask {
     private Collection<UpdateCommand> updates = new HashSet<>();
     private boolean taskFinished = false;
 
-    public TranslationTask(Craft c, int dx, int dy, int dz) {
+    public TranslationTask(Craft c, Vector3i moveVector) {
         super(c);
-        this.dx = dx;
-        this.dy = dy;
-        this.dz = dz;
+        this.dx = moveVector.getX();
+        this.dy = moveVector.getY();
+        this.dz = moveVector.getZ();
         newHitBox = new HashHitBox();
         oldHitBox = new HashHitBox(c.getHitBox());
     }
 
     @Override
-    protected void excecute() {
+    protected void execute() {
 
         //Check if there is anything to move
         if(oldHitBox.isEmpty()){
@@ -287,7 +288,7 @@ public class TranslationTask extends AsyncTask {
     private void fail(String message) {
         failed=true;
         failMessage=message;
-        Player craftPilot = CraftManager.getInstance().getPlayerFromCraft(craft);
+        Player craftPilot = Sponge.getServer().getPlayer(craft.getPilot()).orElse(null);
         if (craftPilot != null) {
             Location location = craftPilot.getLocation();
             if (craft.getState() != CraftState.DISABLED) {

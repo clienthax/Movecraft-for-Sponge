@@ -223,7 +223,7 @@ public class Movecraft {
             this.getCommand("movecraft").setExecutor(new MovecraftCommand());
             this.getCommand("release").setExecutor(new ReleaseCommand());
             this.getCommand("pilot").setExecutor(new PilotCommand());
-            this.getCommand("rotate").setExecutor(new RotateCommand());
+            this.getCommand("translate").setExecutor(new RotateCommand());
             this.getCommand("cruise").setExecutor(new CruiseCommand());
             this.getCommand("craftreport").setExecutor(new CraftReportCommand());
             this.getCommand("manoverboard").setExecutor(new ManOverboardCommand());

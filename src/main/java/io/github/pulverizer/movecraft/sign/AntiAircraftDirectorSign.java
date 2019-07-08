@@ -39,7 +39,7 @@ public class AntiAircraftDirectorSign {
         Craft foundCraft = null;
         World blockWorld = block.getLocation().get().getExtent();
         for (Craft tcraft : CraftManager.getInstance().getCraftsInWorld(blockWorld)) {
-            if (MathUtils.locationInHitbox(tcraft.getHitBox(), block.getLocation().get()) && CraftManager.getInstance().getPlayerFromCraft(tcraft) != null) {
+            if (MathUtils.locationInHitbox(tcraft.getHitBox(), block.getLocation().get()) && !tcraft.getCrewList().isEmpty()) {
                 foundCraft = tcraft;
                 break;
             }

@@ -24,7 +24,7 @@ public abstract class AsyncTask {
 
     private void task() {
         try {
-            excecute();
+            execute();
             Movecraft.getInstance().getAsyncManager().submitCompletedTask(this);
         } catch (Exception e) {
             Movecraft.getInstance().getLogger().error("Internal Error - Proccessor thread encountered an error!");
@@ -32,7 +32,7 @@ public abstract class AsyncTask {
         }
     }
 
-    protected abstract void excecute();
+    protected abstract void execute();
 
     protected Craft getCraft() {
         return craft;

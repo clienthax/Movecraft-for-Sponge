@@ -4,7 +4,10 @@ import com.flowpowered.math.vector.Vector3d;
 import com.flowpowered.math.vector.Vector3i;
 import io.github.pulverizer.movecraft.CraftState;
 import io.github.pulverizer.movecraft.Movecraft;
+import io.github.pulverizer.movecraft.Rotation;
 import io.github.pulverizer.movecraft.async.detection.DetectionTask;
+import io.github.pulverizer.movecraft.async.rotation.RotationTask;
+import io.github.pulverizer.movecraft.async.translation.TranslationTask;
 import io.github.pulverizer.movecraft.events.CraftSinkEvent;
 import io.github.pulverizer.movecraft.utils.HashHitBox;
 
@@ -16,6 +19,7 @@ import org.spongepowered.api.block.tileentity.carrier.Furnace;
 import org.spongepowered.api.item.ItemTypes;
 import org.spongepowered.api.item.inventory.Inventory;
 import org.spongepowered.api.item.inventory.query.QueryOperationTypes;
+import org.spongepowered.api.text.Text;
 import org.spongepowered.api.util.Direction;
 import org.spongepowered.api.world.Location;
 import org.spongepowered.api.world.World;
@@ -28,7 +32,7 @@ public class Craft {
     //Facts
     private final CraftType type;
     private final UUID id = UUID.randomUUID();
-    private HashHitBox initialHitbox;
+    private int initialSize;
     private final Long originalPilotTime;
     private UUID originalPilot;
 
@@ -68,14 +72,9 @@ public class Craft {
 
     /**
      * Initialises the craft and detects the craft's hitbox.
-     * @param type The type of the craft.
-     * @param world The world the craft is currently in.
-     */
-    /**
-     *
-     * @param type
-     * @param player
-     * @param startLocation
+     * @param type The type of craft to detect.
+     * @param player The player that triggered craft detection.
+     * @param startLocation Location from which to start craft detection.
      */
     public Craft(CraftType type, UUID player, Location<World> startLocation) {
         this.type = type;
@@ -83,6 +82,7 @@ public class Craft {
         addCrewMember(player);
         setLastCruiseUpdateTime(System.currentTimeMillis() - 10000);
         this.originalPilotTime = System.currentTimeMillis();
+        this.originalPilot = player;
         Movecraft.getInstance().getAsyncManager().submitTask(new DetectionTask(this, startLocation, player), this);
     }
 
@@ -123,7 +123,7 @@ public class Craft {
      * Fetches the list of players that are registered as members of the craft's crew.
      * @return The list of players that are registered as members of the craft's crew.
      */
-    public Set<UUID> getCrewList() {
+    public HashSet<UUID> getCrewList() {
         return crewList;
     }
 
@@ -150,27 +150,12 @@ public class Craft {
         setCannonDirector(null);
     }
 
-    //TODO: Fix this mess. initialHitbox should be set on initialisation of the Craft.
     /**
-     * Creates the initial hitbox of the craft. This method can only be used once and should only be called by DetectionTask.
-     * @param detectedHitbox The first ever hitbox of the craft.
-     * @return False if the initial hitbox has already been set.
+     * Sets and updates the initial size of the craft.
+     * @param size The initial size of the craft.
      */
-    public boolean setInitialHitBox(HashHitBox detectedHitbox) {
-        if (!initialHitbox.isEmpty())
-            return false;
-
-        initialHitbox = detectedHitbox;
-        setHitBox(detectedHitbox);
-        return true;
-    }
-
-    /**
-     * Fetches the initial hitbox of the craft.
-     * @return The initial hitbox of the craft.
-     */
-    public HashHitBox getInitialHitBox() {
-        return initialHitbox;
+    public void setInitialSize(int size) {
+        initialSize = size;
     }
 
     /**
@@ -178,7 +163,7 @@ public class Craft {
      * @return The initial size of the craft.
      */
     public int getInitialSize() {
-        return initialHitbox.size();
+        return initialSize;
     }
 
     /**
@@ -472,9 +457,10 @@ public class Craft {
     }
 
     /**
-     *
-     * @param movePoints
-     * @return
+     * Deducts move points as requested. Used to represent fuel consumption.
+     * Will burn fuel from inventories specified in the craft config.
+     * @param movePoints The number of move points to deduct.
+     * @return TRUE if the operation was successful.
      */
     public boolean burnFuel(double movePoints) {
 
@@ -532,8 +518,8 @@ public class Craft {
     }
 
     /**
-     *
-     * @return
+     * Calculates the fuel that has not yet been burned.
+     * @return The total unburned move points currently aboard the craft.
      */
     public int checkFuelStored() {
 
@@ -567,14 +553,12 @@ public class Craft {
     }
 
     /**
-     *
-     * @return
+     * Fetches the number of moves the craft has made so far.
+     * @return Number of times the craft has moved.
      */
     public int getNumberOfMoves() {
         return numberOfMoves;
     }
-
-
 
     /**
      *
@@ -593,19 +577,6 @@ public class Craft {
 
     /**
      *
-     * @param player
-     * @return
-     */
-    public boolean setOriginalPilot(UUID player) {
-        if (originalPilot != null)
-            return false;
-
-        originalPilot = player;
-        return true;
-    }
-
-    /**
-     *
      * @return
      */
     public UUID getOriginalPilot() {
@@ -613,6 +584,98 @@ public class Craft {
     }
 
     //--------------------------//
+
+    public void translate(Rotation rotation, Vector3i moveVector, boolean isSubCraft) {
+
+        if (rotation == Rotation.NONE) {
+
+            // check to see if the craft is trying to move in a direction not permitted by the type
+            if (!this.getType().allowHorizontalMovement() && this.getState() != CraftState.SINKING) {
+                moveVector = new Vector3i(0, moveVector.getY(), 0);
+            }
+            if (!this.getType().allowVerticalMovement() && this.getState() != CraftState.SINKING) {
+                moveVector = new Vector3i(moveVector.getX(), 0, moveVector.getZ());
+            }
+            if (moveVector.getX() == 0 && moveVector.getY() == 0 && moveVector.getZ() == 0) {
+                return;
+            }
+
+            if (!this.getType().allowVerticalTakeoffAndLanding() && moveVector.getY() != 0 && this.getState() != CraftState.SINKING) {
+                if (moveVector.getX() == 0 && moveVector.getZ() == 0) {
+                    return;
+                }
+            }
+
+            Movecraft.getInstance().getAsyncManager().submitTask(new TranslationTask(this, moveVector), this);
+
+        } else if (!isSubCraft) {
+
+            if(getLastRotateTime()+1e9>System.nanoTime()){
+                if(getPilot()!= null)
+                    Sponge.getServer().getPlayer(getPilot()).ifPresent(player -> player.sendMessage(Text.of("You're turning too quickly!")));
+                return;
+            }
+            setLastRotateTime(System.nanoTime());
+            Movecraft.getInstance().getAsyncManager().submitTask(new RotationTask(this, moveVector, rotation, this.getWorld(), isSubCraft), this);
+
+        } else {
+
+            Movecraft.getInstance().getAsyncManager().submitTask(new RotationTask(this, moveVector, rotation, this.getWorld(), isSubCraft), this);
+
+        }
+    }
+
+    public int getWaterLine(){
+        //TODO: Remove this temporary system in favor of passthrough blocks
+        // Find the waterline from the surrounding terrain or from the static level in the craft type
+        int waterLine = 0;
+        if (currentHitbox.isEmpty())
+            return waterLine;
+
+        // figure out the water level by examining blocks next to the outer boundaries of the craft
+        for (int posY = currentHitbox.getMaxY() + 1; posY >= currentHitbox.getMinY() - 1; posY--) {
+            int numWater = 0;
+            int numAir = 0;
+            int posX;
+            int posZ;
+            posZ = currentHitbox.getMinZ() - 1;
+            for (posX = currentHitbox.getMinX() - 1; posX <= currentHitbox.getMaxX() + 1; posX++) {
+                BlockType typeID = world.getBlock(posX, posY, posZ).getType();
+                if (typeID == BlockTypes.WATER)
+                    numWater++;
+                if (typeID == BlockTypes.AIR)
+                    numAir++;
+            }
+            posZ = currentHitbox.getMaxZ() + 1;
+            for (posX = currentHitbox.getMinX() - 1; posX <= currentHitbox.getMaxX() + 1; posX++) {
+                BlockType typeID = world.getBlock(posX, posY, posZ).getType();
+                if (typeID == BlockTypes.WATER)
+                    numWater++;
+                if (typeID == BlockTypes.AIR)
+                    numAir++;
+            }
+            posX = currentHitbox.getMinX() - 1;
+            for (posZ = currentHitbox.getMinZ(); posZ <= currentHitbox.getMaxZ(); posZ++) {
+                BlockType typeID = world.getBlock(posX, posY, posZ).getType();
+                if (typeID == BlockTypes.WATER)
+                    numWater++;
+                if (typeID == BlockTypes.AIR)
+                    numAir++;
+            }
+            posX = currentHitbox.getMaxX() + 1;
+            for (posZ = currentHitbox.getMinZ(); posZ <= currentHitbox.getMaxZ(); posZ++) {
+                BlockType typeID = world.getBlock(posX, posY, posZ).getType();
+                if (typeID == BlockTypes.WATER)
+                    numWater++;
+                if (typeID == BlockTypes.AIR)
+                    numAir++;
+            }
+            if (numWater > numAir) {
+                return posY;
+            }
+        }
+        return waterLine;
+    }
 
     public Map<UUID, Location<World>> getCrewSigns(){
         return crewSigns;

@@ -6,10 +6,6 @@ import io.github.pulverizer.movecraft.Rotation;
 import io.github.pulverizer.movecraft.craft.Craft;
 import io.github.pulverizer.movecraft.craft.CraftManager;
 import io.github.pulverizer.movecraft.craft.CraftType;
-import io.github.pulverizer.movecraft.events.CraftDetectEvent;
-import io.github.pulverizer.movecraft.events.CraftReleaseEvent;
-import io.github.pulverizer.movecraft.events.CraftRotateEvent;
-import io.github.pulverizer.movecraft.utils.MathUtils;
 import org.spongepowered.api.block.BlockSnapshot;
 import org.spongepowered.api.block.BlockTypes;
 import org.spongepowered.api.block.tileentity.Sign;
@@ -62,7 +58,7 @@ public final class SubcraftRotateSign {
             event.setCancelled(true);
             return;
         }
-        // rotate subcraft
+        // translate subcraft
         String craftTypeStr = sign.lines().get(1).toPlain();
         CraftType type = CraftManager.getInstance().getCraftTypeFromString(craftTypeStr);
         if (type == null) {
@@ -74,12 +70,12 @@ public final class SubcraftRotateSign {
             sign.offer(lines);
         }
 
-        if (!player.hasPermission("movecraft." + craftTypeStr + ".pilot") || !player.hasPermission("movecraft." + craftTypeStr + ".rotate")) {
+        if (!player.hasPermission("movecraft." + craftTypeStr + ".pilot") || !player.hasPermission("movecraft." + craftTypeStr + ".translate")) {
             player.sendMessage(Text.of("Insufficient Permissions"));
             return;
         }
 
-        final Craft craft = CraftManager.getInstance().getCraftByPlayer(player);
+        final Craft craft = CraftManager.getInstance().getCraftByPlayer(player.getUniqueId());
         if(craft!=null) {
             if (!craft.isNotProcessing()) {
                 player.sendMessage(Text.of("Parent Craft is busy!"));
@@ -101,7 +97,7 @@ public final class SubcraftRotateSign {
         Task.builder()
                 .delayTicks(3)
                 .execute(() -> {
-                    subCraft.rotate(rotation, startPoint, true);
+                    subCraft.translate(rotation, startPoint, true);
                     Task.builder()
                             .delayTicks(3)
                             .execute(() -> {

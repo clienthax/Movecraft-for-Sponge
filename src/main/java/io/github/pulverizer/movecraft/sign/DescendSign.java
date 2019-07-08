@@ -54,11 +54,11 @@ public final class DescendSign {
         ListValue<Text> lines = sign.lines();
 
         if (lines.get(0).toPlain().equalsIgnoreCase("Descend: OFF")) {
-            if (CraftManager.getInstance().getCraftByPlayer(player) == null) {
+            if (CraftManager.getInstance().getCraftByPlayer(player.getUniqueId()) == null) {
                 return;
             }
 
-            Craft craft = CraftManager.getInstance().getCraftByPlayer(player);
+            Craft craft = CraftManager.getInstance().getCraftByPlayer(player.getUniqueId());
             if (!craft.getType().getCanCruise()) {
                 return;
             }
@@ -77,7 +77,7 @@ public final class DescendSign {
             return;
         }
         if (lines.get(0).toPlain().equalsIgnoreCase("Descend: ON")) {
-            Craft craft = CraftManager.getInstance().getCraftByPlayer(player);
+            Craft craft = CraftManager.getInstance().getCraftByPlayer(player.getUniqueId());
             if (craft != null && craft.getType().getCanCruise()) {
                 lines.set(0, Text.of("Descend: OFF"));
                 sign.offer(lines);

@@ -37,7 +37,7 @@ public class PlayerListener {
 
     @Listener
     public void onPlayerMove(MoveEntityEvent event, @Root Player player) {
-        final Craft c = CraftManager.getInstance().getCraftByPlayer(player);
+        final Craft c = CraftManager.getInstance().getCraftByPlayer(player.getUniqueId());
         if (c == null) {
             return;
         }

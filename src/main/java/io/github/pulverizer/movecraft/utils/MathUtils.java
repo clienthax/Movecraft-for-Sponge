@@ -60,8 +60,8 @@ public class MathUtils {
     /**
      * Rotates a MovecraftLocation towards a supplied <code>Rotation</code>.
      * The resulting MovecraftRotation is based on a center of (0,0,0).
-     * @param rotation the direction to rotate
-     * @param movecraftLocation the location to rotate
+     * @param rotation the direction to translate
+     * @param movecraftLocation the location to translate
      * @return a rotated Movecraft location
      */
 

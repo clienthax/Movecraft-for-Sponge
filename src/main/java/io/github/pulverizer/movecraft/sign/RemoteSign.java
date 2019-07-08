@@ -46,7 +46,7 @@ public final class RemoteSign {
             if (MathUtils.locationInHitbox(tcraft.getHitBox(), block.getLocation().get())) {
                 // don't use a craft with a null player. This is
                 // mostly to avoid trying to use subcrafts
-                if (CraftManager.getInstance().getPlayerFromCraft(tcraft) != null) {
+                if (!tcraft.getCrewList().isEmpty()) {
                     foundCraft = tcraft;
                     break;
                 }

@@ -1,6 +1,7 @@
 package io.github.pulverizer.movecraft.async.rotation;
 
 import com.flowpowered.math.vector.Vector3d;
+import com.flowpowered.math.vector.Vector3i;
 import io.github.pulverizer.movecraft.CraftState;
 import io.github.pulverizer.movecraft.Movecraft;
 import io.github.pulverizer.movecraft.MovecraftLocation;
@@ -50,9 +51,9 @@ public class RotationTask extends AsyncTask {
     private final HashHitBox oldHitBox;
     private final HashHitBox newHitBox;
 
-    public RotationTask(Craft c, MovecraftLocation originPoint, Rotation rotation, World w, boolean isSubCraft) {
+    public RotationTask(Craft c, Vector3i originPoint, Rotation rotation, World w, boolean isSubCraft) {
         super(c);
-        this.originPoint = originPoint;
+        this.originPoint = new MovecraftLocation(originPoint.getX(), originPoint.getY(), originPoint.getZ());
         this.rotation = rotation;
         this.w = w;
         this.isSubCraft = isSubCraft;
@@ -60,16 +61,11 @@ public class RotationTask extends AsyncTask {
         this.oldHitBox = new HashHitBox(c.getHitBox());
     }
 
-    public RotationTask(Craft c, MovecraftLocation originPoint, Rotation rotation, World w) {
-        this(c,originPoint,rotation,w,false);
-    }
-
     @Override
-    protected void excecute() {
+    protected void execute() {
 
         if(oldHitBox.isEmpty())
             return;
-        Player craftPilot = CraftManager.getInstance().getPlayerFromCraft(getCraft());
 
         if (getCraft().getState() == CraftState.DISABLED) {
             failed = true;
@@ -140,7 +136,7 @@ public class RotationTask extends AsyncTask {
 
 
         updates.add(new CraftRotateCommand(getCraft(),originPoint, rotation));
-        //rotate entities in the craft
+        //translate entities in the craft
         final Vector3d tOP = originPoint.toVector3i().toDouble().add(0.5, 0, 0.5);
 
         //prevents torpedo and rocket passengers
