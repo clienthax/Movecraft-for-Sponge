@@ -41,7 +41,7 @@ public class DetectionTask extends AsyncTask {
         this.minSize = craft.getType().getMinSize();
         this.maxSize = craft.getType().getMaxSize();
         this.world = craft.getWorld();
-        data = new DetectionTaskData(craft.getWorld(), player, craft.getPilot(), craft.getType().getAllowedBlocks(), craft.getType().getForbiddenBlocks(),
+        data = new DetectionTaskData(craft.getWorld(), player, craft.getType().getAllowedBlocks(), craft.getType().getForbiddenBlocks(),
                 craft.getType().getForbiddenSignStrings());
     }
 
@@ -98,7 +98,7 @@ public class DetectionTask extends AsyncTask {
                 if(snapshot.getLocation().isPresent() && snapshot.getLocation().get().getTileEntity().isPresent()) {
 
                     Sign s = (Sign) snapshot.getLocation().get().getTileEntity().get();
-                    if (s.lines().get(0).toString().equalsIgnoreCase("Pilot:") && data.getPlayer() != null) {
+                    if (s.lines().get(0).toString().equalsIgnoreCase("Commander:") && data.getPlayer() != null) {
                         String playerName = Sponge.getServer().getPlayer(data.getPlayer()).get().getName();
                         boolean foundPilot = false;
                         if (s.lines().get(1).toString().equalsIgnoreCase(playerName) || s.lines().get(2).toString().equalsIgnoreCase(playerName)
@@ -106,7 +106,7 @@ public class DetectionTask extends AsyncTask {
                             foundPilot = true;
                         }
                         if (!foundPilot && (!Sponge.getServer().getPlayer(data.getPlayer()).get().hasPermission("movecraft.bypasslock"))) {
-                            fail("Not one of the registered pilots on this craft.");
+                            fail("Not one of the registered commanders for this craft.");
                         }
                     }
                     for (int i = 0; i < 4; i++) {
@@ -120,12 +120,7 @@ public class DetectionTask extends AsyncTask {
                 fail("Detection Failed- Forbidden block found.");
             } else if (isAllowedBlock(testID)) {
 
-                UUID player;
-                if (data.getPlayer() == null) {
-                    player = data.getNotificationPlayer();
-                } else {
-                    player = data.getPlayer();
-                }
+                UUID player = data.getPlayer();
                 if (player != null) {
 
                     addToBlockList(workingLocation);

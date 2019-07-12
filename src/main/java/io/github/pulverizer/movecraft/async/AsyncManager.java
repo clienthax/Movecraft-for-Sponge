@@ -128,17 +128,11 @@ public class AsyncManager implements Runnable {
                 DetectionTask task = (DetectionTask) poll;
                 DetectionTaskData data = task.getData();
 
-                Player p = Sponge.getServer().getPlayer(data.getPlayer()).orElse(null);
-                Player notifyP = Sponge.getServer().getPlayer(data.getNotificationPlayer()).orElse(null);
-                Craft pCraft = CraftManager.getInstance().getCraftByPlayer(data.getPlayer());
+                Player player = Sponge.getServer().getPlayer(data.getPlayer()).orElse(null);
 
-                if (pCraft != null && p != null) {
-                    // Player is already controlling a craft
-                    notifyP.sendMessage(Text.of("Detection Failed! You are already commanding a craft."));
-                } else {
                     if (data.failed()) {
-                        if (notifyP != null)
-                            notifyP.sendMessage(Text.of(data.getFailMessage()));
+                        if (player != null)
+                            player.sendMessage(Text.of(data.getFailMessage()));
                         else
                             Movecraft.getInstance().getLogger().info("NULL Player Craft Detection failed:" + data.getFailMessage());
 
@@ -146,35 +140,42 @@ public class AsyncManager implements Runnable {
                         Set<Craft> craftsInWorld = CraftManager.getInstance().getCraftsInWorld(c.getWorld());
                         boolean failed = false;
                         boolean isSubcraft = false;
+                        Craft parentCraft = null;
 
-                        for (Craft craft : craftsInWorld) {
-                            if(craft.getHitBox().intersects(data.getBlockList())){
+                        for (Craft pCraft : craftsInWorld) {
+                            if (pCraft.getHitBox().intersects(data.getBlockList())) {
                                 isSubcraft = true;
-                                if (c.getType().getCruiseOnPilot() || p != null) {
-                                    if (craft.getType() == c.getType() || craft.getHitBox().size() <= data.getBlockList().size()) {
-                                        notifyP.sendMessage(Text.of("Detection Failed. Craft is already being controlled by another player."));
+                                parentCraft = pCraft;
+                                break;
+                            }
+                        }
+                        if (player != null && CraftManager.getInstance().getCraftByPlayer(player.getUniqueId()) != null && (!c.getType().getCruiseOnPilot() || isSubcraft)) {
+                            // Player is already controlling a craft
+                            player.sendMessage(Text.of("Detection Failed! You are already in the crew of another craft."));
+                        } else {
+
+                            if (isSubcraft && (c.getType().getCruiseOnPilot() || player != null)) {
+
+                                if (parentCraft.getType() == c.getType() || parentCraft.getHitBox().size() <= data.getBlockList().size()) {
+                                    player.sendMessage(Text.of("Detection Failed. Craft is already being controlled by another player."));
+                                    failed = true;
+
+                                } else {
+
+                                    // if this is a different type than the overlapping craft, and is smaller, this must be a child craft, like a fighter on a carrier
+                                    if (!parentCraft.isNotProcessing()) {
                                         failed = true;
-                                    } else {
-                                        // if this is a different type than
-                                        // the overlapping craft, and is
-                                        // smaller, this must be a child
-                                        // craft, like a fighter on a
-                                        // carrier
-                                        if (!craft.isNotProcessing()) {
-                                            failed = true;
-                                            notifyP.sendMessage(Text.of("Parent Craft is busy."));
-                                        }
-                                        craft.setHitBox(new HashHitBox(CollectionUtils.filter(craft.getHitBox(),data.getBlockList())));
-                                        craft.setInitialSize(craft.getInitialSize() - data.getBlockList().size());
+                                        player.sendMessage(Text.of("Parent Craft is busy."));
                                     }
+                                    parentCraft.setHitBox(new HashHitBox(CollectionUtils.filter(parentCraft.getHitBox(), data.getBlockList())));
+                                    parentCraft.setInitialSize(parentCraft.getInitialSize() - data.getBlockList().size());
                                 }
                             }
-
-
                         }
+
                         if (c.getType().getMustBeSubcraft() && !isSubcraft) {
                             failed = true;
-                            notifyP.sendMessage(Text.of("Craft must be part of another craft!"));
+                            player.sendMessage(Text.of("Craft must be part of another craft!"));
                         }
                         if (!failed) {
                             c.setInitialSize(task.getData().getBlockList().size());
@@ -188,19 +189,25 @@ public class AsyncManager implements Runnable {
                                 }
                             }
 
-                            if (notifyP != null) {
-                                notifyP.sendMessage(Text.of("Successfully piloted " + c.getType().getCraftName() + " Size: " + c.getHitBox().size()));
-                                Movecraft.getInstance().getLogger().info("New Craft Detected! Pilot: " + notifyP.getName() + " CraftType: " + c.getType().getCraftName() + " Size: " + c.getHitBox().size() + " Location: " + c.getHitBox().getMinX() + ", " + c.getHitBox().getMinY() + ", " + c.getHitBox().getMinZ());
+                            if (c.getHitBox() != null) {
+
+                                if (player != null) {
+                                    player.sendMessage(Text.of("Successfully piloted " + c.getType().getCraftName() + " Size: " + c.getHitBox().size()));
+                                    Movecraft.getInstance().getLogger().info("New Craft Detected! Pilot: " + player.getName() + " CraftType: " + c.getType().getCraftName() + " Size: " + c.getHitBox().size() + " Location: " + c.getHitBox().getMinX() + ", " + c.getHitBox().getMinY() + ", " + c.getHitBox().getMinZ());
+                                } else {
+                                    Movecraft.getInstance().getLogger().info("New Craft Detected! Pilot: " + "NULL PLAYER" + " CraftType: " + c.getType().getCraftName() + " Size: " + c.getHitBox().size() + " Location: " + c.getHitBox().getMinX() + ", " + c.getHitBox().getMinY() + ", " + c.getHitBox().getMinZ());
+                                }
+                                CraftManager.getInstance().addCraft(c);
                             } else {
-                                Movecraft.getInstance().getLogger().info("New Craft Detected! Pilot: " + "NULL PLAYER" + " CraftType: " + c.getType().getCraftName() + " Size: " + c.getHitBox().size() + " Location: " + c.getHitBox().getMinX() + ", " + c.getHitBox().getMinY() + ", " + c.getHitBox().getMinZ());
+                                Movecraft.getInstance().getLogger().info("Detection Failed - NULL Hitbox!");
                             }
-                            CraftManager.getInstance().addCraft(c);
                         }
                     }
+                if(c != null && c.getHitBox() != null){
+                    CraftDetectEvent event = new CraftDetectEvent(c);
+                    Sponge.getEventManager().post(event);
                 }
-                if(c!=null){
-                    Sponge.getEventManager().post(new CraftDetectEvent(c));
-                }
+
 
             } else if (poll instanceof TranslationTask) {
                 // Process translation task
@@ -233,6 +240,7 @@ public class AsyncManager implements Runnable {
                 }
 
             } else if (poll instanceof RotationTask) {
+
                 // Process rotation task
                 RotationTask task = (RotationTask) poll;
                 Player notifyP = Sponge.getServer().getPlayer(c.getPilot()).orElse(null);
@@ -241,6 +249,7 @@ public class AsyncManager implements Runnable {
                 if (notifyP != null || task.getIsSubCraft()) {
 
                     if (task.isFailed()) {
+
                         // The craft translation failed, don't try to notify
                         // them if there is no pilot
                         if (notifyP != null)
@@ -248,6 +257,7 @@ public class AsyncManager implements Runnable {
                         else
                             Movecraft.getInstance().getLogger().info("NULL Player Rotation Failed: " + task.getFailMessage());
                     } else {
+
                         if (c.getPilot() != null) {
                             // convert blocklist to location list
                             List<Location> shipLocations = new ArrayList<>();
@@ -256,8 +266,9 @@ public class AsyncManager implements Runnable {
                             }
                         }
 
-                        MapUpdateManager.getInstance().scheduleUpdates(task.getUpdates());
+                        Movecraft.getInstance().getLogger().info("Number of updates in Rotation Task: " + task.getUpdates().size());
 
+                        MapUpdateManager.getInstance().scheduleUpdates(task.getUpdates());
 
                         sentMapUpdate = true;
 

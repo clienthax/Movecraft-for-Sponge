@@ -15,6 +15,7 @@ import org.spongepowered.api.item.ItemTypes;
 import org.spongepowered.api.item.inventory.Inventory;
 import org.spongepowered.api.item.inventory.query.QueryOperationTypes;
 import org.spongepowered.api.text.Text;
+import org.spongepowered.api.text.format.TextColor;
 import org.spongepowered.api.text.format.TextColors;
 import org.spongepowered.api.world.World;
 
@@ -98,9 +99,9 @@ public final class StatusSign {
         }
         int signLine=1;
         int signColumn=0;
-        for(List<BlockType> alFlyBlockID : craft.getType().getFlyBlocks().keySet()) {
-            BlockType flyBlockID=alFlyBlockID.get(0);
-            Double minimum=craft.getType().getFlyBlocks().get(alFlyBlockID).get(0);
+        for(List<BlockType> flyBlockIDs : craft.getType().getFlyBlocks().keySet()) {
+            BlockType flyBlockID = flyBlockIDs.get(0);
+            Double minimum = craft.getType().getFlyBlocks().get(flyBlockIDs).get(0);
             if(foundBlocks.containsKey(flyBlockID) && minimum > 0) { // if it has a minimum, it should be considered for sinking consideration
                 int amount = foundBlocks.get(flyBlockID);
                 Double percentPresent = (double) (amount*100/totalBlocks);
@@ -126,11 +127,11 @@ public final class StatusSign {
                 signText+="/";
                 signText+=minimum.intValue();
                 signText+="  ";
-                if(signColumn==0) {
+                if(signColumn == 0) {
                     lines.set(signLine,Text.of(signText));
                     sign.offer(lines);
                     signColumn++;
-                } else if(signLine<3) {
+                } else if(signLine < 3) {
                     String existingLine = lines.get(signLine).toPlain();
                     existingLine+= signText;
                     lines.set(signLine, Text.of(existingLine));
@@ -142,16 +143,18 @@ public final class StatusSign {
         }
         String fuelText="";
         int fuelRange = (int) ((fuel*(1+craft.getType().getCruiseSkipBlocks()))/craft.getType().getFuelBurnRate());
+        TextColor fuelColor;
+
         if(fuelRange>1000) {
-            fuelText+= TextColors.GREEN;
+            fuelColor = TextColors.GREEN;
         } else if(fuelRange>100) {
-            fuelText+= TextColors.YELLOW;
+            fuelColor = TextColors.YELLOW;
         } else {
-            fuelText+= TextColors.RED;
+            fuelColor = TextColors.RED;
         }
         fuelText+="Fuel range:";
         fuelText+=fuelRange;
-        lines.set(signLine, Text.of(fuelText));
+        lines.set(signLine, Text.of("Fuel range: " + fuelRange).toBuilder().color(fuelColor).build());
         sign.offer(lines);
     }
 }

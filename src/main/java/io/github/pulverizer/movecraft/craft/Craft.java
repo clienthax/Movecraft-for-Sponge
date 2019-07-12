@@ -4,6 +4,7 @@ import com.flowpowered.math.vector.Vector3d;
 import com.flowpowered.math.vector.Vector3i;
 import io.github.pulverizer.movecraft.CraftState;
 import io.github.pulverizer.movecraft.Movecraft;
+import io.github.pulverizer.movecraft.MovecraftLocation;
 import io.github.pulverizer.movecraft.Rotation;
 import io.github.pulverizer.movecraft.async.detection.DetectionTask;
 import io.github.pulverizer.movecraft.async.rotation.RotationTask;
@@ -34,14 +35,14 @@ public class Craft {
     private final UUID id = UUID.randomUUID();
     private int initialSize;
     private final Long originalPilotTime;
-    private UUID originalPilot;
+    private final UUID originalPilot;
 
 
     //State
     private AtomicBoolean processing = new AtomicBoolean();
     private HashHitBox currentHitbox;
     private CraftState state;
-    private Long lastCheckTime;
+    private Long lastCheckTime = (long) 0;
     private World world;
 
 
@@ -497,13 +498,13 @@ public class Craft {
                         int oldValue = (int) Math.ceil((movePoints - burningFuel) / 72);
                         int newValue = furnaceInventory.query(QueryOperationTypes.ITEM_TYPE.of(ItemTypes.COAL_BLOCK)).poll(oldValue).get().getQuantity();
 
-                        burningFuel += (oldValue - newValue) * 72;
+                        burningFuel += newValue * 72;
 
-                    } else {
+                    } else if (furnaceInventory.contains(ItemTypes.COAL)) {
                         int oldValue = (int) Math.ceil((movePoints - burningFuel) / 8);
                         int newValue = furnaceInventory.query(QueryOperationTypes.ITEM_TYPE.of(ItemTypes.COAL)).poll(oldValue).get().getQuantity();
 
-                        burningFuel += (oldValue - newValue) * 8;
+                        burningFuel += newValue * 8;
                     }
                 }
             }
@@ -569,7 +570,7 @@ public class Craft {
         HashSet<Location<World>> foundBlocks = new HashSet<>();
         getHitBox().forEach(mLoc -> {
             if (getWorld().getBlockType(mLoc) == blockType)
-                foundBlocks.add(getWorld().getLocation(mLoc));
+                foundBlocks.add(mLoc.toSponge(getWorld()));
         });
 
         return foundBlocks;
@@ -583,7 +584,37 @@ public class Craft {
         return originalPilot;
     }
 
+
+
     //--------------------------//
+
+    public void setLastCheckTime(long time) {
+        lastCheckTime = time;
+    }
+
+    /**
+     * gets the speed of a craft in blocks per second.
+     * @return the speed of the craft
+     */
+    public double getSpeed(){
+        return 20*type.getCruiseSkipBlocks()/(double)getTickCooldown();
+    }
+
+    public long getLastRotateTime() {
+        return lastRotateTime;
+    }
+
+    public void setLastRotateTime(long lastRotateTime) {
+        this.lastRotateTime = lastRotateTime;
+    }
+
+    public void addMoveTime(float moveTime){
+        meanMoveTime = (meanMoveTime*numberOfMoves + moveTime)/(++numberOfMoves);
+    }
+
+    public float getMeanMoveTime() {
+        return meanMoveTime;
+    }
 
     public void translate(Rotation rotation, Vector3i moveVector, boolean isSubCraft) {
 
@@ -620,10 +651,43 @@ public class Craft {
 
         } else {
 
+            Movecraft.getInstance().getLogger().info("Test || Rotating Subcraft.");
+
             Movecraft.getInstance().getAsyncManager().submitTask(new RotationTask(this, moveVector, rotation, this.getWorld(), isSubCraft), this);
 
         }
     }
+
+    public int getTickCooldown() {
+        if(state == CraftState.SINKING)
+            return type.getSinkRateTicks();
+        double chestPenalty = 0;
+        for(MovecraftLocation location : currentHitbox){
+            if(location.toSponge(world).getBlockType()==BlockTypes.CHEST)
+                chestPenalty++;
+        }
+        chestPenalty*=type.getChestPenalty();
+        if(meanMoveTime==0)
+            return type.getCruiseTickCooldown()+(int)chestPenalty;
+        if(state != CraftState.CRUISING)
+            return type.getTickCooldown()+(int)chestPenalty;
+        if(type.getDynamicFlyBlockSpeedFactor()!=0){
+            double count = 0;
+            BlockType flyBlockMaterial = type.getDynamicFlyBlock();
+            for(MovecraftLocation location : currentHitbox){
+                if(location.toSponge(world).getBlockType()==flyBlockMaterial)
+                    count++;
+            }
+            return Math.max((int) (20 / (type.getCruiseTickCooldown() * (1  + type.getDynamicFlyBlockSpeedFactor() * (count / currentHitbox.size() - .5)))), 1);
+            //return  Math.max((int)(type.getCruiseTickCooldown()* (1 - count /hitBox.size()) +chestPenalty),1);
+        }
+
+        if(type.getDynamicLagSpeedFactor()==0)
+            return type.getCruiseTickCooldown()+(int)chestPenalty;
+        //TODO: modify skip blocks by an equal proportion to this, than add another modifier based on dynamic speed factor
+        return Math.max((int)(type.getCruiseTickCooldown()*meanMoveTime*20/type.getDynamicLagSpeedFactor() +chestPenalty),1);
+    }
+
 
     public int getWaterLine(){
         //TODO: Remove this temporary system in favor of passthrough blocks

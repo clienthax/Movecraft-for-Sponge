@@ -62,6 +62,7 @@ public final class SubcraftRotateSign {
         String craftTypeStr = sign.lines().get(1).toPlain();
         CraftType type = CraftManager.getInstance().getCraftTypeFromString(craftTypeStr);
         if (type == null) {
+            event.setCancelled(true);
             return;
         }
         if (lines.get(2).toPlain().equalsIgnoreCase("") && lines.get(3).toPlain().equalsIgnoreCase("")) {
@@ -72,17 +73,20 @@ public final class SubcraftRotateSign {
 
         if (!player.hasPermission("movecraft." + craftTypeStr + ".pilot") || !player.hasPermission("movecraft." + craftTypeStr + ".translate")) {
             player.sendMessage(Text.of("Insufficient Permissions"));
+            event.setCancelled(true);
             return;
         }
 
         final Craft craft = CraftManager.getInstance().getCraftByPlayer(player.getUniqueId());
-        if(craft!=null) {
+        if(craft != null) {
             if (!craft.isNotProcessing()) {
                 player.sendMessage(Text.of("Parent Craft is busy!"));
+                event.setCancelled(true);
                 return;
             }
             craft.setProcessing(true); // prevent the parent craft from moving or updating until the subcraft is done
 
+            //TODO: This is bad practice! Never assume anything!
             Task.builder()
                     .delayTicks(10)
                     .execute(() -> craft.setProcessing(false))

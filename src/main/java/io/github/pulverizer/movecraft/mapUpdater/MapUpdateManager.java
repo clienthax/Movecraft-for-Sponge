@@ -27,7 +27,9 @@ public class MapUpdateManager implements Runnable {
     }
 
     public void run() {
-        if (updates.isEmpty()) return;
+        if (updates.isEmpty())
+            return;
+
         long startTime = System.currentTimeMillis();
         // and set all crafts that were updated to not processing
 

@@ -148,20 +148,20 @@ public class CraftTranslateCommand extends UpdateCommand {
             }
 
             //place confirmed blocks if they have been un-phased
-            craft.getPhasedBlocks().forEach(block -> {
+            for (BlockSnapshot block : craft.getPhasedBlocks()) {
 
-                if (exterior.contains((MovecraftLocation) block.getPosition())) {
-
-                    handler.setBlock(block.getLocation().get(), block);
-                    craft.getPhasedBlocks().remove(block);
-                }
-
-                if (originalLocations.contains((MovecraftLocation) block.getPosition()) && !craft.getHitBox().inBounds((MovecraftLocation) block.getPosition())) {
+                if (exterior.contains(new MovecraftLocation(block.getPosition().getX(), block.getPosition().getY(), block.getPosition().getZ()))) {
 
                     handler.setBlock(block.getLocation().get(), block);
                     craft.getPhasedBlocks().remove(block);
                 }
-            });
+
+                if (originalLocations.contains(new MovecraftLocation(block.getPosition().getX(), block.getPosition().getY(), block.getPosition().getZ())) && !craft.getHitBox().inBounds(new MovecraftLocation(block.getPosition().getX(), block.getPosition().getY(), block.getPosition().getZ()))) {
+
+                    handler.setBlock(block.getLocation().get(), block);
+                    craft.getPhasedBlocks().remove(block);
+                }
+            }
 
             for (MovecraftLocation location : interior) {
                 final BlockSnapshot material = location.toSponge(craft.getWorld()).createSnapshot();

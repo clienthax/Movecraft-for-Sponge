@@ -1,28 +1,72 @@
 package io.github.pulverizer.movecraft.sign;
 
-import org.spongepowered.api.data.value.mutable.ListValue;
+import io.github.pulverizer.movecraft.craft.Craft;
+import io.github.pulverizer.movecraft.craft.CraftManager;
+import io.github.pulverizer.movecraft.utils.MathUtils;
+import org.spongepowered.api.block.BlockSnapshot;
+import org.spongepowered.api.block.BlockTypes;
+import org.spongepowered.api.block.tileentity.Sign;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.event.Listener;
-import org.spongepowered.api.event.block.tileentity.ChangeSignEvent;
+import org.spongepowered.api.event.block.InteractBlockEvent;
 import org.spongepowered.api.event.filter.cause.Root;
+import org.spongepowered.api.event.filter.type.Include;
 import org.spongepowered.api.text.Text;
+import org.spongepowered.api.world.World;
 
-public final class PilotSign {
-
-    private static final String HEADER = "Pilot:";
+public class PilotSign {
+    private static final String HEADER = "Pilot";
 
     @Listener
-    public final void onSignChange(ChangeSignEvent event, @Root Player player){
+    @Include({InteractBlockEvent.Primary.class, InteractBlockEvent.Secondary.MainHand.class})
+    public final void onSignClick(InteractBlockEvent event, @Root Player player) {
 
-        ListValue<Text> lines = event.getText().lines();
+        BlockSnapshot block = event.getTargetBlock();
+        if (block.getState().getType() != BlockTypes.STANDING_SIGN && block.getState().getType() != BlockTypes.WALL_SIGN) {
+            return;
+        }
 
-        if (lines.get(0).toPlain().equalsIgnoreCase(HEADER)) {
-            String pilotName = lines.get(1).toPlain();
+        if (!block.getLocation().isPresent() || !block.getLocation().get().getTileEntity().isPresent())
+            return;
 
-            if (pilotName.isEmpty()) {
-                lines.set(1, Text.of(player.getName()));
-                event.getText().set(lines);
+        Sign sign = (Sign) block.getLocation().get().getTileEntity().get();
+        if (!sign.lines().get(0).toPlain().equalsIgnoreCase(HEADER)) {
+            return;
+        }
+
+        Craft foundCraft = null;
+        World blockWorld = block.getLocation().get().getExtent();
+        for (Craft tcraft : CraftManager.getInstance().getCraftsInWorld(blockWorld)) {
+            if (MathUtils.locationInHitbox(tcraft.getHitBox(), block.getLocation().get()) && !tcraft.getCrewList().isEmpty()) {
+                foundCraft = tcraft;
+                break;
             }
         }
+
+        if (foundCraft == null) {
+            if (player != null) {player.sendMessage(Text.of("ERROR: Sign must be a part of a piloted craft!"));}
+            event.setCancelled(true);
+            return;
+        }
+
+        if(event instanceof InteractBlockEvent.Primary && player.getUniqueId() == foundCraft.getPilot()){
+            foundCraft.setPilot(null);
+            if (player != null) {player.sendMessage(Text.of("You are no longer the pilot of this craft."));}
+            event.setCancelled(true);
+            return;
+        }
+
+        if(player != null && foundCraft.isCrewMember(player.getUniqueId())) {
+            foundCraft.setPilot(player.getUniqueId());
+            player.sendMessage(Text.of("You are now the pilot of this craft."));
+        }
+
+        if (foundCraft.getCannonDirector() == player.getUniqueId())
+            foundCraft.setCannonDirector(null);
+
+        if (foundCraft.getAADirector() == player.getUniqueId())
+            foundCraft.setAADirector(null);
+
+        event.setCancelled(true);
     }
 }

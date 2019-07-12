@@ -103,7 +103,7 @@ public class RotationTask extends AsyncTask {
             if ((oldMaterial.equals(BlockTypes.CHEST) || oldMaterial.equals(BlockTypes.TRAPPED_CHEST)) &&
                     !checkChests(oldMaterial, newLocation)) {
                 failed = true;
-                failMessage = String.format("Rotation Failed- Craft is obstructed" + " @ %d,%d,%d", newLocation.getX(), newLocation.getY(), newLocation.getZ());
+                failMessage = String.format("Rotation Failed - Craft is obstructed" + " @ %d,%d,%d", newLocation.getX(), newLocation.getY(), newLocation.getZ());
                 break;
             }
 
@@ -119,12 +119,14 @@ public class RotationTask extends AsyncTask {
                 break;
             }
         }
+
         if (failed) {
             if (this.isSubCraft && parentCraft != getCraft()) {
                 parentCraft.setProcessing(false);
             }
             return;
         }
+
         //call event
         CraftRotateEvent event = new CraftRotateEvent(craft, oldHitBox, newHitBox);
         Sponge.getEventManager().post(event);

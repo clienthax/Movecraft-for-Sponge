@@ -236,6 +236,10 @@ public class HashHitBox implements MutableHitBox {
 
     @Override
     public boolean addAll(HitBox hitBox) {
+
+        if (hitBox == null)
+            return true;
+
         boolean modified = false;
         for (MovecraftLocation location : hitBox) {
             if (add(location))

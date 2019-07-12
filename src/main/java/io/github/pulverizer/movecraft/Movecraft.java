@@ -2,6 +2,7 @@ package io.github.pulverizer.movecraft;
 
 import com.google.common.reflect.TypeToken;
 import com.google.inject.Inject;
+import io.github.pulverizer.movecraft.sign.*;
 import ninja.leaping.configurate.ConfigurationNode;
 import ninja.leaping.configurate.ConfigurationOptions;
 import ninja.leaping.configurate.loader.ConfigurationLoader;
@@ -25,24 +26,7 @@ import io.github.pulverizer.movecraft.listener.BlockListener;
 import io.github.pulverizer.movecraft.listener.InteractListener;
 import io.github.pulverizer.movecraft.listener.PlayerListener;
 import io.github.pulverizer.movecraft.mapUpdater.MapUpdateManager;
-import io.github.pulverizer.movecraft.sign.AntiAircraftDirectorSign;
-import io.github.pulverizer.movecraft.sign.AscendSign;
-import io.github.pulverizer.movecraft.sign.CannonDirectorSign;
-import io.github.pulverizer.movecraft.sign.ContactsSign;
-import io.github.pulverizer.movecraft.sign.CraftSign;
-import io.github.pulverizer.movecraft.sign.CrewSign;
-import io.github.pulverizer.movecraft.sign.CruiseSign;
-import io.github.pulverizer.movecraft.sign.DescendSign;
-import io.github.pulverizer.movecraft.sign.HelmSign;
-import io.github.pulverizer.movecraft.sign.MoveSign;
-import io.github.pulverizer.movecraft.sign.PilotSign;
-import io.github.pulverizer.movecraft.sign.RelativeMoveSign;
-import io.github.pulverizer.movecraft.sign.ReleaseSign;
-import io.github.pulverizer.movecraft.sign.RemoteSign;
-import io.github.pulverizer.movecraft.sign.SpeedSign;
-import io.github.pulverizer.movecraft.sign.StatusSign;
-import io.github.pulverizer.movecraft.sign.SubcraftRotateSign;
-import io.github.pulverizer.movecraft.sign.TeleportSign;
+import io.github.pulverizer.movecraft.sign.CommanderSign;
 import org.spongepowered.api.scheduler.Task;
 
 import java.io.IOException;
@@ -244,7 +228,7 @@ public class Movecraft {
             Sponge.getEventManager().registerListeners(this, new DescendSign());
             Sponge.getEventManager().registerListeners(this, new HelmSign());
             Sponge.getEventManager().registerListeners(this, new MoveSign());
-            Sponge.getEventManager().registerListeners(this, new PilotSign());
+            Sponge.getEventManager().registerListeners(this, new CommanderSign());
             Sponge.getEventManager().registerListeners(this, new RelativeMoveSign());
             Sponge.getEventManager().registerListeners(this, new ReleaseSign());
             Sponge.getEventManager().registerListeners(this, new RemoteSign());
@@ -252,6 +236,7 @@ public class Movecraft {
             Sponge.getEventManager().registerListeners(this, new StatusSign());
             Sponge.getEventManager().registerListeners(this, new SubcraftRotateSign());
             Sponge.getEventManager().registerListeners(this, new TeleportSign());
+            Sponge.getEventManager().registerListeners(this, new PilotSign());
 
             logger.info("Movecraft Enabled.");
         }

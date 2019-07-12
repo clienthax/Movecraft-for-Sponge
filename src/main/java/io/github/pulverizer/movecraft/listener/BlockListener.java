@@ -13,9 +13,9 @@ import org.spongepowered.api.data.Transaction;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.event.Listener;
 import org.spongepowered.api.event.block.ChangeBlockEvent;
+import org.spongepowered.api.event.filter.cause.Root;
 import org.spongepowered.api.text.Text;
 import org.spongepowered.api.world.World;
-import org.spongepowered.api.world.explosion.Explosion;
 
 import static org.spongepowered.api.event.Order.FIRST;
 import static org.spongepowered.api.event.Order.LAST;
@@ -25,10 +25,7 @@ public class BlockListener {
     private long lastDamagesUpdate = 0;
 
     @Listener(order = LAST)
-    public void onBlockBreak(ChangeBlockEvent.Break event) {
-
-        if (event.getCause().root() instanceof Movecraft || event.getCause().root() instanceof Explosion)
-            return;
+    public void onBlockBreak(ChangeBlockEvent.Break event, @Root Player player) {
 
         for (Transaction<BlockSnapshot> transaction : event.getTransactions()) {
             BlockSnapshot blockSnapshot = transaction.getOriginal();
@@ -48,9 +45,8 @@ public class BlockListener {
 
                         transaction.setValid(false);
 
-                        if (!Settings.ProtectPilotedCrafts && event.getCause().root() instanceof Player) {
+                        if (Settings.ProtectPilotedCrafts) {
 
-                            Player player = (Player) event.getCause().root();
                             player.sendMessage(Text.of("BLOCK IS PART OF A PILOTED CRAFT"));
                         }
 

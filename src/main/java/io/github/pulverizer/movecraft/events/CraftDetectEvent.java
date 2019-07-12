@@ -1,18 +1,23 @@
 package io.github.pulverizer.movecraft.events;
 
-import io.github.pulverizer.movecraft.Movecraft;
 import io.github.pulverizer.movecraft.craft.Craft;
 import org.spongepowered.api.event.cause.Cause;
+import org.spongepowered.api.event.cause.EventContext;
 
 public class CraftDetectEvent extends CraftEvent {
 
+    private Cause cause;
+
     public CraftDetectEvent(Craft craft) {
         super(craft);
+
+        cause = Cause.builder()
+                .append(craft.getOriginalPilot())
+                .build(EventContext.empty());
     }
 
-    //TODO: Fix this!
     @Override
     public Cause getCause() {
-        return null;
+        return cause;
     }
 }

@@ -28,6 +28,7 @@ import org.spongepowered.api.item.inventory.Inventory;
 import org.spongepowered.api.item.inventory.ItemStack;
 import org.spongepowered.api.item.inventory.query.QueryOperationTypes;
 import org.spongepowered.api.scheduler.Task;
+import org.spongepowered.api.text.Text;
 import org.spongepowered.api.util.AABB;
 import org.spongepowered.api.world.Location;
 import org.spongepowered.api.world.World;
@@ -290,6 +291,7 @@ public class TranslationTask extends AsyncTask {
         failMessage=message;
         Player craftPilot = Sponge.getServer().getPlayer(craft.getPilot()).orElse(null);
         if (craftPilot != null) {
+            craftPilot.sendMessage(Text.of(failMessage));
             Location location = craftPilot.getLocation();
             if (craft.getState() != CraftState.DISABLED) {
                 craft.getWorld().playSound(SoundTypes.BLOCK_ANVIL_LAND, location.getPosition(), 1.0f, 0.25f);

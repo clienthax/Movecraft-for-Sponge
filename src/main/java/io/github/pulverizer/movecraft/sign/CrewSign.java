@@ -142,6 +142,7 @@ public class CrewSign {
 
     @Listener
     public void onCraftDetect(CraftDetectEvent event){
+
         World world = event.getCraft().getWorld();
         for(MovecraftLocation location: event.getCraft().getHitBox()){
             BlockSnapshot block = location.toSponge(world).createSnapshot();

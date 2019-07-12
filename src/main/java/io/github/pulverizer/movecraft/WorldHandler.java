@@ -5,11 +5,13 @@ import com.flowpowered.math.vector.Vector3i;
 import io.github.pulverizer.movecraft.config.Settings;
 import io.github.pulverizer.movecraft.craft.Craft;
 import io.github.pulverizer.movecraft.utils.HashHitBox;
+import org.spongepowered.api.Sponge;
 import org.spongepowered.api.block.BlockSnapshot;
 import org.spongepowered.api.block.BlockTypes;
 import org.spongepowered.api.block.ScheduledBlockUpdate;
 import org.spongepowered.api.data.key.Keys;
 import org.spongepowered.api.entity.Entity;
+import org.spongepowered.api.scheduler.Task;
 import org.spongepowered.api.util.Direction;
 import org.spongepowered.api.world.*;
 import io.github.pulverizer.movecraft.utils.MathUtils;
@@ -104,11 +106,12 @@ public class WorldHandler {
 
         //get the old blocks
         List<BlockSnapshot> blocks = new ArrayList<>();
-        List<Collection<ScheduledBlockUpdate>> updates = new ArrayList<>();
+        //List<Collection<ScheduledBlockUpdate>> updates = new ArrayList<>();
         for(Vector3i blockPosition : blockPositions){
             blocks.add(nativeWorld.createSnapshot(blockPosition));
-            updates.add(nativeWorld.getLocation(blockPosition).getScheduledUpdates());
+            //updates.add(nativeWorld.getLocation(blockPosition).getScheduledUpdates());
         }
+
         //translate the blockPositions
         List<Vector3i> newBlockPositions = new ArrayList<>();
         for(Vector3i blockPosition : blockPositions){
@@ -116,19 +119,25 @@ public class WorldHandler {
         }
 
         //remove the old blocks from the world
-        blockPositions.forEach(blockPosition -> {
-            nativeWorld.getLocation(blockPosition).getScheduledUpdates().forEach(update -> nativeWorld.getLocation(blockPosition).removeScheduledUpdate(update));
-            setBlock(nativeWorld, blockPosition, BlockSnapshot.builder().blockState(BlockTypes.AIR.getDefaultState()).world(nativeWorld.getProperties()).position(blockPosition).build());
-        });
+        //for (Vector3i blockPosition : blockPositions) {
+            //nativeWorld.getLocation(blockPosition).getScheduledUpdates().forEach(update -> nativeWorld.getLocation(blockPosition).removeScheduledUpdate(update));
+            //setBlock(nativeWorld, blockPosition, BlockSnapshot.builder().blockState(BlockTypes.AIR.getDefaultState()).world(nativeWorld.getProperties()).position(blockPosition).build());
+        //}
 
         //create the new blocks
         for(int i = 0; i < newBlockPositions.size(); i++) {
             setBlock(nativeWorld, newBlockPositions.get(i), blocks.get(i));
-            int finalI = i;
-            updates.get(i).forEach(update -> nativeWorld.getLocation(newBlockPositions.get(finalI)).addScheduledUpdate(update.getPriority(), update.getTicks()));
+            //int finalI = i;
+            //updates.get(i).forEach(update -> nativeWorld.getLocation(newBlockPositions.get(finalI)).addScheduledUpdate(update.getPriority(), update.getTicks()));
         }
 
+        blockPositions.removeAll(newBlockPositions);
+        blockPositions.forEach(blockPosition -> {
+            setBlock(nativeWorld, blockPosition, BlockSnapshot.builder().blockState(BlockTypes.AIR.getDefaultState()).world(nativeWorld.getProperties()).position(blockPosition).build());
+        });
+
         craft.setHitBox(newHitBox);
+
     }
 
     /**

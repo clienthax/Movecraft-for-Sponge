@@ -16,15 +16,13 @@ public class DetectionTaskData {
     private String failMessage;
     private HashHitBox hitBox;
     private UUID player;
-    private UUID notificationPlayer;
     private int minX, minZ;
     private BlockType[] allowedBlocks, forbiddenBlocks;
     private String[] forbiddenSignStrings;
 
-    public DetectionTaskData(World w, UUID player, UUID notificationPlayer, BlockType[] allowedBlocks, BlockType[] forbiddenBlocks, String[] forbiddenSignStrings) {
+    public DetectionTaskData(World w, UUID player, BlockType[] allowedBlocks, BlockType[] forbiddenBlocks, String[] forbiddenSignStrings) {
         this.w = w;
         this.player = player;
-        this.notificationPlayer = notificationPlayer;
         this.allowedBlocks = allowedBlocks;
         this.forbiddenBlocks = forbiddenBlocks;
         this.forbiddenSignStrings = forbiddenSignStrings;
@@ -90,14 +88,6 @@ public class DetectionTaskData {
 
     void setPlayer(UUID player) {
         this.player = player;
-    }
-
-    public UUID getNotificationPlayer() {
-        return notificationPlayer;
-    }
-
-    void setNotificationPlayer(UUID notificationPlayer) {
-        this.notificationPlayer = notificationPlayer;
     }
 
     public HitBox getHitBox() {

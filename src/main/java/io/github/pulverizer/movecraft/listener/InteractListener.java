@@ -49,6 +49,10 @@ public final class InteractListener {
         if (c == null)
             return;
 
+        if (player.getUniqueId() != c.getPilot()) {
+            player.sendMessage(Text.of("You are not the Pilot of this craft."));
+        }
+
         if (event instanceof InteractItemEvent.Secondary) {
             Craft craft = CraftManager.getInstance().getCraftByPlayer(player.getUniqueId());
 
