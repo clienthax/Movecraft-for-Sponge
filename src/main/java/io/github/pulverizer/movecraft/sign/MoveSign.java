@@ -3,6 +3,7 @@ package io.github.pulverizer.movecraft.sign;
 import com.flowpowered.math.vector.Vector3i;
 import io.github.pulverizer.movecraft.Rotation;
 import io.github.pulverizer.movecraft.craft.CraftManager;
+import org.spongepowered.api.Sponge;
 import org.spongepowered.api.block.BlockSnapshot;
 import org.spongepowered.api.block.BlockTypes;
 import org.spongepowered.api.block.tileentity.Sign;
@@ -55,14 +56,14 @@ public final class MoveSign {
         if (dz < 0 - maxMove)
             dz = 0 - maxMove;
 
-        if (!player.hasPermission("movecraft." + CraftManager.getInstance().getCraftByPlayer(player.getUniqueId()).getType().getCraftName() + ".move")) {
+        if (!player.hasPermission("movecraft." + CraftManager.getInstance().getCraftByPlayer(player.getUniqueId()).getType().getName() + ".move")) {
             player.sendMessage(Text.of("Insufficient Permissions"));
             return;
         }
         if (CraftManager.getInstance().getCraftByPlayer(player.getUniqueId()).getType().getCanStaticMove()) {
             CraftManager.getInstance().getCraftByPlayer(player.getUniqueId()).translate(Rotation.NONE, new Vector3i(dx, dy, dz), false);
             //timeMap.put(player, System.currentTimeMillis());
-            CraftManager.getInstance().getCraftByPlayer(player.getUniqueId()).setLastCruiseUpdateTime(System.currentTimeMillis());
+            CraftManager.getInstance().getCraftByPlayer(player.getUniqueId()).setLastCruiseUpdateTick(Sponge.getServer().getRunningTimeTicks());
         }
     }
 }

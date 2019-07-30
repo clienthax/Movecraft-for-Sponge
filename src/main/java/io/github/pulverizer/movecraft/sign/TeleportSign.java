@@ -38,7 +38,7 @@ public final class TeleportSign {
         int tY = Integer.parseInt(numbers[1]);
         int tZ = Integer.parseInt(numbers[2]);
 
-        if (player != null && !player.hasPermission("movecraft." + CraftManager.getInstance().getCraftByPlayer(player.getUniqueId()).getType().getCraftName() + ".move")) {
+        if (player != null && !player.hasPermission("movecraft." + CraftManager.getInstance().getCraftByPlayer(player.getUniqueId()).getType().getName() + ".move")) {
             player.sendMessage(Text.of("Insufficient Permissions"));
             return;
         }

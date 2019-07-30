@@ -1,19 +1,16 @@
 package io.github.pulverizer.movecraft.sign;
 
+import com.flowpowered.math.vector.Vector3i;
 import io.github.pulverizer.movecraft.MovecraftLocation;
 import io.github.pulverizer.movecraft.craft.Craft;
-import io.github.pulverizer.movecraft.events.CraftDetectEvent;
-import io.github.pulverizer.movecraft.events.SignTranslateEvent;
+import io.github.pulverizer.movecraft.event.CraftDetectEvent;
+import io.github.pulverizer.movecraft.event.SignTranslateEvent;
 import org.spongepowered.api.block.BlockSnapshot;
 import org.spongepowered.api.block.BlockType;
 import org.spongepowered.api.block.BlockTypes;
 import org.spongepowered.api.block.tileentity.Sign;
-import org.spongepowered.api.block.tileentity.carrier.TileEntityCarrier;
 import org.spongepowered.api.data.value.mutable.ListValue;
 import org.spongepowered.api.event.Listener;
-import org.spongepowered.api.item.ItemTypes;
-import org.spongepowered.api.item.inventory.Inventory;
-import org.spongepowered.api.item.inventory.query.QueryOperationTypes;
 import org.spongepowered.api.text.Text;
 import org.spongepowered.api.text.format.TextColor;
 import org.spongepowered.api.text.format.TextColors;
@@ -28,8 +25,8 @@ public final class StatusSign {
     @Listener
     public void onCraftDetect(CraftDetectEvent event){
         World world = event.getCraft().getWorld();
-        for(MovecraftLocation location: event.getCraft().getHitBox()){
-            BlockSnapshot block = location.toSponge(world).createSnapshot();
+        for(Vector3i location: event.getCraft().getHitBox()){
+            BlockSnapshot block = MovecraftLocation.toSponge(world, location).createSnapshot();
 
             if(block.getState().getType() != BlockTypes.WALL_SIGN && block.getState().getType() != BlockTypes.STANDING_SIGN)
                 return;
@@ -66,10 +63,10 @@ public final class StatusSign {
             return;
         }
 
-        int fuel=0;
+        double fuel = craft.checkFuelStored() + craft.getBurningFuel();
         int totalBlocks=0;
         Map<BlockType, Integer> foundBlocks = new HashMap<>();
-        for (MovecraftLocation ml : craft.getHitBox()) {
+        for (Vector3i ml : craft.getHitBox()) {
             BlockType blockType = craft.getWorld().getBlockType(ml.getX(), ml.getY(), ml.getZ());
 
             if (foundBlocks.containsKey(blockType)) {
@@ -83,16 +80,6 @@ public final class StatusSign {
                 foundBlocks.put(blockType, 1);
             }
 
-            if (blockType == BlockTypes.FURNACE || blockType == BlockTypes.LIT_FURNACE) {
-                Inventory inventory = ((TileEntityCarrier) craft.getWorld().getTileEntity(ml.getX(), ml.getY(), ml.getZ()).get()).getInventory();
-                if (inventory.contains(ItemTypes.COAL) || inventory.contains(ItemTypes.COAL_BLOCK)) {
-
-                    int coal = inventory.query(QueryOperationTypes.ITEM_TYPE.of(ItemTypes.COAL)).totalItems();
-                    int coalBlocks = inventory.query(QueryOperationTypes.ITEM_TYPE.of(ItemTypes.COAL_BLOCK)).totalItems();
-
-                    fuel = (coal * 8) + (coalBlocks * 80);
-                }
-            }
             if (blockType != BlockTypes.AIR) {
                 totalBlocks++;
             }
@@ -142,7 +129,7 @@ public final class StatusSign {
             }
         }
         String fuelText="";
-        int fuelRange = (int) ((fuel*(1+craft.getType().getCruiseSkipBlocks()))/craft.getType().getFuelBurnRate());
+        int fuelRange = (int) Math.floor((fuel*(1+craft.getType().getCruiseSkipBlocks()))/craft.getType().getFuelBurnRate());
         TextColor fuelColor;
 
         if(fuelRange>1000) {

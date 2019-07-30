@@ -3,20 +3,22 @@ package io.github.pulverizer.movecraft.craft;
 import com.flowpowered.math.vector.Vector3d;
 import com.flowpowered.math.vector.Vector3i;
 import io.github.pulverizer.movecraft.CraftState;
-import io.github.pulverizer.movecraft.Movecraft;
 import io.github.pulverizer.movecraft.MovecraftLocation;
 import io.github.pulverizer.movecraft.Rotation;
-import io.github.pulverizer.movecraft.async.detection.DetectionTask;
-import io.github.pulverizer.movecraft.async.rotation.RotationTask;
-import io.github.pulverizer.movecraft.async.translation.TranslationTask;
-import io.github.pulverizer.movecraft.events.CraftSinkEvent;
+import io.github.pulverizer.movecraft.async.AsyncTask;
+import io.github.pulverizer.movecraft.async.DetectionTask;
+import io.github.pulverizer.movecraft.async.RotationTask;
+import io.github.pulverizer.movecraft.async.TranslationTask;
+import io.github.pulverizer.movecraft.config.CraftType;
+import io.github.pulverizer.movecraft.event.CraftSinkEvent;
 import io.github.pulverizer.movecraft.utils.HashHitBox;
 
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.block.BlockSnapshot;
 import org.spongepowered.api.block.BlockType;
 import org.spongepowered.api.block.BlockTypes;
-import org.spongepowered.api.block.tileentity.carrier.Furnace;
+import org.spongepowered.api.block.tileentity.carrier.TileEntityCarrier;
+import org.spongepowered.api.item.ItemType;
 import org.spongepowered.api.item.ItemTypes;
 import org.spongepowered.api.item.inventory.Inventory;
 import org.spongepowered.api.item.inventory.query.QueryOperationTypes;
@@ -59,7 +61,7 @@ public class Craft {
 
 
     //Movement
-    private long lastCruiseUpdateTime;
+    private int lastCruiseUpdateTick;
     private Direction cruiseDirection;
     private Vector3i lastMoveVector;
     private HashSet<BlockSnapshot> phasedBlocks = new HashSet<>();
@@ -81,10 +83,10 @@ public class Craft {
         this.type = type;
         setWorld(startLocation.getExtent());
         addCrewMember(player);
-        setLastCruiseUpdateTime(System.currentTimeMillis() - 10000);
+        setLastCruiseUpdateTick(Sponge.getServer().getRunningTimeTicks() - 10000);
         this.originalPilotTime = System.currentTimeMillis();
         this.originalPilot = player;
-        Movecraft.getInstance().getAsyncManager().submitTask(new DetectionTask(this, startLocation, player), this);
+        submitTask(new DetectionTask(this, startLocation));
     }
 
     /**
@@ -191,7 +193,7 @@ public class Craft {
         return currentHitbox.size();
     }
 
-    //Cross-dimensional crafts anyone?
+    //TODO: Cross-dimensional crafts anyone?
     /**
      * <pre>
      *     Changes the world the craft is registered as being in.
@@ -214,7 +216,7 @@ public class Craft {
     /**
      * Sets the player as the craft's pilot.
      * @param player The player to be set as the pilot. Use null to remove but not replace the existing pilot.
-     * @return False if you are attempting to set a player as the pilot but the player is not a member of the crew.
+     * @return FALSE - If you are attempting to set a player as the pilot but the player is not a member of the crew.
      */
     public boolean setPilot(UUID player) {
         if (!isCrewMember(player) && player != null)
@@ -235,7 +237,7 @@ public class Craft {
     /**
      * Sets the player as the craft's AA director.
      * @param player The player to be set as the AA director. Use null to remove but not replace the existing AA director.
-     * @return False if you are attempting to set a player as the AA director but the player is not a member of the crew.
+     * @return FALSE - If you are attempting to set a player as the AA director but the player is not a member of the crew.
      */
     public boolean setAADirector(UUID player) {
         if (!isCrewMember(player) && player != null)
@@ -256,7 +258,7 @@ public class Craft {
     /**
      * Sets the player as the craft's cannon director.
      * @param player The player to be set as the cannon director. Use null to remove but not replace the existing cannon director.
-     * @return False if you are attempting to set a player as the cannon director but the player is not a member of the crew.
+     * @return FALSE - If you are attempting to set a player as the cannon director but the player is not a member of the crew.
      */
     public boolean setCannonDirector(UUID player) {
         if (!isCrewMember(player) && player != null)
@@ -294,16 +296,16 @@ public class Craft {
      * Fetches the time when the craft last cruised.
      * @return Time when craft last cruised.
      */
-    public long getLastCruiseUpdateTime() {
-        return lastCruiseUpdateTime;
+    public int getLastCruiseUpdateTick() {
+        return lastCruiseUpdateTick;
     }
 
     /**
      * Fetches the time when the craft last cruised.
      * @param time Time when the craft last cruised.
      */
-    public void setLastCruiseUpdateTime(Long time) {
-        lastCruiseUpdateTime = time;
+    public void setLastCruiseUpdateTick(int time) {
+        lastCruiseUpdateTick = time;
     }
 
     /**
@@ -353,7 +355,7 @@ public class Craft {
 
     /**
      * Checks if the craft is not processing.
-     * @return False if the craft is processing.
+     * @return FALSE - If the craft is processing.
      */
     public boolean isNotProcessing() {
         return !processing.get();
@@ -368,7 +370,7 @@ public class Craft {
 
     /**
      * Sets if the craft is in direct control mode.
-     * @param setting True if the craft entering direct control mode. False if exiting direct control mode.
+     * @param setting TRUE - If the craft entering direct control mode. False if exiting direct control mode.
      */
     public void setDirectControl(boolean setting) {
         directControl = setting;
@@ -376,9 +378,9 @@ public class Craft {
 
     /**
      * Fetches if the craft is in direct control mode or not.
-     * @return True if the craft is in direct control mode.
+     * @return TRUE - If the craft is in direct control mode.
      */
-    public boolean underDirectControl() {
+    public boolean isUnderDirectControl() {
         return directControl;
     }
 
@@ -468,51 +470,45 @@ public class Craft {
         if (movePoints < 0)
             return false;
 
-        if (burningFuel >= movePoints) {
-            burningFuel -= movePoints;
-            return true;
-        }
-
         if (burningFuel < movePoints) {
 
-            //TODO: Edit CraftType configs to allow setting of furnace blocks and fuel items.
             HashSet<Location<World>> furnaceBlocks = new HashSet<>();
 
             //Find all the furnace blocks
-            furnaceBlocks.addAll(findBlockType(BlockTypes.FURNACE));
-            furnaceBlocks.addAll(findBlockType(BlockTypes.LIT_FURNACE));
+            getType().getFurnaceBlocks().forEach(blockType -> furnaceBlocks.addAll(findBlockType(blockType)));
 
             //Find and burn fuel
-            Iterator<Location<World>> workingList = furnaceBlocks.iterator();
-            Optional<Furnace> furnaceOptional;
-            while (burningFuel < movePoints && workingList.hasNext()) {
-                furnaceOptional = workingList.next()
-                        .getTileEntity()
-                        .filter(Furnace.class::isInstance)
-                        .map(Furnace.class::cast);
+            for (Location<World> furnaceBlock : furnaceBlocks) {
+                if (furnaceBlock.getTileEntity().isPresent() && furnaceBlock.getTileEntity().get() instanceof TileEntityCarrier) {
+                    Inventory inventory = ((TileEntityCarrier) furnaceBlock.getTileEntity().get()).getInventory();
 
-                if (furnaceOptional.isPresent()) {
-                    Inventory furnaceInventory = furnaceOptional.get().getInventory();
-                    if (furnaceInventory.contains(ItemTypes.COAL_BLOCK)) {
-                        //TODO: Make move points per fuel type configurable.
-                        int oldValue = (int) Math.ceil((movePoints - burningFuel) / 72);
-                        int newValue = furnaceInventory.query(QueryOperationTypes.ITEM_TYPE.of(ItemTypes.COAL_BLOCK)).poll(oldValue).get().getQuantity();
+                    Set<ItemType> fuelItems = getType().getFuelItems().keySet();
 
-                        burningFuel += newValue * 72;
+                    for (ItemType fuelItem : fuelItems) {
+                        if (inventory.contains(fuelItem)) {
 
-                    } else if (furnaceInventory.contains(ItemTypes.COAL)) {
-                        int oldValue = (int) Math.ceil((movePoints - burningFuel) / 8);
-                        int newValue = furnaceInventory.query(QueryOperationTypes.ITEM_TYPE.of(ItemTypes.COAL)).poll(oldValue).get().getQuantity();
+                            double fuelItemValue = getType().getFuelItems().get(fuelItem);
 
-                        burningFuel += newValue * 8;
+                            int oldValue = (int) Math.ceil((movePoints - burningFuel) / fuelItemValue);
+                            int newValue = inventory.query(QueryOperationTypes.ITEM_TYPE.of(ItemTypes.COAL_BLOCK)).poll(oldValue).get().getQuantity();
+
+                            burningFuel += newValue * fuelItemValue;
+                        }
+
+                        if (burningFuel >= movePoints)
+                            break;
                     }
                 }
-            }
 
-            if (burningFuel >= movePoints) {
-                burningFuel -= movePoints;
-                return true;
+                if (burningFuel >= movePoints)
+                    break;
+
             }
+        }
+
+        if (burningFuel >= movePoints) {
+            burningFuel -= movePoints;
+            return true;
         }
 
         return false;
@@ -528,25 +524,22 @@ public class Craft {
         HashSet<Location<World>> furnaceBlocks = new HashSet<>();
 
         //Find all the furnace blocks
-        furnaceBlocks.addAll(findBlockType(BlockTypes.FURNACE));
-        furnaceBlocks.addAll(findBlockType(BlockTypes.LIT_FURNACE));
+        getType().getFurnaceBlocks().forEach(blockType -> furnaceBlocks.addAll(findBlockType(blockType)));
 
-        //Find fuel
-        Iterator<Location<World>> workingList = furnaceBlocks.iterator();
-        Optional<Furnace> furnaceOptional;
-        Inventory furnaceInventory;
+        //Find and count the fuel
+        for (Location<World> furnaceBlock : furnaceBlocks) {
+            if (furnaceBlock.getTileEntity().isPresent() && furnaceBlock.getTileEntity().get() instanceof TileEntityCarrier) {
+                Inventory inventory = ((TileEntityCarrier) furnaceBlock.getTileEntity().get()).getInventory();
 
-        while (workingList.hasNext()) {
-            furnaceOptional = workingList.next()
-                    .getTileEntity()
-                    .filter(Furnace.class::isInstance)
-                    .map(Furnace.class::cast);
+                Set<ItemType> fuelItems = getType().getFuelItems().keySet();
 
-            if (furnaceOptional.isPresent()) {
-                furnaceInventory = furnaceOptional.get().getInventory();
+                for (ItemType fuelItem : fuelItems) {
+                    if (inventory.contains(fuelItem)) {
 
-                fuelStored += furnaceInventory.query(QueryOperationTypes.ITEM_TYPE.of(ItemTypes.COAL_BLOCK)).totalItems() * 72;
-                fuelStored += furnaceInventory.query(QueryOperationTypes.ITEM_TYPE.of(ItemTypes.COAL)).totalItems() * 8;
+                        fuelStored += inventory.query(QueryOperationTypes.ITEM_TYPE.of(fuelItem)).totalItems() * getType().getFuelItems().get(fuelItem);
+
+                    }
+                }
             }
         }
 
@@ -562,26 +555,42 @@ public class Craft {
     }
 
     /**
-     *
-     * @param blockType
-     * @return
+     * Finds the blocks of a specific BlockType within a craft and returns their locations.
+     * @param blockType The BlockType to find.
+     * @return The locations of the matching blocks.
      */
     public HashSet<Location<World>> findBlockType(BlockType blockType) {
         HashSet<Location<World>> foundBlocks = new HashSet<>();
         getHitBox().forEach(mLoc -> {
             if (getWorld().getBlockType(mLoc) == blockType)
-                foundBlocks.add(mLoc.toSponge(getWorld()));
+                foundBlocks.add(MovecraftLocation.toSponge(getWorld(), mLoc));
         });
 
         return foundBlocks;
     }
 
     /**
-     *
-     * @return
+     * Fetches the UUID of the player that triggered craft detection.
+     * @return The UUID of the player that triggered craft detection.
      */
     public UUID getOriginalPilot() {
         return originalPilot;
+    }
+
+    //TODO: Complete this!
+    /**
+     * Checks if the craft is unable to move through any fault of it's own or if it should be sinking. CODE NOT COMPLETE YET!
+     * @return TRUE - If the craft can move.
+     */
+    public boolean runChecks()  {
+
+        if (getHitBox().isEmpty())
+            return false;
+
+        if (getState() == CraftState.DISABLED)
+            return false;
+
+        return true;
     }
 
 
@@ -622,12 +631,12 @@ public class Craft {
 
             // check to see if the craft is trying to move in a direction not permitted by the type
             if (!this.getType().allowHorizontalMovement() && this.getState() != CraftState.SINKING) {
-                moveVector = new Vector3i(0, moveVector.getY(), 0);
+                moveVector = new com.flowpowered.math.vector.Vector3i(0, moveVector.getY(), 0);
             }
             if (!this.getType().allowVerticalMovement() && this.getState() != CraftState.SINKING) {
-                moveVector = new Vector3i(moveVector.getX(), 0, moveVector.getZ());
+                moveVector = new com.flowpowered.math.vector.Vector3i(moveVector.getX(), 0, moveVector.getZ());
             }
-            if (moveVector.getX() == 0 && moveVector.getY() == 0 && moveVector.getZ() == 0) {
+            if (moveVector.length() == 0) {
                 return;
             }
 
@@ -637,7 +646,7 @@ public class Craft {
                 }
             }
 
-            Movecraft.getInstance().getAsyncManager().submitTask(new TranslationTask(this, moveVector), this);
+            submitTask(new TranslationTask(this, moveVector));
 
         } else if (!isSubCraft) {
 
@@ -647,13 +656,11 @@ public class Craft {
                 return;
             }
             setLastRotateTime(System.nanoTime());
-            Movecraft.getInstance().getAsyncManager().submitTask(new RotationTask(this, moveVector, rotation, this.getWorld(), isSubCraft), this);
+            submitTask(new RotationTask(this, moveVector, rotation, this.getWorld(), isSubCraft));
 
         } else {
 
-            Movecraft.getInstance().getLogger().info("Test || Rotating Subcraft.");
-
-            Movecraft.getInstance().getAsyncManager().submitTask(new RotationTask(this, moveVector, rotation, this.getWorld(), isSubCraft), this);
+            submitTask(new RotationTask(this, moveVector, rotation, this.getWorld(), isSubCraft));
 
         }
     }
@@ -662,8 +669,8 @@ public class Craft {
         if(state == CraftState.SINKING)
             return type.getSinkRateTicks();
         double chestPenalty = 0;
-        for(MovecraftLocation location : currentHitbox){
-            if(location.toSponge(world).getBlockType()==BlockTypes.CHEST)
+        for(Vector3i location : currentHitbox){
+            if(MovecraftLocation.toSponge(world, location).getBlockType()==BlockTypes.CHEST)
                 chestPenalty++;
         }
         chestPenalty*=type.getChestPenalty();
@@ -674,8 +681,8 @@ public class Craft {
         if(type.getDynamicFlyBlockSpeedFactor()!=0){
             double count = 0;
             BlockType flyBlockMaterial = type.getDynamicFlyBlock();
-            for(MovecraftLocation location : currentHitbox){
-                if(location.toSponge(world).getBlockType()==flyBlockMaterial)
+            for(Vector3i location : currentHitbox){
+                if(MovecraftLocation.toSponge(world, location).getBlockType()==flyBlockMaterial)
                     count++;
             }
             return Math.max((int) (20 / (type.getCruiseTickCooldown() * (1  + type.getDynamicFlyBlockSpeedFactor() * (count / currentHitbox.size() - .5)))), 1);
@@ -743,6 +750,13 @@ public class Craft {
 
     public Map<UUID, Location<World>> getCrewSigns(){
         return crewSigns;
+    }
+
+    public void submitTask(AsyncTask task) {
+        if (isNotProcessing()) {
+            setProcessing(true);
+            task.run();
+        }
     }
 
     @Override

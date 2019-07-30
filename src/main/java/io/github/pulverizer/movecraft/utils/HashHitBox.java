@@ -1,18 +1,18 @@
 package io.github.pulverizer.movecraft.utils;
 
-import io.github.pulverizer.movecraft.MovecraftLocation;
+import com.flowpowered.math.vector.Vector3i;
 import io.github.pulverizer.movecraft.exception.EmptyHitBoxException;
 
 import java.util.*;
 
 public class HashHitBox implements MutableHitBox {
-    private final Set<MovecraftLocation> locationSet = new HashSet<>();
+    private final Set<Vector3i> locationSet = new HashSet<>();
     private int minX,maxX,minY,maxY,minZ,maxZ;
 
     public HashHitBox(){
     }
 
-    public HashHitBox(Collection<? extends MovecraftLocation> collection){
+    public HashHitBox(Collection<? extends Vector3i> collection){
         this.addAll(collection);
     }
     public HashHitBox(HitBox hitBox){
@@ -88,7 +88,7 @@ public class HashHitBox implements MutableHitBox {
             throw new EmptyHitBoxException();
         }
         int yValue=-1;
-        for(MovecraftLocation location : locationSet){
+        for(Vector3i location : locationSet){
             if(location.getX()==x && location.getZ() ==z && location.getY()>yValue){
                 yValue=location.getY();
             }
@@ -101,7 +101,7 @@ public class HashHitBox implements MutableHitBox {
             throw new EmptyHitBoxException();
         }
         int yValue=-1;
-        for(MovecraftLocation location : locationSet){
+        for(Vector3i location : locationSet){
             if(location.getX()==x && location.getZ() ==z && (yValue==-1 || location.getY()>yValue)){
                 yValue=location.getY();
             }
@@ -109,14 +109,14 @@ public class HashHitBox implements MutableHitBox {
         return yValue;
     }
 
-    public MovecraftLocation getMidPoint(){
+    public Vector3i getMidPoint(){
         if(locationSet.isEmpty()){
             throw new EmptyHitBoxException();
         }
-        return new MovecraftLocation((minX+maxX)/2, (minY+maxY)/2,(minZ+maxZ)/2);
+        return new Vector3i((minX+maxX)/2, (minY+maxY)/2,(minZ+maxZ)/2);
     }
 
-    public boolean inBounds(MovecraftLocation location){
+    public boolean inBounds(Vector3i location){
         if(locationSet.isEmpty()){
             return false;
         }
@@ -135,7 +135,7 @@ public class HashHitBox implements MutableHitBox {
     }
 
     public boolean intersects(HitBox hitBox){
-        for(MovecraftLocation location : hitBox){
+        for(Vector3i location : hitBox){
             if(this.contains(location)){
                 return true;
             }
@@ -154,20 +154,20 @@ public class HashHitBox implements MutableHitBox {
     }
 
     @Override
-    public boolean contains(MovecraftLocation location) {
+    public boolean contains(Vector3i location) {
         return locationSet.contains(location);
     }
 
     public boolean contains(int x, int y, int z){
-        return contains(new MovecraftLocation(x,y,z));
+        return contains(new Vector3i(x,y,z));
     }
 
     @Override
-    public Iterator<MovecraftLocation> iterator(){
-        return new Iterator<MovecraftLocation>() {
+    public Iterator<Vector3i> iterator(){
+        return new Iterator<Vector3i>() {
 
-            private final Iterator<MovecraftLocation> it = locationSet.iterator();
-            private MovecraftLocation last;
+            private final Iterator<Vector3i> it = locationSet.iterator();
+            private Vector3i last;
 
             @Override
             public boolean hasNext() {
@@ -175,7 +175,7 @@ public class HashHitBox implements MutableHitBox {
             }
 
             @Override
-            public MovecraftLocation next() {
+            public Vector3i next() {
                 return last = it.next();
             }
 
@@ -192,24 +192,24 @@ public class HashHitBox implements MutableHitBox {
     }
 
     @Override
-    public boolean add(MovecraftLocation movecraftLocation) {
-        if(locationSet.isEmpty() || movecraftLocation.getX() < minX)
-            minX=movecraftLocation.getX();
-        if(locationSet.isEmpty() || movecraftLocation.getX() > maxX)
-            maxX=movecraftLocation.getX();
-        if(locationSet.isEmpty() || movecraftLocation.getY() < minY)
-            minY=movecraftLocation.getY();
-        if(locationSet.isEmpty() || movecraftLocation.getY() > maxY)
-            maxY=movecraftLocation.getY();
-        if(locationSet.isEmpty() || movecraftLocation.getZ() < minZ)
-            minZ=movecraftLocation.getZ();
-        if(locationSet.isEmpty() || movecraftLocation.getZ() > maxZ)
-            maxZ=movecraftLocation.getZ();
-        return locationSet.add(movecraftLocation);
+    public boolean add(Vector3i vector3i) {
+        if(locationSet.isEmpty() || vector3i.getX() < minX)
+            minX= vector3i.getX();
+        if(locationSet.isEmpty() || vector3i.getX() > maxX)
+            maxX= vector3i.getX();
+        if(locationSet.isEmpty() || vector3i.getY() < minY)
+            minY= vector3i.getY();
+        if(locationSet.isEmpty() || vector3i.getY() > maxY)
+            maxY= vector3i.getY();
+        if(locationSet.isEmpty() || vector3i.getZ() < minZ)
+            minZ= vector3i.getZ();
+        if(locationSet.isEmpty() || vector3i.getZ() > maxZ)
+            maxZ= vector3i.getZ();
+        return locationSet.add(vector3i);
     }
 
     @Override
-    public boolean remove(MovecraftLocation location) {
+    public boolean remove(Vector3i location) {
         if(!locationSet.contains(location))
             return false;
         locationSet.remove(location);
@@ -220,14 +220,14 @@ public class HashHitBox implements MutableHitBox {
     }
 
     @Override
-    public boolean containsAll(Collection<? extends MovecraftLocation> c) {
+    public boolean containsAll(Collection<? extends Vector3i> c) {
         return locationSet.containsAll(c);
     }
 
     @Override
-    public boolean addAll(Collection<? extends MovecraftLocation> c) {
+    public boolean addAll(Collection<? extends Vector3i> c) {
         boolean modified = false;
-        for (MovecraftLocation location : c) {
+        for (Vector3i location : c) {
             if (add(location))
                 modified = true;
         }
@@ -241,7 +241,7 @@ public class HashHitBox implements MutableHitBox {
             return true;
 
         boolean modified = false;
-        for (MovecraftLocation location : hitBox) {
+        for (Vector3i location : hitBox) {
             if (add(location))
                 modified = true;
         }
@@ -249,10 +249,10 @@ public class HashHitBox implements MutableHitBox {
     }
 
     @Override
-    public boolean removeAll(Collection<? extends MovecraftLocation> c) {
+    public boolean removeAll(Collection<? extends Vector3i> c) {
         boolean updateBounds = false;
         boolean modified = false;
-        for(MovecraftLocation location : c){
+        for(Vector3i location : c){
             if(locationSet.remove(location)) {
                 modified = true;
                 if (location.getX() < minX)
@@ -279,7 +279,7 @@ public class HashHitBox implements MutableHitBox {
     public boolean removeAll(HitBox hitBox) {
         boolean updateBounds = false;
         boolean modified = false;
-        for(MovecraftLocation location : hitBox){
+        for(Vector3i location : hitBox){
             if(locationSet.remove(location)) {
                 modified = true;
                 if (location.getX() < minX)
@@ -308,13 +308,13 @@ public class HashHitBox implements MutableHitBox {
         locationSet.clear();
     }
 
-    private final static MovecraftLocation[] SHIFTS = {
-            new MovecraftLocation(0, 0, 1),
-            new MovecraftLocation(0, 1, 0),
-            new MovecraftLocation(1, 0 ,0),
-            new MovecraftLocation(0, 0, -1),
-            new MovecraftLocation(0, -1, 0),
-            new MovecraftLocation(-1, 0, 0)};
+    private final static Vector3i[] SHIFTS = {
+            new Vector3i(0, 0, 1),
+            new Vector3i(0, 1, 0),
+            new Vector3i(1, 0 ,0),
+            new Vector3i(0, 0, -1),
+            new Vector3i(0, -1, 0),
+            new Vector3i(-1, 0, 0)};
     /**
      * finds the axial neighbors to a location. Neighbors are defined as locations that exist within one meter of a given
      * location
@@ -322,12 +322,12 @@ public class HashHitBox implements MutableHitBox {
      * @return an iterable set of neighbors to the given location
      */
 
-    public Iterable<MovecraftLocation> neighbors(MovecraftLocation location){
+    public Iterable<Vector3i> neighbors(Vector3i location){
         if(this.isEmpty()){
             return Collections.emptyList();
         }
-        final List<MovecraftLocation> neighbors = new ArrayList<>(6);
-        for(MovecraftLocation test : SHIFTS){
+        final List<Vector3i> neighbors = new ArrayList<>(6);
+        for(Vector3i test : SHIFTS){
             if(this.contains(location.add(test))){
                 neighbors.add(location.add(test));
             }
@@ -346,7 +346,7 @@ public class HashHitBox implements MutableHitBox {
     }
 
     private void updateBounds(){
-        for (MovecraftLocation location : locationSet){
+        for (Vector3i location : locationSet){
             if(location.getX()<minX)
                 minX=location.getX();
             if(location.getX()>maxX)

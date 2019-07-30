@@ -1,16 +1,16 @@
 package io.github.pulverizer.movecraft.utils;
 
-import io.github.pulverizer.movecraft.MovecraftLocation;
+import com.flowpowered.math.vector.Vector3i;
 
 public class BoundingBoxUtils {
 
-    public static int[][][] formBoundingBox(MovecraftLocation[] blockList, Integer minX, Integer maxX, Integer minZ, Integer maxZ) {
+    public static int[][][] formBoundingBox(Vector3i[] blockList, Integer minX, Integer maxX, Integer minZ, Integer maxZ) {
         int sizeX = (maxX - minX) + 1;
         int sizeZ = (maxZ - minZ) + 1;
 
         int[][][] polygonalBox = new int[sizeX][][];
 
-        for (MovecraftLocation l : blockList) {
+        for (Vector3i l : blockList) {
             if (polygonalBox[l.getX() - minX] == null) {
                 polygonalBox[l.getX() - minX] = new int[sizeZ][];
             }

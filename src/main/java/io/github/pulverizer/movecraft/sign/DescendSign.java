@@ -1,10 +1,12 @@
 package io.github.pulverizer.movecraft.sign;
 
+import com.flowpowered.math.vector.Vector3i;
 import io.github.pulverizer.movecraft.CraftState;
 import io.github.pulverizer.movecraft.MovecraftLocation;
 import io.github.pulverizer.movecraft.craft.Craft;
 import io.github.pulverizer.movecraft.craft.CraftManager;
-import io.github.pulverizer.movecraft.events.CraftDetectEvent;
+import io.github.pulverizer.movecraft.event.CraftDetectEvent;
+import org.spongepowered.api.Sponge;
 import org.spongepowered.api.block.BlockSnapshot;
 import org.spongepowered.api.block.BlockTypes;
 import org.spongepowered.api.block.tileentity.Sign;
@@ -22,8 +24,8 @@ public final class DescendSign {
     @Listener
     public void onCraftDetect(CraftDetectEvent event){
         World world = event.getCraft().getWorld();
-        for(MovecraftLocation location: event.getCraft().getHitBox()){
-            BlockSnapshot block = location.toSponge(world).createSnapshot();
+        for(Vector3i location: event.getCraft().getHitBox()){
+            BlockSnapshot block = MovecraftLocation.toSponge(world, location).createSnapshot();
             if(block.getState().getType() == BlockTypes.WALL_SIGN || block.getState().getType() == BlockTypes.STANDING_SIGN){
 
                 if (!block.getLocation().isPresent() || !block.getLocation().get().getTileEntity().isPresent())
@@ -63,17 +65,14 @@ public final class DescendSign {
                 return;
             }
 
-            //c.resetSigns(true, true, false);
+            //craft.resetSigns(true, true, false);
             lines.set(0, Text.of("Descend: ON"));
             sign.offer(lines);
 
             craft.setCruiseDirection(Direction.DOWN);
-            craft.setLastCruiseUpdateTime(System.currentTimeMillis());
+            craft.setLastCruiseUpdateTick(Sponge.getServer().getRunningTimeTicks());
             craft.setState(CraftState.CRUISING);
 
-            if (!craft.getType().getMoveEntities()) {
-                CraftManager.getInstance().addReleaseTask(craft);
-            }
             return;
         }
         if (lines.get(0).toPlain().equalsIgnoreCase("Descend: ON")) {

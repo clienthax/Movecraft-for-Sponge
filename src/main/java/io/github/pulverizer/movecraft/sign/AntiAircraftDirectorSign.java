@@ -36,37 +36,30 @@ public class AntiAircraftDirectorSign {
 
         event.setCancelled(true);
 
-        Craft foundCraft = null;
-        World blockWorld = block.getLocation().get().getExtent();
-        for (Craft tcraft : CraftManager.getInstance().getCraftsInWorld(blockWorld)) {
-            if (MathUtils.locationInHitbox(tcraft.getHitBox(), block.getLocation().get()) && !tcraft.getCrewList().isEmpty()) {
-                foundCraft = tcraft;
-                break;
-            }
-        }
+        Craft craft = CraftManager.getInstance().getCraftByPlayer(player.getUniqueId());
 
-        if (foundCraft == null) {
-            if (player != null) {player.sendMessage(Text.of("ERROR: Sign must be a part of a piloted craft!"));}
+        if (craft == null) {
+            player.sendMessage(Text.of("You are not part of the crew aboard this craft!"));
             return;
         }
 
-        if (!foundCraft.getType().allowAADirectorSign()) {
-            if (player != null) {player.sendMessage(Text.of("ERROR: AA Director Signs not allowed on this craft!"));}
+        if (!craft.getType().allowAADirectorSign()) {
+            player.sendMessage(Text.of("ERROR: AA Director Signs not allowed on this craft!"));
             return;
         }
-        if(event instanceof InteractBlockEvent.Primary && player.getUniqueId() == foundCraft.getAADirector()){
-            foundCraft.setAADirector(null);
-            if (player != null) {player.sendMessage(Text.of("You are no longer directing the AA of this craft."));}
+        if(event instanceof InteractBlockEvent.Primary && player.getUniqueId() == craft.getAADirector()){
+            craft.setAADirector(null);
+            player.sendMessage(Text.of("You are no longer directing the AA of this craft."));
             return;
         }
 
-        foundCraft.setAADirector(player.getUniqueId());
-        if(player != null) {player.sendMessage(Text.of("You are now directing the AA of this craft."));}
+        craft.setAADirector(player.getUniqueId());
+        player.sendMessage(Text.of("You are now directing the AA of this craft."));
 
-        if (foundCraft.getCannonDirector() == player.getUniqueId())
-            foundCraft.setCannonDirector(null);
+        if (craft.getCannonDirector() == player.getUniqueId())
+            craft.setCannonDirector(null);
 
-        if (foundCraft.getPilot() == player.getUniqueId())
-            foundCraft.setPilot(null);
+        if (craft.getPilot() == player.getUniqueId())
+            craft.setPilot(null);
     }
 }

@@ -1,10 +1,6 @@
 package io.github.pulverizer.movecraft.mapUpdater;
 
-import io.github.pulverizer.movecraft.Movecraft;
-import io.github.pulverizer.movecraft.craft.Craft;
 import io.github.pulverizer.movecraft.config.Settings;
-import io.github.pulverizer.movecraft.mapUpdater.update.CraftRotateCommand;
-import io.github.pulverizer.movecraft.mapUpdater.update.CraftTranslateCommand;
 import io.github.pulverizer.movecraft.mapUpdater.update.UpdateCommand;
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.text.Text;

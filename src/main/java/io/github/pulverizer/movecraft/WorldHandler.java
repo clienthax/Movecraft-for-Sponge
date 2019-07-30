@@ -5,13 +5,11 @@ import com.flowpowered.math.vector.Vector3i;
 import io.github.pulverizer.movecraft.config.Settings;
 import io.github.pulverizer.movecraft.craft.Craft;
 import io.github.pulverizer.movecraft.utils.HashHitBox;
-import org.spongepowered.api.Sponge;
 import org.spongepowered.api.block.BlockSnapshot;
 import org.spongepowered.api.block.BlockTypes;
 import org.spongepowered.api.block.ScheduledBlockUpdate;
 import org.spongepowered.api.data.key.Keys;
 import org.spongepowered.api.entity.Entity;
-import org.spongepowered.api.scheduler.Task;
 import org.spongepowered.api.util.Direction;
 import org.spongepowered.api.world.*;
 import io.github.pulverizer.movecraft.utils.MathUtils;
@@ -38,50 +36,52 @@ public class WorldHandler {
     public void moveEntity(Entity entity, Vector3d newLocation, float rotation){
         boolean entityMoved = entity.setLocationAndRotation(new Location<>(entity.getWorld(), newLocation), entity.getRotation().add(0, rotation, 0));
 
-        if (Settings.Debug && entityMoved)
-            Movecraft.getInstance().getLogger().info("Moved Entity of type: " + entity.getType().getName());
-        else if (Settings.Debug)
+        if (Settings.Debug && !entityMoved)
             Movecraft.getInstance().getLogger().info("Failed to move Entity of type: " + entity.getType().getName());
     }
 
     /**
      * Rotates the Craft around the Location using the Rotation.
      * @param craft Craft to be rotated.
-     * @param originPoint MovecraftLocation that the Craft will be rotated around.
+     * @param originPoint Vector3i that the Craft will be rotated around.
      * @param rotation Rotation tha the Craft will be rotated by.
      */
-    public void rotateCraft(Craft craft, MovecraftLocation originPoint, Rotation rotation) {
+    public void rotateCraft(Craft craft, Vector3i originPoint, Rotation rotation) {
 
         World nativeWorld = craft.getWorld();
 
         //*******************************************
         //*      Step one: Convert to Positions     *
         //*******************************************
-        HashMap<Vector3i,Vector3i> rotatedBlockPositions = new HashMap<>();
+        HashMap<Vector3i, Vector3i> rotatedBlockPositions = new HashMap<>();
         Rotation counterRotation = rotation == Rotation.CLOCKWISE ? Rotation.ANTICLOCKWISE : Rotation.CLOCKWISE;
-        Map<Vector3i, Collection<ScheduledBlockUpdate>> updates = new HashMap<>();
-        for(MovecraftLocation newLocation : craft.getHitBox()){
-            rotatedBlockPositions.put(MathUtils.rotateVec(counterRotation, newLocation.subtract(originPoint)).add(originPoint), newLocation);
-            updates.put(MathUtils.rotateVec(counterRotation, newLocation.subtract(originPoint)).add(originPoint), nativeWorld.getLocation(MathUtils.rotateVec(counterRotation, newLocation.subtract(originPoint)).add(originPoint)).getScheduledUpdates());
-
+        HashMap<Vector3i, HashMap<Integer, Integer>> updates = new HashMap<>();
+        for(Vector3i newLocation : craft.getHitBox()){
+            rotatedBlockPositions.put(MathUtils.rotateVec(counterRotation, newLocation.sub(originPoint)).add(originPoint), newLocation);
         }
 
-        //get the old blocks and translate them
+        //get the old blocks and add them
         HashMap<Vector3i,BlockSnapshot> blockData = new HashMap<>();
         for(Vector3i blockPosition : rotatedBlockPositions.keySet()){
             blockData.put(blockPosition,nativeWorld.createSnapshot(blockPosition));
+
+            HashMap<Integer, Integer> blockUpdates = new HashMap<>();
+            nativeWorld.getLocation(blockPosition).getScheduledUpdates().forEach(update -> blockUpdates.put(update.getPriority(), update.getTicks()));
+
+            updates.put(blockPosition, blockUpdates);
         }
 
         //remove the old blocks from the world
         for (Vector3i blockPosition : rotatedBlockPositions.keySet()) {
             nativeWorld.getLocation(blockPosition).getScheduledUpdates().forEach(update -> nativeWorld.getLocation(blockPosition).removeScheduledUpdate(update));
+            nativeWorld.getLocation(blockPosition).getTileEntity().ifPresent(tileEntity -> tileEntity.setValid(false));
             setBlock(nativeWorld, blockPosition, BlockSnapshot.builder().blockState(BlockTypes.AIR.getDefaultState()).world(nativeWorld.getProperties()).position(blockPosition).build());
         }
 
         //create the new blocks
         for(Map.Entry<Vector3i,BlockSnapshot> entry : blockData.entrySet()) {
             setBlock(nativeWorld, rotatedBlockPositions.get(entry.getKey()), rotation, entry.getValue());
-            updates.get(entry.getKey()).forEach(update -> nativeWorld.getLocation(rotatedBlockPositions.get(entry.getKey())).addScheduledUpdate(update.getPriority(), update.getTicks()));
+            updates.get(entry.getKey()).forEach((priority , ticks) -> nativeWorld.getLocation(rotatedBlockPositions.get(entry.getKey())).addScheduledUpdate(priority, ticks));
         }
     }
 
@@ -100,41 +100,45 @@ public class WorldHandler {
         //*          Convert to Positions           *
         //*******************************************
         List<Vector3i> blockPositions = new ArrayList<>();
-        for(MovecraftLocation movecraftLocation : craft.getHitBox()) {
-            blockPositions.add(movecraftLocation);
+        for(Vector3i vector3i : craft.getHitBox()) {
+            blockPositions.add(vector3i);
         }
 
         //get the old blocks
         List<BlockSnapshot> blocks = new ArrayList<>();
-        //List<Collection<ScheduledBlockUpdate>> updates = new ArrayList<>();
+        HashMap<Vector3i, HashMap<Integer, Integer>> updates = new HashMap<>();
         for(Vector3i blockPosition : blockPositions){
             blocks.add(nativeWorld.createSnapshot(blockPosition));
-            //updates.add(nativeWorld.getLocation(blockPosition).getScheduledUpdates());
         }
 
-        //translate the blockPositions
+        //add the blockPositions
         List<Vector3i> newBlockPositions = new ArrayList<>();
         for(Vector3i blockPosition : blockPositions){
             newBlockPositions.add(blockPosition.add(translateBlockVector));
         }
 
         //remove the old blocks from the world
-        //for (Vector3i blockPosition : blockPositions) {
-            //nativeWorld.getLocation(blockPosition).getScheduledUpdates().forEach(update -> nativeWorld.getLocation(blockPosition).removeScheduledUpdate(update));
-            //setBlock(nativeWorld, blockPosition, BlockSnapshot.builder().blockState(BlockTypes.AIR.getDefaultState()).world(nativeWorld.getProperties()).position(blockPosition).build());
-        //}
+        for (Vector3i blockPosition : blockPositions) {
+            HashMap<Integer, Integer> blockUpdates = new HashMap<>();
+            nativeWorld.getLocation(blockPosition).getScheduledUpdates().forEach(update -> blockUpdates.put(update.getPriority(), update.getTicks()));
+
+            Vector3i position = blockPosition.add(translateBlockVector);
+            updates.put(position, blockUpdates);
+
+            nativeWorld.getLocation(blockPosition).getScheduledUpdates().forEach(update -> nativeWorld.getLocation(blockPosition).removeScheduledUpdate(update));
+            nativeWorld.getLocation(blockPosition).getTileEntity().ifPresent(tileEntity -> tileEntity.setValid(false));
+            //setBlock(nativeWorld, blockPosition, BlockTypes.AIR.getDefaultState().snapshotFor(nativeWorld.getLocation(position)));
+        }
 
         //create the new blocks
         for(int i = 0; i < newBlockPositions.size(); i++) {
-            setBlock(nativeWorld, newBlockPositions.get(i), blocks.get(i));
-            //int finalI = i;
-            //updates.get(i).forEach(update -> nativeWorld.getLocation(newBlockPositions.get(finalI)).addScheduledUpdate(update.getPriority(), update.getTicks()));
+            setBlock(nativeWorld, newBlockPositions.get(i), blocks.get(i).withLocation(nativeWorld.getLocation(newBlockPositions.get(i))));
+            int finalI = i;
+            updates.get(newBlockPositions.get(i)).forEach((priority , ticks) -> nativeWorld.getLocation(newBlockPositions.get(finalI)).addScheduledUpdate(priority, ticks));
         }
 
         blockPositions.removeAll(newBlockPositions);
-        blockPositions.forEach(blockPosition -> {
-            setBlock(nativeWorld, blockPosition, BlockSnapshot.builder().blockState(BlockTypes.AIR.getDefaultState()).world(nativeWorld.getProperties()).position(blockPosition).build());
-        });
+        blockPositions.forEach(position -> setBlock(nativeWorld, position, BlockTypes.AIR.getDefaultState().snapshotFor(nativeWorld.getLocation(position))));
 
         craft.setHitBox(newHitBox);
 
@@ -311,19 +315,9 @@ public class WorldHandler {
             method = Block.class.getDeclaredMethod("e", int.class);
             method.setAccessible(true);
             method.invoke(tempBlock, 0);
-        } catch (NoSuchMethodException | InvocationTargetException | IllegalArgumentException | IllegalAccessException | SecurityException e1) {
-            // TODO Auto-generated catch block
-            e1.printStackTrace();
+        } catch (NoSuchMethodException | InvocationTargetException | IllegalArgumentException | IllegalAccessException | SecurityException e) {
+            e.printStackTrace();
         }
     }
     */
-
-    /**
-     * Converts a Location to a MovecraftLocation.
-     * @param worldLocation The Location to be converted.
-     * @return New MovecraftLocation equivalent to the provided Location.
-     */
-    private static MovecraftLocation sponge2MovecraftLoc(Location<World> worldLocation) {
-        return new MovecraftLocation(worldLocation.getBlockX(), worldLocation.getBlockY(), worldLocation.getBlockZ());
-    }
 }

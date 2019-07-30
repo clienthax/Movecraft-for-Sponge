@@ -1,12 +1,12 @@
 package io.github.pulverizer.movecraft.listener;
 
-import com.flowpowered.math.vector.Vector3d;
 import com.flowpowered.math.vector.Vector3i;
 import io.github.pulverizer.movecraft.Rotation;
 import io.github.pulverizer.movecraft.utils.MathUtils;
 import io.github.pulverizer.movecraft.craft.Craft;
 import io.github.pulverizer.movecraft.config.Settings;
 import io.github.pulverizer.movecraft.craft.CraftManager;
+import org.spongepowered.api.Sponge;
 import org.spongepowered.api.block.BlockSnapshot;
 import org.spongepowered.api.block.BlockTypes;
 import org.spongepowered.api.data.key.Keys;
@@ -44,25 +44,20 @@ public final class InteractListener {
     @Include({InteractItemEvent.Primary.class, InteractItemEvent.Secondary.MainHand.class})
     public void onPlayerInteractStick(InteractItemEvent event, @Root Player player) {
 
-        Craft c = CraftManager.getInstance().getCraftByPlayer(player.getUniqueId());
+        Craft craft = CraftManager.getInstance().getCraftByPlayer(player.getUniqueId());
         // if not in command of craft, don't process pilot tool clicks
-        if (c == null)
+        if (craft == null)
             return;
 
-        if (player.getUniqueId() != c.getPilot()) {
+        if (!player.getItemInHand(HandTypes.MAIN_HAND).isPresent() || player.getItemInHand(HandTypes.MAIN_HAND).get().getType() != Settings.PilotTool)
+            return;
+
+        if (player.getUniqueId() != craft.getPilot()) {
             player.sendMessage(Text.of("You are not the Pilot of this craft."));
+            return;
         }
 
         if (event instanceof InteractItemEvent.Secondary) {
-            Craft craft = CraftManager.getInstance().getCraftByPlayer(player.getUniqueId());
-
-            if (player.getItemInHand(HandTypes.MAIN_HAND).get().getType() != Settings.PilotTool) {
-                return;
-            }
-
-            if (craft == null) {
-                return;
-            }
 
             event.setCancelled(true);
 
@@ -84,20 +79,20 @@ public final class InteractListener {
                 return;
             }
 
-            if (!player.hasPermission("movecraft." + craft.getType().getCraftName() + ".move")) {
+            if (!player.hasPermission("movecraft." + craft.getType().getName() + ".move")) {
                 player.sendMessage(Text.of("Insufficient Permissions"));
                 return;
             }
-            if (craft.underDirectControl()) {
+            if (craft.isUnderDirectControl()) {
                 // right click moves up or down if using direct
                 // control
-                int DY = 1;
+                int dy = 1;
                 if (player.get(Keys.IS_SNEAKING).get())
-                    DY = -1;
+                    dy = -1;
 
-                craft.translate(Rotation.NONE, new Vector3i(0, DY, 0), false);
+                craft.translate(Rotation.NONE, new Vector3i(0, dy, 0), false);
                 timeMap.put(player, System.currentTimeMillis());
-                craft.setLastCruiseUpdateTime(System.currentTimeMillis());
+                craft.setLastCruiseUpdateTick(Sponge.getServer().getRunningTimeTicks());
                 return;
             }
             // Player is onboard craft and right clicking
@@ -121,29 +116,23 @@ public final class InteractListener {
 
             craft.translate(Rotation.NONE, new Vector3i(dx, dy, dz), false);
             timeMap.put(player, System.currentTimeMillis());
-            craft.setLastCruiseUpdateTime(System.currentTimeMillis());
+            craft.setLastCruiseUpdateTick(Sponge.getServer().getRunningTimeTicks());
             return;
         }
         if (event instanceof InteractItemEvent.Primary) {
-            if (player.getItemInHand(HandTypes.MAIN_HAND).get().getType() != Settings.PilotTool) {
-                return;
-            }
-            Craft craft = CraftManager.getInstance().getCraftByPlayer(player.getUniqueId());
-            if (craft == null) {
-                return;
-            }
 
-            if (craft.underDirectControl()) {
+            if (craft.isUnderDirectControl()) {
                 craft.setDirectControl(false);
                 player.sendMessage(Text.of("Leaving Direct Control Mode"));
                 event.setCancelled(true);
                 return;
             }
-            if (!player.hasPermission("movecraft." + craft.getType().getCraftName() + ".move")
-                    || !craft.getType().getCanDirectControl()) {
+
+            if (!player.hasPermission("movecraft." + craft.getType().getName() + ".move") || !craft.getType().getCanDirectControl()) {
                 player.sendMessage(Text.of("Insufficient Permissions"));
                 return;
             }
+
             craft.setDirectControl(true);
             player.sendMessage(Text.of("Entering Direct Control Mode"));
             event.setCancelled(true);

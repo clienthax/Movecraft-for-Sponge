@@ -1,7 +1,7 @@
 package io.github.pulverizer.movecraft.sign;
 
+import com.flowpowered.math.vector.Vector3i;
 import io.github.pulverizer.movecraft.utils.MathUtils;
-import io.github.pulverizer.movecraft.MovecraftLocation;
 import io.github.pulverizer.movecraft.craft.Craft;
 import io.github.pulverizer.movecraft.craft.CraftManager;
 
@@ -87,8 +87,8 @@ public final class RemoteSign {
             }
             return;
         }
-        LinkedList<MovecraftLocation> foundLocations = new LinkedList<MovecraftLocation>();
-        for (MovecraftLocation tloc : foundCraft.getHitBox()) {
+        LinkedList<Vector3i> foundLocations = new LinkedList<Vector3i>();
+        for (Vector3i tloc : foundCraft.getHitBox()) {
             BlockSnapshot targetBlock = blockWorld.createSnapshot(tloc.getX(), tloc.getY(), tloc.getZ());
             if (!targetBlock.getState().getType().equals(BlockTypes.STANDING_SIGN) && !targetBlock.getState().getType().equals(BlockTypes.WALL_SIGN)) {
                 continue;
@@ -125,7 +125,7 @@ public final class RemoteSign {
             return;
         }
 
-        for (MovecraftLocation foundLoc : foundLocations) {
+        for (Vector3i foundLoc : foundLocations) {
             BlockSnapshot newBlock = blockWorld.createSnapshot(foundLoc.getX(), foundLoc.getY(), foundLoc.getZ());
 
             InteractBlockEvent interact = null;

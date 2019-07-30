@@ -49,7 +49,6 @@ import java.util.Map;
 public class Movecraft {
 
     private static Movecraft instance;
-    private boolean shuttingDown;
     private WorldHandler worldHandler;
     private AsyncManager asyncManager;
 
@@ -95,12 +94,6 @@ public class Movecraft {
         ConfigurationLoader<ConfigurationNode> loader = YAMLConfigurationLoader.builder().setPath(file).setDefaultOptions(ConfigurationOptions.defaults().setShouldCopyDefaults(true)).build();
             return loader;
     }
-
-    @Listener
-    public void onDisable(GameStoppingEvent event) {
-        shuttingDown = true;
-    }
-
 
     /**
      * Listener for GamePreInitializationEvent. Loads the Plugin's settings.
@@ -162,6 +155,7 @@ public class Movecraft {
         Settings.RequireCreatePerm = mainConfigNode.getNode("RequireCreatePerm").getBoolean(false);
         Settings.TNTContactExplosives = mainConfigNode.getNode("TNTContactExplosives").getBoolean(true);
         Settings.FadeWrecksAfter = mainConfigNode.getNode("FadeWrecksAfter").getInt(0);
+        Settings.ReleaseOnCrewDeath = mainConfigNode.getNode("ReleaseOnCrewDeath").getBoolean(true);
         Settings.DurabilityOverride = new HashMap<>();
 
         try {
@@ -197,49 +191,43 @@ public class Movecraft {
             error.printStackTrace();
         }
 
-        if (shuttingDown && Settings.IGNORE_RESET) {
-            logger.error("Startup - Error - Reload error");
-            logger.info("Startup - Error - Disable warning for reload");
-        } else {
+        //TODO: Re-add this good stuff!
 
-            //TODO: Re-add this good stuff!
-            /*
-            this.getCommand("movecraft").setExecutor(new MovecraftCommand());
-            this.getCommand("release").setExecutor(new ReleaseCommand());
-            this.getCommand("pilot").setExecutor(new PilotCommand());
-            this.getCommand("translate").setExecutor(new RotateCommand());
-            this.getCommand("cruise").setExecutor(new CruiseCommand());
-            this.getCommand("craftreport").setExecutor(new CraftReportCommand());
-            this.getCommand("manoverboard").setExecutor(new ManOverboardCommand());
-            this.getCommand("contacts").setExecutor(new ContactsCommand());
-            this.getCommand("scuttle").setExecutor(new ScuttleCommand());
-            */
+        /*this.getCommand("movecraft").setExecutor(new MovecraftCommand());
+        this.getCommand("release").setExecutor(new ReleaseCommand());
+        this.getCommand("pilot").setExecutor(new PilotCommand());
+        this.getCommand("add").setExecutor(new RotateCommand());
+        this.getCommand("cruise").setExecutor(new CruiseCommand());
+        this.getCommand("craftreport").setExecutor(new CraftReportCommand());
+        this.getCommand("manoverboard").setExecutor(new ManOverboardCommand());
+        this.getCommand("contacts").setExecutor(new ContactsCommand());
+        this.getCommand("scuttle").setExecutor(new ScuttleCommand());*/
 
-            Sponge.getEventManager().registerListeners(this, new InteractListener());
-            Sponge.getEventManager().registerListeners(this, new BlockListener());
-            Sponge.getEventManager().registerListeners(this, new PlayerListener());
-            Sponge.getEventManager().registerListeners(this, new AntiAircraftDirectorSign());
-            Sponge.getEventManager().registerListeners(this, new AscendSign());
-            Sponge.getEventManager().registerListeners(this, new CannonDirectorSign());
-            Sponge.getEventManager().registerListeners(this, new ContactsSign());
-            Sponge.getEventManager().registerListeners(this, new CraftSign());
-            Sponge.getEventManager().registerListeners(this, new CrewSign());
-            Sponge.getEventManager().registerListeners(this, new CruiseSign());
-            Sponge.getEventManager().registerListeners(this, new DescendSign());
-            Sponge.getEventManager().registerListeners(this, new HelmSign());
-            Sponge.getEventManager().registerListeners(this, new MoveSign());
-            Sponge.getEventManager().registerListeners(this, new CommanderSign());
-            Sponge.getEventManager().registerListeners(this, new RelativeMoveSign());
-            Sponge.getEventManager().registerListeners(this, new ReleaseSign());
-            Sponge.getEventManager().registerListeners(this, new RemoteSign());
-            Sponge.getEventManager().registerListeners(this, new SpeedSign());
-            Sponge.getEventManager().registerListeners(this, new StatusSign());
-            Sponge.getEventManager().registerListeners(this, new SubcraftRotateSign());
-            Sponge.getEventManager().registerListeners(this, new TeleportSign());
-            Sponge.getEventManager().registerListeners(this, new PilotSign());
 
-            logger.info("Movecraft Enabled.");
-        }
+        Sponge.getEventManager().registerListeners(this, new InteractListener());
+        Sponge.getEventManager().registerListeners(this, new BlockListener());
+        Sponge.getEventManager().registerListeners(this, new PlayerListener());
+        Sponge.getEventManager().registerListeners(this, new AntiAircraftDirectorSign());
+        Sponge.getEventManager().registerListeners(this, new AscendSign());
+        Sponge.getEventManager().registerListeners(this, new CannonDirectorSign());
+        Sponge.getEventManager().registerListeners(this, new ContactsSign());
+        Sponge.getEventManager().registerListeners(this, new CraftSign());
+        Sponge.getEventManager().registerListeners(this, new CrewSign());
+        Sponge.getEventManager().registerListeners(this, new CruiseSign());
+        Sponge.getEventManager().registerListeners(this, new DescendSign());
+        Sponge.getEventManager().registerListeners(this, new HelmSign());
+        Sponge.getEventManager().registerListeners(this, new MoveSign());
+        Sponge.getEventManager().registerListeners(this, new CommanderSign());
+        Sponge.getEventManager().registerListeners(this, new RelativeMoveSign());
+        Sponge.getEventManager().registerListeners(this, new ReleaseSign());
+        Sponge.getEventManager().registerListeners(this, new RemoteSign());
+        Sponge.getEventManager().registerListeners(this, new SpeedSign());
+        Sponge.getEventManager().registerListeners(this, new StatusSign());
+        Sponge.getEventManager().registerListeners(this, new SubcraftRotateSign());
+        Sponge.getEventManager().registerListeners(this, new TeleportSign());
+        Sponge.getEventManager().registerListeners(this, new PilotSign());
+
+        logger.info("Movecraft Enabled.");
     }
 
     /**

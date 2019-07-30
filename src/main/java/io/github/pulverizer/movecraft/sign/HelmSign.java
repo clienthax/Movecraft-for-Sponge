@@ -63,7 +63,7 @@ public final class HelmSign {
         if (craft == null) {
             return;
         }
-        if (!player.hasPermission("movecraft." + craft.getType().getCraftName() + ".translate")) {
+        if (!player.hasPermission("movecraft." + craft.getType().getName() + ".add")) {
             player.sendMessage(Text.of("Insufficient Permissions"));
             return;
         }

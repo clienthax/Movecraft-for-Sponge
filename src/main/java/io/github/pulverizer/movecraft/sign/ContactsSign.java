@@ -1,9 +1,10 @@
 package io.github.pulverizer.movecraft.sign;
 
+import com.flowpowered.math.vector.Vector3i;
 import io.github.pulverizer.movecraft.MovecraftLocation;
 import io.github.pulverizer.movecraft.craft.Craft;
-import io.github.pulverizer.movecraft.events.CraftDetectEvent;
-import io.github.pulverizer.movecraft.events.SignTranslateEvent;
+import io.github.pulverizer.movecraft.event.CraftDetectEvent;
+import io.github.pulverizer.movecraft.event.SignTranslateEvent;
 import io.github.pulverizer.movecraft.craft.CraftManager;
 import org.spongepowered.api.block.BlockSnapshot;
 import org.spongepowered.api.block.BlockTypes;
@@ -19,14 +20,14 @@ public class ContactsSign {
     @Listener
     public void onCraftDetect(CraftDetectEvent event){
         World world = event.getCraft().getWorld();
-        for(MovecraftLocation location: event.getCraft().getHitBox()){
-            BlockSnapshot block = location.toSponge(world).createSnapshot();
+        for(Vector3i location: event.getCraft().getHitBox()){
+            BlockSnapshot block = MovecraftLocation.toSponge(world, location).createSnapshot();
             if(block.getState().getType() == BlockTypes.WALL_SIGN || block.getState().getType() == BlockTypes.STANDING_SIGN){
 
-                if (!location.toSponge(world).getTileEntity().isPresent())
+                if (!MovecraftLocation.toSponge(world, location).getTileEntity().isPresent())
                     return;
 
-                Sign sign = (Sign) location.toSponge(world).getTileEntity().get();
+                Sign sign = (Sign) MovecraftLocation.toSponge(world, location).getTileEntity().get();
                 ListValue<Text> lines = sign.lines();
                 if (lines.get(0).toPlain().equalsIgnoreCase("Contacts:")) {
                     lines.set(1, Text.of(""));
@@ -82,7 +83,7 @@ public class ContactsSign {
             if(distsquared<detectionRange*detectionRange && tcraft.getPilot()!=craft.getPilot()) {
                 // craft has been detected
                 foundContact = true;
-                String notification = TextColors.BLUE + tcraft.getType().getCraftName();
+                String notification = TextColors.BLUE + tcraft.getType().getName();
                 if(notification.length()>9) {
                     notification = notification.substring(0, 7);
                 }

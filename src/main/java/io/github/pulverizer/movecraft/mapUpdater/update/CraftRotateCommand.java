@@ -1,10 +1,11 @@
 package io.github.pulverizer.movecraft.mapUpdater.update;
 
+import com.flowpowered.math.vector.Vector3i;
 import io.github.pulverizer.movecraft.*;
 import io.github.pulverizer.movecraft.config.Settings;
 import io.github.pulverizer.movecraft.craft.Craft;
 import io.github.pulverizer.movecraft.craft.CraftManager;
-import io.github.pulverizer.movecraft.events.SignTranslateEvent;
+import io.github.pulverizer.movecraft.event.SignTranslateEvent;
 import io.github.pulverizer.movecraft.utils.*;
 import org.slf4j.Logger;
 import org.spongepowered.api.Sponge;
@@ -19,9 +20,9 @@ import java.util.*;
 public class CraftRotateCommand extends UpdateCommand {
     private final Craft craft;
     private final Rotation rotation;
-    private final MovecraftLocation originLocation;
+    private final Vector3i originLocation;
 
-    public CraftRotateCommand(final Craft craft, final MovecraftLocation originLocation, final Rotation rotation) {
+    public CraftRotateCommand(final Craft craft, final Vector3i originLocation, final Rotation rotation) {
         this.craft = craft;
         this.rotation = rotation;
         this.originLocation = originLocation;
@@ -49,14 +50,14 @@ public class CraftRotateCommand extends UpdateCommand {
         if (!passthroughBlocks.isEmpty()) {
             MutableHitBox originalLocations = new HashHitBox();
             final Rotation counterRotation = rotation == Rotation.CLOCKWISE ? Rotation.ANTICLOCKWISE : Rotation.CLOCKWISE;
-            for (MovecraftLocation movecraftLocation : craft.getHitBox()) {
-                originalLocations.add(MathUtils.rotateVec(counterRotation, movecraftLocation.subtract(originLocation)).add(originLocation));
+            for (Vector3i vector3i : craft.getHitBox()) {
+                originalLocations.add(MathUtils.rotateVec(counterRotation, vector3i.sub(originLocation)).add(originLocation));
             }
 
             final HitBox to = CollectionUtils.filter(craft.getHitBox(), originalLocations);
 
-            for (MovecraftLocation location : to) {
-                BlockSnapshot material = location.toSponge(craft.getWorld()).createSnapshot();
+            for (Vector3i location : to) {
+                BlockSnapshot material = MovecraftLocation.toSponge(craft.getWorld(), location).createSnapshot();
                 if (passthroughBlocks.contains(material.getState().getType())) {
                     craft.getPhasedBlocks().add(material);
                 }
@@ -75,30 +76,30 @@ public class CraftRotateCommand extends UpdateCommand {
             final int minZ = craft.getHitBox().getMinZ();
             final int maxZ = craft.getHitBox().getMaxZ();
             final HitBox[] surfaces = {
-                    new SolidHitBox(new MovecraftLocation(minX, minY, minZ), new MovecraftLocation(minX, maxY, maxZ)),
-                    new SolidHitBox(new MovecraftLocation(minX, minY, minZ), new MovecraftLocation(maxX, minY, maxZ)),
-                    new SolidHitBox(new MovecraftLocation(minX, minY, minZ), new MovecraftLocation(maxX, maxY, minZ)),
-                    new SolidHitBox(new MovecraftLocation(maxX, maxY, maxZ), new MovecraftLocation(minX, maxY, maxZ)),
-                    new SolidHitBox(new MovecraftLocation(maxX, maxY, maxZ), new MovecraftLocation(maxX, minY, maxZ)),
-                    new SolidHitBox(new MovecraftLocation(maxX, maxY, maxZ), new MovecraftLocation(maxX, maxY, minZ))};
+                    new SolidHitBox(new Vector3i(minX, minY, minZ), new Vector3i(minX, maxY, maxZ)),
+                    new SolidHitBox(new Vector3i(minX, minY, minZ), new Vector3i(maxX, minY, maxZ)),
+                    new SolidHitBox(new Vector3i(minX, minY, minZ), new Vector3i(maxX, maxY, minZ)),
+                    new SolidHitBox(new Vector3i(maxX, maxY, maxZ), new Vector3i(minX, maxY, maxZ)),
+                    new SolidHitBox(new Vector3i(maxX, maxY, maxZ), new Vector3i(maxX, minY, maxZ)),
+                    new SolidHitBox(new Vector3i(maxX, maxY, maxZ), new Vector3i(maxX, maxY, minZ))};
             //Valid exterior starts as the 6 surface planes of the HitBox with the locations that lie in the HitBox removed
-            final Set<MovecraftLocation> validExterior = new HashSet<>();
+            final Set<Vector3i> validExterior = new HashSet<>();
             for (HitBox hitBox : surfaces) {
                 validExterior.addAll(CollectionUtils.filter(hitBox, craft.getHitBox()).asSet());
             }
             //Check to see which locations in the from set are actually outside of the craft
-            for (MovecraftLocation location :validExterior ) {
+            for (Vector3i location :validExterior ) {
                 if (craft.getHitBox().contains(location) || exterior.contains(location)) {
                     continue;
                 }
                 //use a modified BFS for multiple origin elements
-                Set<MovecraftLocation> visited = new HashSet<>();
-                Queue<MovecraftLocation> queue = new LinkedList<>();
+                Set<Vector3i> visited = new HashSet<>();
+                Queue<Vector3i> queue = new LinkedList<>();
                 queue.add(location);
                 while (!queue.isEmpty()) {
-                    MovecraftLocation node = queue.poll();
+                    Vector3i node = queue.poll();
                     //If the node is already a valid member of the exterior of the HitBox, continued search is unitary.
-                    for (MovecraftLocation neighbor : CollectionUtils.neighbors(invertedHitBox, node)) {
+                    for (Vector3i neighbor : CollectionUtils.neighbors(invertedHitBox, node)) {
                         if (visited.contains(neighbor)) {
                             continue;
                         }
@@ -111,20 +112,20 @@ public class CraftRotateCommand extends UpdateCommand {
             interior.addAll(CollectionUtils.filter(invertedHitBox, exterior));
 
             final WorldHandler handler = Movecraft.getInstance().getWorldHandler();
-            for (MovecraftLocation location : CollectionUtils.filter(invertedHitBox, exterior)) {
-                BlockSnapshot material = location.toSponge(craft.getWorld()).createSnapshot();
+            for (Vector3i location : CollectionUtils.filter(invertedHitBox, exterior)) {
+                BlockSnapshot material = MovecraftLocation.toSponge(craft.getWorld(), location).createSnapshot();
                 if (!passthroughBlocks.contains(material.getState().getType())) {
                     continue;
                 }
                 craft.getPhasedBlocks().add(material);
             }
 
-            //translate the craft
+            //add the craft
 
             handler.rotateCraft(craft, originLocation, rotation);
-            //trigger sign events
-            for (MovecraftLocation location : craft.getHitBox()) {
-                BlockSnapshot block = location.toSponge(craft.getWorld()).createSnapshot();
+            //trigger sign event
+            for (Vector3i location : craft.getHitBox()) {
+                BlockSnapshot block = MovecraftLocation.toSponge(craft.getWorld(), location).createSnapshot();
                 if (block.getState().getType() == BlockTypes.WALL_SIGN || block.getState().getType() == BlockTypes.STANDING_SIGN) {
                     Sponge.getEventManager().post(new SignTranslateEvent(block, craft));
                 }
@@ -132,34 +133,34 @@ public class CraftRotateCommand extends UpdateCommand {
 
             //place confirmed blocks if they have been un-phased
             craft.getPhasedBlocks().forEach(block -> {
-                if (exterior.contains((MovecraftLocation) block.getPosition())) {
+                if (exterior.contains((Vector3i) block.getPosition())) {
 
                     handler.setBlock(block.getLocation().get(), block);
                     craft.getPhasedBlocks().remove(block);
                 }
 
-                if (originalLocations.contains((MovecraftLocation) block.getPosition()) && !craft.getHitBox().inBounds((MovecraftLocation) block.getPosition())) {
+                if (originalLocations.contains((Vector3i) block.getPosition()) && !craft.getHitBox().inBounds((Vector3i) block.getPosition())) {
 
                     handler.setBlock(block.getLocation().get(), block);
                     craft.getPhasedBlocks().remove(block);
                 }
             });
 
-            for (MovecraftLocation location : interior) {
-                final BlockSnapshot material = location.toSponge(craft.getWorld()).createSnapshot();
+            for (Vector3i location : interior) {
+                final BlockSnapshot material = MovecraftLocation.toSponge(craft.getWorld(), location).createSnapshot();
                 if (passthroughBlocks.contains(material.getState().getType())) {
                     craft.getPhasedBlocks().add(material);
-                    handler.setBlock(location.toSponge(craft.getWorld()), BlockTypes.AIR.getDefaultState().snapshotFor(location.toSponge(craft.getWorld())));
+                    handler.setBlock(MovecraftLocation.toSponge(craft.getWorld(), location), BlockTypes.AIR.getDefaultState().snapshotFor(MovecraftLocation.toSponge(craft.getWorld(), location)));
 
                 }
             }
         }else{
-            //translate the craft
+            //add the craft
 
             Movecraft.getInstance().getWorldHandler().rotateCraft(craft, originLocation, rotation);
-            //trigger sign events
-            for (MovecraftLocation location : craft.getHitBox()) {
-                BlockSnapshot block = location.toSponge(craft.getWorld()).createSnapshot();
+            //trigger sign event
+            for (Vector3i location : craft.getHitBox()) {
+                BlockSnapshot block = MovecraftLocation.toSponge(craft.getWorld(), location).createSnapshot();
                 if (block.getState().getType() == BlockTypes.WALL_SIGN || block.getState().getType() == BlockTypes.STANDING_SIGN) {
                     Sponge.getEventManager().post(new SignTranslateEvent(block, craft));
                 }

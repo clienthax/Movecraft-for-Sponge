@@ -1,11 +1,11 @@
 package io.github.pulverizer.movecraft.utils;
 
-import io.github.pulverizer.movecraft.MovecraftLocation;
+import com.flowpowered.math.vector.Vector3i;
 
 import java.util.*;
 
 public class HeapHitBox implements MutableHitBox {
-    private final Set<MovecraftLocation> locationSet = new HashSet<>();
+    private final Set<Vector3i> locationSet = new HashSet<>();
     private final PriorityQueue<Integer> minX = new PriorityQueue<>(),
             maxX = new PriorityQueue<>(10,Collections.reverseOrder()),
             minY = new PriorityQueue<>(),
@@ -16,7 +16,7 @@ public class HeapHitBox implements MutableHitBox {
     public HeapHitBox(){
     }
 
-    public HeapHitBox(Collection<MovecraftLocation> collection){
+    public HeapHitBox(Collection<Vector3i> collection){
         this.addAll(collection);
     }
 
@@ -89,7 +89,7 @@ public class HeapHitBox implements MutableHitBox {
             throw new EmptyHitBoxException();
         }
         int yValue=-1;
-        for(MovecraftLocation location : locationSet){
+        for(Vector3i location : locationSet){
             if(location.getX()==x && location.getZ() ==z && location.getY()>yValue){
                 yValue=location.getY();
             }
@@ -103,7 +103,7 @@ public class HeapHitBox implements MutableHitBox {
             throw new EmptyHitBoxException();
         }
         int yValue=-1;
-        for(MovecraftLocation location : locationSet){
+        for(Vector3i location : locationSet){
             if(location.getX()==x && location.getZ() ==z && (yValue==-1 || location.getY()>yValue)){
                 yValue=location.getY();
             }
@@ -111,14 +111,14 @@ public class HeapHitBox implements MutableHitBox {
         return yValue;
     }
 
-    public MovecraftLocation getMidPoint(){
+    public Vector3i getMidPoint(){
         if(locationSet.isEmpty()){
             throw new EmptyHitBoxException();
         }
-        return new MovecraftLocation((minX.peek()+maxX.peek())/2, (minY.peek()+maxY.peek())/2,(minZ.peek()+maxZ.peek())/2);
+        return new Vector3i((minX.peek()+maxX.peek())/2, (minY.peek()+maxY.peek())/2,(minZ.peek()+maxZ.peek())/2);
     }
 
-    public boolean inBounds(MovecraftLocation location){
+    public boolean inBounds(Vector3i location){
         if(locationSet.isEmpty()){
             return false;
         }
@@ -137,7 +137,7 @@ public class HeapHitBox implements MutableHitBox {
     }
 
     public boolean intersects(HashHitBox hitBox){
-        for(MovecraftLocation location : hitBox){
+        for(Vector3i location : hitBox){
             if(this.contains(location)){
                 return true;
             }
@@ -156,20 +156,20 @@ public class HeapHitBox implements MutableHitBox {
     }
 
     @Override
-    public boolean contains(MovecraftLocation location) {
+    public boolean contains(Vector3i location) {
         return locationSet.contains(location);
     }
 
     public boolean contains(int x, int y, int z){
-        return contains(new MovecraftLocation(x,y,z));
+        return contains(new Vector3i(x,y,z));
     }
 
     @Override
-    public Iterator<MovecraftLocation> iterator(){
-        return new Iterator<MovecraftLocation>() {
+    public Iterator<Vector3i> iterator(){
+        return new Iterator<Vector3i>() {
 
-            private final Iterator<MovecraftLocation> it = locationSet.iterator();
-            private MovecraftLocation last;
+            private final Iterator<Vector3i> it = locationSet.iterator();
+            private Vector3i last;
 
             @Override
             public boolean hasNext() {
@@ -177,7 +177,7 @@ public class HeapHitBox implements MutableHitBox {
             }
 
             @Override
-            public MovecraftLocation next() {
+            public Vector3i next() {
                 return last = it.next();
             }
 
@@ -194,18 +194,18 @@ public class HeapHitBox implements MutableHitBox {
     }
 
     @Override
-    public boolean add(MovecraftLocation movecraftLocation) {
-        minX.add(movecraftLocation.getX());
-        maxX.add(movecraftLocation.getX());
-        minY.add(movecraftLocation.getY());
-        maxY.add(movecraftLocation.getY());
-        minY.add(movecraftLocation.getZ());
-        maxY.add(movecraftLocation.getZ());
-        return locationSet.add(movecraftLocation);
+    public boolean add(Vector3i vector3i) {
+        minX.add(vector3i.getX());
+        maxX.add(vector3i.getX());
+        minY.add(vector3i.getY());
+        maxY.add(vector3i.getY());
+        minY.add(vector3i.getZ());
+        maxY.add(vector3i.getZ());
+        return locationSet.add(vector3i);
     }
 
     @Override
-    public boolean remove(MovecraftLocation location) {
+    public boolean remove(Vector3i location) {
         if(!locationSet.contains(location))
             return false;
         locationSet.remove(location);
@@ -219,14 +219,14 @@ public class HeapHitBox implements MutableHitBox {
     }
 
     @Override
-    public boolean containsAll(Collection<? extends MovecraftLocation> c) {
+    public boolean containsAll(Collection<? extends Vector3i> c) {
         return locationSet.containsAll(c);
     }
 
     @Override
-    public boolean addAll(Collection<? extends MovecraftLocation> c) {
+    public boolean addAll(Collection<? extends Vector3i> c) {
         boolean modified = false;
-        for (MovecraftLocation location : c) {
+        for (Vector3i location : c) {
             if (add(location))
                 modified = true;
         }
@@ -236,7 +236,7 @@ public class HeapHitBox implements MutableHitBox {
     @Override
     public boolean addAll(HitBox hitBox) {
         boolean modified = false;
-        for (MovecraftLocation location : hitBox) {
+        for (Vector3i location : hitBox) {
             if (add(location))
                 modified = true;
         }
@@ -244,10 +244,10 @@ public class HeapHitBox implements MutableHitBox {
     }
 
     @Override
-    public boolean removeAll(Collection<? extends MovecraftLocation> c) {
+    public boolean removeAll(Collection<? extends Vector3i> c) {
         boolean updateBounds = false;
         boolean modified = false;
-        for(MovecraftLocation location : c){
+        for(Vector3i location : c){
             if(locationSet.remove(location)) {
                 modified = true;
             }
@@ -259,7 +259,7 @@ public class HeapHitBox implements MutableHitBox {
     public boolean removeAll(HitBox hitBox) {
         boolean updateBounds = false;
         boolean modified = false;
-        for(MovecraftLocation location : hitBox){
+        for(Vector3i location : hitBox){
             if(locationSet.remove(location)) {
                 modified = true;
             }

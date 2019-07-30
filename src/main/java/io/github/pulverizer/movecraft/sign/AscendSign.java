@@ -1,10 +1,12 @@
 package io.github.pulverizer.movecraft.sign;
 
+import com.flowpowered.math.vector.Vector3i;
 import io.github.pulverizer.movecraft.CraftState;
 import io.github.pulverizer.movecraft.MovecraftLocation;
 import io.github.pulverizer.movecraft.craft.Craft;
 import io.github.pulverizer.movecraft.craft.CraftManager;
-import io.github.pulverizer.movecraft.events.CraftDetectEvent;
+import io.github.pulverizer.movecraft.event.CraftDetectEvent;
+import org.spongepowered.api.Sponge;
 import org.spongepowered.api.block.BlockSnapshot;
 import org.spongepowered.api.block.BlockTypes;
 import org.spongepowered.api.block.tileentity.Sign;
@@ -22,14 +24,14 @@ public class AscendSign {
     @Listener
     public void onCraftDetect(CraftDetectEvent event){
         World world = event.getCraft().getWorld();
-        for(MovecraftLocation location: event.getCraft().getHitBox()){
-            BlockSnapshot block = location.toSponge(world).createSnapshot();
+        for(Vector3i location: event.getCraft().getHitBox()){
+            BlockSnapshot block = MovecraftLocation.toSponge(world, location).createSnapshot();
             if(block.getState().getType() == BlockTypes.WALL_SIGN || block.getState().getType() == BlockTypes.STANDING_SIGN){
 
-                if (!location.toSponge(world).getTileEntity().isPresent())
+                if (!MovecraftLocation.toSponge(world, location).getTileEntity().isPresent())
                     return;
 
-                Sign sign = (Sign) location.toSponge(world).getTileEntity().get();
+                Sign sign = (Sign) MovecraftLocation.toSponge(world, location).getTileEntity().get();
                 ListValue<Text> lines = sign.lines();
                 if (lines.get(0).toPlain().equalsIgnoreCase("Ascend: ON")) {
                     lines.set(0, Text.of("Ascend: OFF"));
@@ -50,13 +52,14 @@ public class AscendSign {
 
         Craft craft = CraftManager.getInstance().getCraftByPlayer(player.getUniqueId());
 
-        if (!block.getLocation().isPresent() || !block.getLocation().get().getTileEntity().isPresent())
+        if (!block.getLocation().isPresent() || !block.getLocation().get().getTileEntity().isPresent() || craft.getPilot() != player.getUniqueId())
             return;
 
         Sign sign = (Sign) block.getLocation().get().getTileEntity().get();
         ListValue<Text> lines = sign.lines();
         if (lines.get(0).toPlain().equalsIgnoreCase("Ascend: OFF")) {
-            if (craft == null || !craft.getType().getCanCruise()) {
+            if (!craft.getType().getCanCruise()) {
+                //TODO: Find a better message.
                 player.sendMessage(Text.of("You are not piloting a craft!"));
                 return;
             }
@@ -67,19 +70,19 @@ public class AscendSign {
             sign.offer(lines);
 
             craft.setCruiseDirection(Direction.UP);
-            craft.setLastCruiseUpdateTime(System.currentTimeMillis());
+            craft.setLastCruiseUpdateTick(Sponge.getServer().getRunningTimeTicks());
             craft.setState(CraftState.CRUISING);
 
-            if (!craft.getType().getMoveEntities()) {
-                CraftManager.getInstance().addReleaseTask(craft);
-            }
             return;
         }
+
         if (lines.get(0).toPlain().equalsIgnoreCase("Ascend: ON")) {
-            if (craft == null || !craft.getType().getCanCruise()) {
+            if (!craft.getType().getCanCruise()) {
+                //TODO: Find a better message.
                 player.sendMessage(Text.of("You are not piloting a craft!"));
                 return;
             }
+
             event.setCancelled(true);
             lines.set(0, Text.of("Ascend: OFF"));
             sign.offer(lines);

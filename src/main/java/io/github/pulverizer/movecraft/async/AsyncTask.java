@@ -1,24 +1,31 @@
 package io.github.pulverizer.movecraft.async;
 
 import io.github.pulverizer.movecraft.Movecraft;
+import io.github.pulverizer.movecraft.config.Settings;
 import io.github.pulverizer.movecraft.craft.Craft;
 import org.spongepowered.api.scheduler.Task;
 
 public abstract class AsyncTask {
     protected final Craft craft;
+    protected final String type;
 
-    protected AsyncTask(Craft c) {
+    protected AsyncTask(Craft c, String taskType) {
         craft = c;
+        type = taskType;
     }
 
-    public void run(Object plugin, boolean isAsync) {
+    public void run() {
 
-        if (isAsync) {
-            Task.builder().async().execute(() -> task()).submit(plugin);
-        } else {
-            Task.builder().execute(() -> task()).submit(plugin);
-        }
+        String taskName = "Movecraft - " + type + " Task - " + craft.getID();
 
+        Task.builder()
+                .async()
+                .name(taskName)
+                .execute(this::task)
+                .submit(Movecraft.getInstance());
+
+        if (Settings.Debug)
+            Movecraft.getInstance().getLogger().info(taskName);
 
     }
 
@@ -32,7 +39,7 @@ public abstract class AsyncTask {
         }
     }
 
-    protected abstract void execute();
+    protected abstract void execute() throws InterruptedException;
 
     protected Craft getCraft() {
         return craft;

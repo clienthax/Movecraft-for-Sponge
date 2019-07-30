@@ -2,11 +2,11 @@ package io.github.pulverizer.movecraft.sign;
 
 import io.github.pulverizer.movecraft.CraftState;
 import io.github.pulverizer.movecraft.Movecraft;
-import io.github.pulverizer.movecraft.MovecraftLocation;
 import io.github.pulverizer.movecraft.craft.Craft;
-import io.github.pulverizer.movecraft.craft.CraftType;
+import io.github.pulverizer.movecraft.config.CraftType;
 import io.github.pulverizer.movecraft.config.Settings;
 import io.github.pulverizer.movecraft.craft.CraftManager;
+import org.spongepowered.api.Sponge;
 import org.spongepowered.api.block.BlockSnapshot;
 import org.spongepowered.api.block.BlockTypes;
 import org.spongepowered.api.block.tileentity.Sign;
@@ -89,7 +89,7 @@ public final class CraftSign {
             }
 
             craft.setCruiseDirection(cruiseDirection);
-            craft.setLastCruiseUpdateTime(System.currentTimeMillis());
+            craft.setLastCruiseUpdateTick(Sponge.getServer().getRunningTimeTicks());
             craft.setState(CraftState.CRUISING);
 
             Task.builder()

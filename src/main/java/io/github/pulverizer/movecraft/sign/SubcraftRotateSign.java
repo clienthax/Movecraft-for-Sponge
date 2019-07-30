@@ -1,11 +1,11 @@
 package io.github.pulverizer.movecraft.sign;
 
+import com.flowpowered.math.vector.Vector3i;
 import io.github.pulverizer.movecraft.Movecraft;
-import io.github.pulverizer.movecraft.MovecraftLocation;
 import io.github.pulverizer.movecraft.Rotation;
 import io.github.pulverizer.movecraft.craft.Craft;
 import io.github.pulverizer.movecraft.craft.CraftManager;
-import io.github.pulverizer.movecraft.craft.CraftType;
+import io.github.pulverizer.movecraft.config.CraftType;
 import org.spongepowered.api.block.BlockSnapshot;
 import org.spongepowered.api.block.BlockTypes;
 import org.spongepowered.api.block.tileentity.Sign;
@@ -58,7 +58,7 @@ public final class SubcraftRotateSign {
             event.setCancelled(true);
             return;
         }
-        // translate subcraft
+        // add subcraft
         String craftTypeStr = sign.lines().get(1).toPlain();
         CraftType type = CraftManager.getInstance().getCraftTypeFromString(craftTypeStr);
         if (type == null) {
@@ -71,7 +71,7 @@ public final class SubcraftRotateSign {
             sign.offer(lines);
         }
 
-        if (!player.hasPermission("movecraft." + craftTypeStr + ".pilot") || !player.hasPermission("movecraft." + craftTypeStr + ".translate")) {
+        if (!player.hasPermission("movecraft." + craftTypeStr + ".pilot") || !player.hasPermission("movecraft." + craftTypeStr + ".add")) {
             player.sendMessage(Text.of("Insufficient Permissions"));
             event.setCancelled(true);
             return;
@@ -95,7 +95,7 @@ public final class SubcraftRotateSign {
 
         final Location<World> loc = event.getTargetBlock().getLocation().get();
         final Craft subCraft = new Craft(type, player.getUniqueId(), loc);
-        MovecraftLocation startPoint = new MovecraftLocation(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
+        Vector3i startPoint = new Vector3i(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
         rotatingPlayers.add(player.getUniqueId());
 
         Task.builder()
