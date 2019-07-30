@@ -1,5 +1,7 @@
 package io.github.pulverizer.movecraft.utils;
 
+import com.flowpowered.math.vector.Vector3i;
+import io.github.pulverizer.movecraft.Movecraft;
 import io.github.pulverizer.movecraft.MovecraftLocation;
 import io.github.pulverizer.movecraft.Rotation;
 import io.github.pulverizer.movecraft.craft.Craft;
@@ -42,30 +44,20 @@ public class MathUtils {
      * @return True if <code>location</code> is less or equal to 3 blocks from <code>craft</code>
      */
 
-    public static boolean locIsNearCraftFast(final Craft craft, final MovecraftLocation location) {
+    public static boolean locIsNearCraftFast(final Craft craft, final Vector3i location) {
         // optimized to be as fast as possible, it checks the easy ones first, then the more computationally intensive later
-        return locationNearHitBox(craft.getHitBox(), location.toSponge(craft.getW()), 3);
+        return locationNearHitBox(craft.getHitBox(), MovecraftLocation.toSponge(craft.getWorld(), location), 3);
     }
 
     /**
-     * Creates a <code>MovecraftLocation</code> representation of a bukkit <code>Location</code> object aligned to the block grid
-     * @param bukkitLocation the location to convert
-     * @return a new <code>MovecraftLocation</code> representing the given location
-     */
-
-    public static MovecraftLocation sponge2MovecraftLoc(final Location bukkitLocation) {
-        return new MovecraftLocation(bukkitLocation.getBlockX(), bukkitLocation.getBlockY(), bukkitLocation.getBlockZ());
-    }
-
-    /**
-     * Rotates a MovecraftLocation towards a supplied <code>Rotation</code>.
+     * Rotates a Vector3i towards a supplied <code>Rotation</code>.
      * The resulting MovecraftRotation is based on a center of (0,0,0).
-     * @param rotation the direction to rotate
-     * @param movecraftLocation the location to rotate
+     * @param rotation the direction to add
+     * @param vector3i the location to add
      * @return a rotated Movecraft location
      */
 
-    public static MovecraftLocation rotateVec(final Rotation rotation, final MovecraftLocation movecraftLocation) {
+    public static Vector3i rotateVec(final Rotation rotation, final Vector3i vector3i) {
         double theta;
         if (rotation == Rotation.CLOCKWISE) {
             theta = 0.5 * Math.PI;
@@ -73,10 +65,10 @@ public class MathUtils {
             theta = -1 * 0.5 * Math.PI;
         }
 
-        int x = (int) Math.round((movecraftLocation.getX() * Math.cos(theta)) + (movecraftLocation.getZ() * (-1 * Math.sin(theta))));
-        int z = (int) Math.round((movecraftLocation.getX() * Math.sin(theta)) + (movecraftLocation.getZ() * Math.cos(theta)));
+        int x = (int) Math.round((vector3i.getX() * Math.cos(theta)) + (vector3i.getZ() * (-1 * Math.sin(theta))));
+        int z = (int) Math.round((vector3i.getX() * Math.sin(theta)) + (vector3i.getZ() * Math.cos(theta)));
 
-        return new MovecraftLocation(x, movecraftLocation.getY(), z);
+        return new Vector3i(x, vector3i.getY(), z);
     }
 
     @Deprecated

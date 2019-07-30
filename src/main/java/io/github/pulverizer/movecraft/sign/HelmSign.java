@@ -59,11 +59,11 @@ public final class HelmSign {
             return;
         }
 
-        Craft craft = CraftManager.getInstance().getCraftByPlayer(player);
+        Craft craft = CraftManager.getInstance().getCraftByPlayer(player.getUniqueId());
         if (craft == null) {
             return;
         }
-        if (!player.hasPermission("movecraft." + craft.getType().getCraftName() + ".rotate")) {
+        if (!player.hasPermission("movecraft." + craft.getType().getName() + ".add")) {
             player.sendMessage(Text.of("Insufficient Permissions"));
             return;
         }
@@ -73,9 +73,9 @@ public final class HelmSign {
         }
 
         if (craft.getType().rotateAtMidpoint()) {
-            CraftManager.getInstance().getCraftByPlayer(player).rotate(rotation, craft.getHitBox().getMidPoint());
+            CraftManager.getInstance().getCraftByPlayer(player.getUniqueId()).translate(rotation, craft.getHitBox().getMidPoint(), false);
         } else {
-            CraftManager.getInstance().getCraftByPlayer(player).rotate(rotation, MathUtils.sponge2MovecraftLoc(sign.getLocation()));
+            CraftManager.getInstance().getCraftByPlayer(player.getUniqueId()).translate(rotation, sign.getLocation().getBlockPosition(), false);
         }
 
         //timeMap.put(event.getPlayer(), System.currentTimeMillis());

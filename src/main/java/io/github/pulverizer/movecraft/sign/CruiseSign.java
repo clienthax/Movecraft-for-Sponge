@@ -1,10 +1,13 @@
 package io.github.pulverizer.movecraft.sign;
 
+import com.flowpowered.math.vector.Vector3i;
+import io.github.pulverizer.movecraft.CraftState;
 import io.github.pulverizer.movecraft.MovecraftLocation;
 import io.github.pulverizer.movecraft.config.Settings;
 import io.github.pulverizer.movecraft.craft.Craft;
 import io.github.pulverizer.movecraft.craft.CraftManager;
-import io.github.pulverizer.movecraft.events.CraftDetectEvent;
+import io.github.pulverizer.movecraft.event.CraftDetectEvent;
+import org.spongepowered.api.Sponge;
 import org.spongepowered.api.block.BlockSnapshot;
 import org.spongepowered.api.block.BlockTypes;
 import org.spongepowered.api.block.tileentity.Sign;
@@ -23,9 +26,9 @@ public final class CruiseSign {
 
     @Listener
     public void onCraftDetect(CraftDetectEvent event){
-        World world = event.getCraft().getW();
-        for(MovecraftLocation location: event.getCraft().getHitBox()){
-            BlockSnapshot block = location.toSponge(world).createSnapshot();
+        World world = event.getCraft().getWorld();
+        for(Vector3i location: event.getCraft().getHitBox()){
+            BlockSnapshot block = MovecraftLocation.toSponge(world, location).createSnapshot();
             if(block.getState().getType() == BlockTypes.WALL_SIGN || block.getState().getType() == BlockTypes.STANDING_SIGN){
 
                 if (!block.getLocation().isPresent() || !block.getLocation().get().getTileEntity().isPresent())
@@ -58,13 +61,13 @@ public final class CruiseSign {
 
             event.setCancelled(true);
 
-            if (CraftManager.getInstance().getCraftByPlayer(player) == null) {
+            if (CraftManager.getInstance().getCraftByPlayer(player.getUniqueId()) == null) {
                 return;
             }
 
-            Craft c = CraftManager.getInstance().getCraftByPlayer(player);
+            Craft craft = CraftManager.getInstance().getCraftByPlayer(player.getUniqueId());
 
-            if (!c.getType().getCanCruise()) {
+            if (!craft.getType().getCanCruise() || player.getUniqueId() != craft.getPilot()) {
                 return;
             }
 
@@ -89,21 +92,20 @@ public final class CruiseSign {
             lines.set(0, Text.of("Cruise: ON"));
             sign.offer(lines);
 
-            c.setCruiseDirection(cruiseDirection);
-            c.setLastCruiseUpdate(System.currentTimeMillis());
-            c.setCruising(true);
-            if (!c.getType().getMoveEntities()) {
-                CraftManager.getInstance().addReleaseTask(c);
-            }
+            craft.setCruiseDirection(cruiseDirection);
+            craft.setLastCruiseUpdateTick(Sponge.getServer().getRunningTimeTicks());
+            craft.setState(CraftState.CRUISING);
+
             return;
         }
-        if (lines.get(0).toPlain().equalsIgnoreCase("Cruise: ON")
-                && CraftManager.getInstance().getCraftByPlayer(player) != null
-                && CraftManager.getInstance().getCraftByPlayer(player).getType().getCanCruise()) {
+
+        Craft craft = CraftManager.getInstance().getCraftByPlayer(player.getUniqueId());
+
+        if (lines.get(0).toPlain().equalsIgnoreCase("Cruise: ON") && craft != null && craft.getType().getCanCruise() && player.getUniqueId() == craft.getPilot()) {
             event.setCancelled(true);
             lines.set(0, Text.of("Cruise: OFF"));
             sign.offer(lines);
-            CraftManager.getInstance().getCraftByPlayer(player).setCruising(false);
+            CraftManager.getInstance().getCraftByPlayer(player.getUniqueId()).setState(CraftState.STOPPED);
         }
     }
 

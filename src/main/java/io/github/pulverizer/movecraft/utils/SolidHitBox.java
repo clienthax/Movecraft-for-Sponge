@@ -1,7 +1,6 @@
 package io.github.pulverizer.movecraft.utils;
 
-import io.github.pulverizer.movecraft.MovecraftLocation;
-
+import com.flowpowered.math.vector.Vector3i;
 import java.util.Collection;
 import java.util.Iterator;
 
@@ -9,7 +8,7 @@ final public class SolidHitBox implements HitBox{
     final private int minX, minY, minZ, maxX, maxY, maxZ;
 
 
-    public SolidHitBox(MovecraftLocation startBound, MovecraftLocation endBound){
+    public SolidHitBox(Vector3i startBound, Vector3i endBound){
         if(startBound.getX() < endBound.getX()){
             minX = startBound.getX();
             maxX = endBound.getX();
@@ -88,8 +87,8 @@ final public class SolidHitBox implements HitBox{
     }
 
     @Override
-    public Iterator<MovecraftLocation> iterator() {
-        return new Iterator<MovecraftLocation>() {
+    public Iterator<Vector3i> iterator() {
+        return new Iterator<Vector3i>() {
             private int lastX = minX;
             private int lastY = minY;
             private int lastZ = minZ;
@@ -99,8 +98,8 @@ final public class SolidHitBox implements HitBox{
             }
 
             @Override
-            public MovecraftLocation next() {
-                MovecraftLocation output = new MovecraftLocation(lastX,lastY,lastZ);
+            public Vector3i next() {
+                Vector3i output = new Vector3i(lastX,lastY,lastZ);
                 lastX++;
                 if (lastX > maxX){
                     lastX = minX;
@@ -116,7 +115,7 @@ final public class SolidHitBox implements HitBox{
     }
 
     @Override
-    public boolean contains(MovecraftLocation location) {
+    public boolean contains(Vector3i location) {
         return location.getX() >= minX &&
                 location.getX() <= maxX &&
                 location.getY() >= minY &&
@@ -126,8 +125,8 @@ final public class SolidHitBox implements HitBox{
     }
 
     @Override
-    public boolean containsAll(Collection<? extends MovecraftLocation> collection) {
-        for (MovecraftLocation location : collection){
+    public boolean containsAll(Collection<? extends Vector3i> collection) {
+        for (Vector3i location : collection){
             if (!this.contains(location)){
                 return false;
             }
@@ -140,11 +139,11 @@ final public class SolidHitBox implements HitBox{
             return null;
 
         return new SolidHitBox(
-                new MovecraftLocation(
+                new Vector3i(
                         Math.max(other.getMinX(), this.getMinX()),
                         Math.max(other.getMinY(), this.getMinY()),
                         Math.max(other.getMinZ(),this.getMinZ())),
-                new MovecraftLocation(
+                new Vector3i(
                         Math.min(other.getMaxX(), this.getMaxX()),
                         Math.min(other.getMaxY(), this.getMaxY()),
                         Math.min(other.getMaxZ(), this.getMaxZ()))

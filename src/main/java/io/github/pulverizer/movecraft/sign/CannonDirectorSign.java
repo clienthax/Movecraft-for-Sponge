@@ -39,8 +39,7 @@ public final class CannonDirectorSign {
         Craft foundCraft = null;
         World blockWorld = block.getLocation().get().getExtent();
         for (Craft tcraft : CraftManager.getInstance().getCraftsInWorld(blockWorld)) {
-            if (MathUtils.locationInHitbox(tcraft.getHitBox(), block.getLocation().get()) &&
-                    CraftManager.getInstance().getPlayerFromCraft(tcraft) != null) {
+            if (MathUtils.locationInHitbox(tcraft.getHitBox(), block.getLocation().get()) && !tcraft.getCrewList().isEmpty()) {
                 foundCraft = tcraft;
                 break;
             }
@@ -55,17 +54,20 @@ public final class CannonDirectorSign {
             if (player != null) {player.sendMessage(Text.of("ERROR: Cannon Director Signs not allowed on this craft!"));}
             return;
         }
-        if(event instanceof InteractBlockEvent.Primary && player == foundCraft.getCannonDirector()){
+        if(event instanceof InteractBlockEvent.Primary && player.getUniqueId() == foundCraft.getCannonDirector()){
             foundCraft.setCannonDirector(null);
             if (player != null) {player.sendMessage(Text.of("You are no longer directing the cannons of this craft."));}
             return;
         }
 
 
-        foundCraft.setCannonDirector(player);
+        foundCraft.setCannonDirector(player.getUniqueId());
         if(player != null) {player.sendMessage(Text.of("You are now directing the cannons of this craft."));}
-        if (foundCraft.getAADirector() == player)
+        if (foundCraft.getAADirector() == player.getUniqueId())
             foundCraft.setAADirector(null);
+
+        if (foundCraft.getPilot() == player.getUniqueId())
+            foundCraft.setPilot(null);
 
     }
 }

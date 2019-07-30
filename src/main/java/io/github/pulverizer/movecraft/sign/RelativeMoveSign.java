@@ -1,6 +1,9 @@
 package io.github.pulverizer.movecraft.sign;
 
+import com.flowpowered.math.vector.Vector3i;
+import io.github.pulverizer.movecraft.Rotation;
 import io.github.pulverizer.movecraft.craft.CraftManager;
+import org.spongepowered.api.Sponge;
 import org.spongepowered.api.block.BlockSnapshot;
 import org.spongepowered.api.block.BlockTypes;
 import org.spongepowered.api.block.tileentity.Sign;
@@ -33,7 +36,7 @@ public final class RelativeMoveSign {
         if (!lines.get(0).toPlain().equalsIgnoreCase(HEADER)) {
             return;
         }
-        if (CraftManager.getInstance().getCraftByPlayer(player) == null) {
+        if (CraftManager.getInstance().getCraftByPlayer(player.getUniqueId()) == null) {
             return;
         }
         String[] numbers = lines.get(1).toPlain().split(",");
@@ -48,7 +51,7 @@ public final class RelativeMoveSign {
         // positive
         // =
         // forwards
-        int maxMove = CraftManager.getInstance().getCraftByPlayer(player).getType().maxStaticMove();
+        int maxMove = CraftManager.getInstance().getCraftByPlayer(player.getUniqueId()).getType().maxStaticMove();
 
         if (dLeftRight > maxMove)
             dLeftRight = maxMove;
@@ -106,13 +109,13 @@ public final class RelativeMoveSign {
                 break;
         }
 
-        if (!player.hasPermission("movecraft." + CraftManager.getInstance().getCraftByPlayer(player).getType().getCraftName() + ".move")) {
+        if (!player.hasPermission("movecraft." + CraftManager.getInstance().getCraftByPlayer(player.getUniqueId()).getType().getName() + ".move")) {
             player.sendMessage(Text.of("Insufficient Permissions"));
             return;
         }
-        if (CraftManager.getInstance().getCraftByPlayer(player).getType().getCanStaticMove()) {
-            CraftManager.getInstance().getCraftByPlayer(player).translate(dx, dy, dz);
-            CraftManager.getInstance().getCraftByPlayer(player).setLastCruiseUpdate(System.currentTimeMillis());
+        if (CraftManager.getInstance().getCraftByPlayer(player.getUniqueId()).getType().getCanStaticMove()) {
+            CraftManager.getInstance().getCraftByPlayer(player.getUniqueId()).translate(Rotation.NONE, new Vector3i(dx, dy, dz), false);
+            CraftManager.getInstance().getCraftByPlayer(player.getUniqueId()).setLastCruiseUpdateTick(Sponge.getServer().getRunningTimeTicks());
         }
     }
 }

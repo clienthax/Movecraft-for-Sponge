@@ -1,15 +1,11 @@
 package io.github.pulverizer.movecraft.sign;
 
+import com.flowpowered.math.vector.Vector3i;
 import io.github.pulverizer.movecraft.Movecraft;
-import io.github.pulverizer.movecraft.MovecraftLocation;
 import io.github.pulverizer.movecraft.Rotation;
 import io.github.pulverizer.movecraft.craft.Craft;
 import io.github.pulverizer.movecraft.craft.CraftManager;
-import io.github.pulverizer.movecraft.craft.CraftType;
-import io.github.pulverizer.movecraft.events.CraftDetectEvent;
-import io.github.pulverizer.movecraft.events.CraftReleaseEvent;
-import io.github.pulverizer.movecraft.events.CraftRotateEvent;
-import io.github.pulverizer.movecraft.utils.MathUtils;
+import io.github.pulverizer.movecraft.config.CraftType;
 import org.spongepowered.api.block.BlockSnapshot;
 import org.spongepowered.api.block.BlockTypes;
 import org.spongepowered.api.block.tileentity.Sign;
@@ -62,10 +58,11 @@ public final class SubcraftRotateSign {
             event.setCancelled(true);
             return;
         }
-        // rotate subcraft
+        // add subcraft
         String craftTypeStr = sign.lines().get(1).toPlain();
         CraftType type = CraftManager.getInstance().getCraftTypeFromString(craftTypeStr);
         if (type == null) {
+            event.setCancelled(true);
             return;
         }
         if (lines.get(2).toPlain().equalsIgnoreCase("") && lines.get(3).toPlain().equalsIgnoreCase("")) {
@@ -74,19 +71,22 @@ public final class SubcraftRotateSign {
             sign.offer(lines);
         }
 
-        if (!player.hasPermission("movecraft." + craftTypeStr + ".pilot") || !player.hasPermission("movecraft." + craftTypeStr + ".rotate")) {
+        if (!player.hasPermission("movecraft." + craftTypeStr + ".pilot") || !player.hasPermission("movecraft." + craftTypeStr + ".add")) {
             player.sendMessage(Text.of("Insufficient Permissions"));
+            event.setCancelled(true);
             return;
         }
 
-        final Craft craft = CraftManager.getInstance().getCraftByPlayer(player);
-        if(craft!=null) {
+        final Craft craft = CraftManager.getInstance().getCraftByPlayer(player.getUniqueId());
+        if(craft != null) {
             if (!craft.isNotProcessing()) {
                 player.sendMessage(Text.of("Parent Craft is busy!"));
+                event.setCancelled(true);
                 return;
             }
             craft.setProcessing(true); // prevent the parent craft from moving or updating until the subcraft is done
 
+            //TODO: This is bad practice! Never assume anything!
             Task.builder()
                     .delayTicks(10)
                     .execute(() -> craft.setProcessing(false))
@@ -94,15 +94,14 @@ public final class SubcraftRotateSign {
         }
 
         final Location<World> loc = event.getTargetBlock().getLocation().get();
-        final Craft subCraft = new Craft(type, loc.getExtent());
-        MovecraftLocation startPoint = new MovecraftLocation(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
-        subCraft.detect(null, player, startPoint);
+        final Craft subCraft = new Craft(type, player.getUniqueId(), loc);
+        Vector3i startPoint = new Vector3i(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
         rotatingPlayers.add(player.getUniqueId());
 
         Task.builder()
                 .delayTicks(3)
                 .execute(() -> {
-                    subCraft.rotate(rotation, startPoint, true);
+                    subCraft.translate(rotation, startPoint, true);
                     Task.builder()
                             .delayTicks(3)
                             .execute(() -> {

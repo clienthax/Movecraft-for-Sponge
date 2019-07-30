@@ -32,7 +32,7 @@ public final class ReleaseSign {
         if (!lines.get(0).toPlain().equalsIgnoreCase(HEADER)) {
             return;
         }
-        Craft craft = CraftManager.getInstance().getCraftByPlayer(player);
+        Craft craft = CraftManager.getInstance().getCraftByPlayer(player.getUniqueId());
         if (craft == null) {
             return;
         }

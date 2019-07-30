@@ -1,9 +1,10 @@
 package io.github.pulverizer.movecraft.sign;
 
+import com.flowpowered.math.vector.Vector3i;
 import io.github.pulverizer.movecraft.MovecraftLocation;
 import io.github.pulverizer.movecraft.craft.Craft;
-import io.github.pulverizer.movecraft.events.CraftDetectEvent;
-import io.github.pulverizer.movecraft.events.SignTranslateEvent;
+import io.github.pulverizer.movecraft.event.CraftDetectEvent;
+import io.github.pulverizer.movecraft.event.SignTranslateEvent;
 import org.spongepowered.api.block.BlockSnapshot;
 import org.spongepowered.api.block.BlockTypes;
 import org.spongepowered.api.block.tileentity.Sign;
@@ -15,9 +16,9 @@ import org.spongepowered.api.world.World;
 public final class SpeedSign {
     @Listener
     public void onCraftDetect(CraftDetectEvent event){
-        World world = event.getCraft().getW();
-        for(MovecraftLocation location: event.getCraft().getHitBox()){
-            BlockSnapshot block = location.toSponge(world).createSnapshot();
+        World world = event.getCraft().getWorld();
+        for(Vector3i location: event.getCraft().getHitBox()){
+            BlockSnapshot block = MovecraftLocation.toSponge(world, location).createSnapshot();
             if(block.getState().getType() != BlockTypes.WALL_SIGN && block.getState().getType() != BlockTypes.STANDING_SIGN) {
                 return;
             }

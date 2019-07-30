@@ -1,6 +1,8 @@
 package io.github.pulverizer.movecraft.craft;
 
 import io.github.pulverizer.movecraft.Movecraft;
+import io.github.pulverizer.movecraft.config.CraftType;
+import org.spongepowered.api.Sponge;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.scheduler.Task;
 import org.spongepowered.api.text.Text;
@@ -14,9 +16,9 @@ import java.util.concurrent.ConcurrentMap;
 public class CraftManager implements Iterable<Craft>{
     private static CraftManager ourInstance;
     private final Set<Craft> craftList = ConcurrentHashMap.newKeySet();
-    private final ConcurrentMap<Player, Craft> craftPlayerIndex = new ConcurrentHashMap<>();
-    private final ConcurrentMap<Craft, Task> releaseEvents = new ConcurrentHashMap<>();
     private Set<CraftType> craftTypes;
+    @Deprecated
+    private final ConcurrentMap<Craft, Task> releaseEvents = new ConcurrentHashMap<>();
 
     public static void initialize(){
         ourInstance = new CraftManager();
@@ -59,29 +61,26 @@ public class CraftManager implements Iterable<Craft>{
         return craftTypes;
     }
 
-    public void initCraftTypes() {
+    public void reloadCraftTypes() {
         this.craftTypes = loadCraftTypes();
     }
 
-    public void addCraft(Craft c, Player p) {
-        this.craftList.add(c);
-        if(p!=null)
-            this.craftPlayerIndex.put(p, c);
+    public void addCraft(Craft craft) {
+        this.craftList.add(craft);
     }
 
     public void removeCraft(Craft c) {
         removeReleaseTask(c);
-        Player player = getPlayerFromCraft(c);
-        if (player!=null)
-            this.craftPlayerIndex.remove(player);
+        Player player = Sponge.getServer().getPlayer(c.getPilot()).orElse(null);
+
         // if its sinking, just remove the craft without notifying or checking
         this.craftList.remove(c);
         if(!c.getHitBox().isEmpty()) {
             if (player != null) {
                 player.sendMessage(Text.of("You have released your craft."));
-                Movecraft.getInstance().getLogger().info(String.format(c.getNotificationPlayer().getName() + " has released a craft of type %s with size %d at coordinates : %d x , %d z", c.getType().getCraftName(), c.getHitBox().size(), c.getHitBox().getMinX(), c.getHitBox().getMinZ()));
+                Movecraft.getInstance().getLogger().info(String.format(player.getName() + " has released a craft of type %s with size %d at coordinates : %d x , %d z", c.getType().getName(), c.getHitBox().size(), c.getHitBox().getMinX(), c.getHitBox().getMinZ()));
             } else {
-                Movecraft.getInstance().getLogger().info(String.format("NULL Player has released a craft of type %s with size %d at coordinates : %d x , %d z", c.getType().getCraftName(), c.getHitBox().size(), c.getHitBox().getMinX(), c.getHitBox().getMinZ()));
+                Movecraft.getInstance().getLogger().info(String.format("NULL Player has released a craft of type %s with size %d at coordinates : %d x , %d z", c.getType().getName(), c.getHitBox().size(), c.getHitBox().getMinX(), c.getHitBox().getMinZ()));
             }
         }else{
             Movecraft.getInstance().getLogger().warn("Releasing empty craft!");
@@ -90,75 +89,61 @@ public class CraftManager implements Iterable<Craft>{
 
     public void forceRemoveCraft(Craft c) {
         this.craftList.remove(c);
-        if (getPlayerFromCraft(c) != null)
-            this.craftPlayerIndex.remove(getPlayerFromCraft(c));
     }
 
-    public Set<Craft> getCraftsInWorld(World w) {
+    public Set<Craft> getCraftsInWorld(World world) {
         Set<Craft> crafts = new HashSet<>();
         for(Craft c : this.craftList){
-            if(c.getW() == w)
+            if(c.getWorld() == world)
                 crafts.add(c);
         }
         return crafts;
     }
 
-    public Craft getCraftByPlayer(Player p) {
-        if(p == null)
+    public Craft getCraftByPlayer(UUID player) {
+
+        if (!Sponge.getServer().getPlayer(player).isPresent())
             return null;
-        return craftPlayerIndex.get(p);
-    }
 
-
-    public Craft getCraftByPlayerName(String name) {
-        Set<Player> players = craftPlayerIndex.keySet();
-        for (Player player : players) {
-            if (player != null && player.getName().equals(name)) {
-                return this.craftPlayerIndex.get(player);
-            }
+        for (Craft craft : craftList) {
+            if (craft.isCrewMember(player))
+                return craft;
         }
+
         return null;
     }
 
-    public void removeCraftByPlayer(Player player){
+    public void removeCraftByPlayer(UUID player){
         List<Craft> crafts = new ArrayList<>();
         for(Craft c : craftList){
-            if(c.getNotificationPlayer() != null && c.getNotificationPlayer().equals(player)){
+            if(c.getPilot() != null && c.getPilot().equals(player)){
                 releaseEvents.remove(c);
                 crafts.add(c);
             }
         }
-        craftPlayerIndex.remove(player);
         craftList.removeAll(crafts);
     }
 
-    public Player getPlayerFromCraft(Craft c) {
-        for (Map.Entry<Player, Craft> playerCraftEntry : craftPlayerIndex.entrySet()) {
-            if (playerCraftEntry.getValue() == c) {
-                return playerCraftEntry.getKey();
-            }
-        }
-        return null;
-    }
-
+    //TODO: Replace with Craft.removeCrew()
     public void removePlayerFromCraft(Craft c) {
-        if (getPlayerFromCraft(c) == null) {
+        if (c.getCrewList().isEmpty()) {
             return;
         }
         removeReleaseTask(c);
-        Player p = getPlayerFromCraft(c);
-        p.sendMessage(Text.of("You have released your craft."));
-        Movecraft.getInstance().getLogger().info(String.format(p.getName() + " has released a craft of type %s with size %d at coordinates : %d x , %d z", c.getType().getCraftName(), c.getHitBox().size(), c.getHitBox().getMinX(), c.getHitBox().getMinZ()));
-        c.setNotificationPlayer(null);
-        craftPlayerIndex.remove(p);
+        c.getCrewList().forEach(playerUUID ->
+                Sponge.getServer().getPlayer(playerUUID).ifPresent(player ->
+                        player.sendMessage(Text.of("You have released your craft."))));
+
+        Movecraft.getInstance().getLogger().info(String.format(Sponge.getServer().getPlayer(c.getPilot()).orElse(null) + " has released a craft of type %s with size %d at coordinates : %d x , %d z", c.getType().getName(), c.getHitBox().size(), c.getHitBox().getMinX(), c.getHitBox().getMinZ()));
     }
 
 
     @Deprecated
     public final void addReleaseTask(final Craft c) {
-        Player p = getPlayerFromCraft(c);
-        if (p!=null) {
-            p.sendMessage(Text.of("You have released your craft."));
+        if (!c.getCrewList().isEmpty()) {
+            c.getCrewList().forEach(playerUUID ->
+                    Sponge.getServer().getPlayer(playerUUID).ifPresent(player ->
+                            player.sendMessage(Text.of("You have released your craft."))));
         }
 
         Task releaseTask = Task.builder().delayTicks(20*15).execute(() -> removeCraft(c)).submit(Movecraft.getInstance());
@@ -168,8 +153,7 @@ public class CraftManager implements Iterable<Craft>{
 
     @Deprecated
     public final void removeReleaseTask(final Craft c) {
-        Player p = getPlayerFromCraft(c);
-        if (p != null) {
+        if (!c.getCrewList().isEmpty()) {
             if (releaseEvents.containsKey(c)) {
                 if (releaseEvents.get(c) != null)
                     releaseEvents.get(c).cancel();
@@ -178,20 +162,10 @@ public class CraftManager implements Iterable<Craft>{
         }
     }
 
-    @Deprecated
-    public boolean isReleasing(final Craft craft){
-        return releaseEvents.containsKey(craft);
-    }
-
-    @Deprecated
-    public Set<Craft> getCraftList(){
-        return Collections.unmodifiableSet(craftList);
-    }
-
-    public CraftType getCraftTypeFromString(String s) {
-        for (CraftType t : craftTypes) {
-            if (s.equalsIgnoreCase(t.getCraftName())) {
-                return t;
+    public CraftType getCraftTypeFromString(String string) {
+        for (CraftType craftType : craftTypes) {
+            if (string.equalsIgnoreCase(craftType.getName())) {
+                return craftType;
             }
         }
         return null;

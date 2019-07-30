@@ -1,10 +1,12 @@
 package io.github.pulverizer.movecraft.sign;
 
+import com.flowpowered.math.vector.Vector3i;
+import io.github.pulverizer.movecraft.CraftState;
 import io.github.pulverizer.movecraft.MovecraftLocation;
 import io.github.pulverizer.movecraft.craft.Craft;
 import io.github.pulverizer.movecraft.craft.CraftManager;
-import io.github.pulverizer.movecraft.events.CraftDetectEvent;
-import io.github.pulverizer.movecraft.events.SignTranslateEvent;
+import io.github.pulverizer.movecraft.event.CraftDetectEvent;
+import io.github.pulverizer.movecraft.event.SignTranslateEvent;
 import io.github.pulverizer.movecraft.config.Settings;
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.block.BlockSnapshot;
@@ -102,7 +104,7 @@ public class CrewSign {
             player.sendMessage(Text.of("You don't own this crew sign!"));
             return;
         }
-        if(CraftManager.getInstance().getCraftByPlayer(player) != null){
+        if(CraftManager.getInstance().getCraftByPlayer(player.getUniqueId()) != null){
             player.sendMessage(Text.of("You can't set your priority crew sign to a piloted craft."));
             return;
         }
@@ -126,11 +128,11 @@ public class CrewSign {
             return;
 
         Player player = event.getTargetEntity();
-        Craft craft = CraftManager.getInstance().getCraftByPlayer(player);
+        Craft craft = CraftManager.getInstance().getCraftByPlayer(player.getUniqueId());
         if (craft == null) {
             return;
         }
-        if(craft.getSinking() || craft.getDisabled() || !craft.getCrewSigns().containsKey(player.getUniqueId())) {
+        if(craft.getState() == CraftState.SINKING || craft.getState() == CraftState.DISABLED || !craft.getCrewSigns().containsKey(player.getUniqueId())) {
             return;
         }
         player.sendMessage(Text.of("Respawning at crew bed!"));
@@ -141,9 +143,10 @@ public class CrewSign {
 
     @Listener
     public void onCraftDetect(CraftDetectEvent event){
-        World world = event.getCraft().getW();
-        for(MovecraftLocation location: event.getCraft().getHitBox()){
-            BlockSnapshot block = location.toSponge(world).createSnapshot();
+
+        World world = event.getCraft().getWorld();
+        for(Vector3i location: event.getCraft().getHitBox()){
+            BlockSnapshot block = MovecraftLocation.toSponge(world, location).createSnapshot();
             if (block.getState().getType() != BlockTypes.WALL_SIGN && block.getState().getType() != BlockTypes.STANDING_SIGN) {
                 continue;
             }

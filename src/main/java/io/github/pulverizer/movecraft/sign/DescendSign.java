@@ -1,9 +1,12 @@
 package io.github.pulverizer.movecraft.sign;
 
+import com.flowpowered.math.vector.Vector3i;
+import io.github.pulverizer.movecraft.CraftState;
 import io.github.pulverizer.movecraft.MovecraftLocation;
 import io.github.pulverizer.movecraft.craft.Craft;
 import io.github.pulverizer.movecraft.craft.CraftManager;
-import io.github.pulverizer.movecraft.events.CraftDetectEvent;
+import io.github.pulverizer.movecraft.event.CraftDetectEvent;
+import org.spongepowered.api.Sponge;
 import org.spongepowered.api.block.BlockSnapshot;
 import org.spongepowered.api.block.BlockTypes;
 import org.spongepowered.api.block.tileentity.Sign;
@@ -20,9 +23,9 @@ public final class DescendSign {
 
     @Listener
     public void onCraftDetect(CraftDetectEvent event){
-        World world = event.getCraft().getW();
-        for(MovecraftLocation location: event.getCraft().getHitBox()){
-            BlockSnapshot block = location.toSponge(world).createSnapshot();
+        World world = event.getCraft().getWorld();
+        for(Vector3i location: event.getCraft().getHitBox()){
+            BlockSnapshot block = MovecraftLocation.toSponge(world, location).createSnapshot();
             if(block.getState().getType() == BlockTypes.WALL_SIGN || block.getState().getType() == BlockTypes.STANDING_SIGN){
 
                 if (!block.getLocation().isPresent() || !block.getLocation().get().getTileEntity().isPresent())
@@ -53,34 +56,31 @@ public final class DescendSign {
         ListValue<Text> lines = sign.lines();
 
         if (lines.get(0).toPlain().equalsIgnoreCase("Descend: OFF")) {
-            if (CraftManager.getInstance().getCraftByPlayer(player) == null) {
+            if (CraftManager.getInstance().getCraftByPlayer(player.getUniqueId()) == null) {
                 return;
             }
 
-            Craft c = CraftManager.getInstance().getCraftByPlayer(player);
-            if (!c.getType().getCanCruise()) {
+            Craft craft = CraftManager.getInstance().getCraftByPlayer(player.getUniqueId());
+            if (!craft.getType().getCanCruise()) {
                 return;
             }
 
-            //c.resetSigns(true, true, false);
+            //craft.resetSigns(true, true, false);
             lines.set(0, Text.of("Descend: ON"));
             sign.offer(lines);
 
-            c.setCruiseDirection(Direction.DOWN);
-            c.setLastCruiseUpdate(System.currentTimeMillis());
-            c.setCruising(true);
+            craft.setCruiseDirection(Direction.DOWN);
+            craft.setLastCruiseUpdateTick(Sponge.getServer().getRunningTimeTicks());
+            craft.setState(CraftState.CRUISING);
 
-            if (!c.getType().getMoveEntities()) {
-                CraftManager.getInstance().addReleaseTask(c);
-            }
             return;
         }
         if (lines.get(0).toPlain().equalsIgnoreCase("Descend: ON")) {
-            Craft c = CraftManager.getInstance().getCraftByPlayer(player);
-            if (c != null && c.getType().getCanCruise()) {
+            Craft craft = CraftManager.getInstance().getCraftByPlayer(player.getUniqueId());
+            if (craft != null && craft.getType().getCanCruise()) {
                 lines.set(0, Text.of("Descend: OFF"));
                 sign.offer(lines);
-                c.setCruising(false);
+                craft.setState(CraftState.STOPPED);
             }
         }
     }

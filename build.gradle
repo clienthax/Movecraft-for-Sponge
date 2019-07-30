@@ -3,7 +3,7 @@ plugins {
 }
 
 group = 'io.github.pulverizer.movecraft'
-version = '0.0.1'
+version = '0.1.0'
 description = 'Movecraft for Sponge'
 
 dependencies {
@@ -13,7 +13,7 @@ dependencies {
 task endBuildTask(type: Copy) {
     from "build/libs"
     //into "C:/Games/MultiMC/instances/Sponge 1.12/.minecraft/mods/plugins"
-    into "C:/Users/berna/Downloads/Sponge Server/mods/plugins"
+    into "C:/Users/berna/Downloads/Sponge Server 2768/mods/plugins"
 }
 
 build.finalizedBy(endBuildTask)

@@ -1,5 +1,7 @@
 package io.github.pulverizer.movecraft.sign;
 
+import com.flowpowered.math.vector.Vector3i;
+import io.github.pulverizer.movecraft.Rotation;
 import io.github.pulverizer.movecraft.craft.CraftManager;
 import org.spongepowered.api.block.BlockSnapshot;
 import org.spongepowered.api.block.BlockTypes;
@@ -28,7 +30,7 @@ public final class TeleportSign {
             return;
         }
 
-        if (CraftManager.getInstance().getCraftByPlayer(player) == null) {
+        if (CraftManager.getInstance().getCraftByPlayer(player.getUniqueId()) == null) {
             return;
         }
         String[] numbers = sign.lines().get(1).toPlain().split(",");
@@ -36,15 +38,15 @@ public final class TeleportSign {
         int tY = Integer.parseInt(numbers[1]);
         int tZ = Integer.parseInt(numbers[2]);
 
-        if (player != null && !player.hasPermission("movecraft." + CraftManager.getInstance().getCraftByPlayer(player).getType().getCraftName() + ".move")) {
+        if (player != null && !player.hasPermission("movecraft." + CraftManager.getInstance().getCraftByPlayer(player.getUniqueId()).getType().getName() + ".move")) {
             player.sendMessage(Text.of("Insufficient Permissions"));
             return;
         }
-        if (CraftManager.getInstance().getCraftByPlayer(player).getType().getCanTeleport()) {
+        if (CraftManager.getInstance().getCraftByPlayer(player.getUniqueId()).getType().getCanTeleport()) {
             int dx = tX - block.getLocation().get().getBlockPosition().getX();
             int dy = tY - block.getLocation().get().getBlockPosition().getY();
             int dz = tZ - block.getLocation().get().getBlockPosition().getZ();
-            CraftManager.getInstance().getCraftByPlayer(player).translate(dx, dy, dz);
+            CraftManager.getInstance().getCraftByPlayer(player.getUniqueId()).translate(Rotation.NONE, new Vector3i(dx, dy, dz), false);
         }
     }
 }

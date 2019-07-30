@@ -1,6 +1,6 @@
 package io.github.pulverizer.movecraft.utils;
 
-import io.github.pulverizer.movecraft.MovecraftLocation;
+import com.flowpowered.math.vector.Vector3i;
 
 import java.util.*;
 
@@ -24,10 +24,10 @@ public class CollectionUtils {
         return returnList;
     }
 
-    public static Collection<MovecraftLocation> filter(final HitBox collection, final Collection<MovecraftLocation> filter){
-        final Collection<MovecraftLocation> returnList = new HashSet<>();
-        final HashSet<MovecraftLocation> filterSet = new HashSet<>(filter);
-        for(MovecraftLocation object : collection){
+    public static Collection<Vector3i> filter(final HitBox collection, final Collection<Vector3i> filter){
+        final Collection<Vector3i> returnList = new HashSet<>();
+        final HashSet<Vector3i> filterSet = new HashSet<>(filter);
+        for(Vector3i object : collection){
             if(!filterSet.contains(object)){
                 returnList.add(object);
             }
@@ -37,7 +37,7 @@ public class CollectionUtils {
 
     public static HitBox filter(final HitBox collection, final HitBox filter){
         final MutableHitBox returnList = new HashHitBox();
-        for(MovecraftLocation object : collection){
+        for(Vector3i object : collection){
             if(!filter.contains(object)){
                 returnList.add(object);
             }
@@ -45,13 +45,13 @@ public class CollectionUtils {
         return returnList;
     }
 
-    private final static MovecraftLocation[] SHIFTS = {
-            new MovecraftLocation(0, 0, 1),
-            new MovecraftLocation(0, 1, 0),
-            new MovecraftLocation(1, 0 ,0),
-            new MovecraftLocation(0, 0, -1),
-            new MovecraftLocation(0, -1, 0),
-            new MovecraftLocation(-1, 0, 0)};
+    private final static Vector3i[] SHIFTS = {
+            new Vector3i(0, 0, 1),
+            new Vector3i(0, 1, 0),
+            new Vector3i(1, 0 ,0),
+            new Vector3i(0, 0, -1),
+            new Vector3i(0, -1, 0),
+            new Vector3i(-1, 0, 0)};
 
     /**
      * Finds the axial neighbors to a location. Neighbors are defined as locations that exist within one meter of a given location.
@@ -59,12 +59,12 @@ public class CollectionUtils {
      * @param location the location to search for neighbors
      * @return an iterable set of neighbors to the given location
      */
-    public static Iterable<MovecraftLocation> neighbors(HitBox hitbox, MovecraftLocation location){
+    public static Iterable<Vector3i> neighbors(HitBox hitbox, Vector3i location){
         if(hitbox.isEmpty()){
             return Collections.emptyList();
         }
-        final List<MovecraftLocation> neighbors = new ArrayList<>(6);
-        for(MovecraftLocation test : SHIFTS){
+        final List<Vector3i> neighbors = new ArrayList<>(6);
+        for(Vector3i test : SHIFTS){
             if(hitbox.contains(location.add(test))){
                 neighbors.add(location.add(test));
             }

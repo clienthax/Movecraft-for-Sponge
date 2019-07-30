@@ -1,11 +1,12 @@
 package io.github.pulverizer.movecraft.sign;
 
+import io.github.pulverizer.movecraft.CraftState;
 import io.github.pulverizer.movecraft.Movecraft;
-import io.github.pulverizer.movecraft.MovecraftLocation;
 import io.github.pulverizer.movecraft.craft.Craft;
-import io.github.pulverizer.movecraft.craft.CraftType;
+import io.github.pulverizer.movecraft.config.CraftType;
 import io.github.pulverizer.movecraft.config.Settings;
 import io.github.pulverizer.movecraft.craft.CraftManager;
+import org.spongepowered.api.Sponge;
 import org.spongepowered.api.block.BlockSnapshot;
 import org.spongepowered.api.block.BlockTypes;
 import org.spongepowered.api.block.tileentity.Sign;
@@ -66,11 +67,9 @@ public final class CraftSign {
         }
         // Attempt to run detection
         Location<World> loc = block.getLocation().get();
-        MovecraftLocation startPoint = new MovecraftLocation(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
-        final Craft c = new Craft(type, loc.getExtent());
 
-        if (c.getType().getCruiseOnPilot()) {
-            c.detect(null, player, startPoint);
+        if (type.getCruiseOnPilot()) {
+            final Craft craft = new Craft(type, player.getUniqueId(), loc);
 
             //get Cruise Direction
             Direction cruiseDirection = block.get(Keys.DIRECTION).get().getOpposite();
@@ -89,23 +88,23 @@ public final class CraftSign {
                 }
             }
 
-            c.setCruiseDirection(cruiseDirection);
-            c.setLastCruiseUpdate(System.currentTimeMillis());
-            c.setCruising(true);
+            craft.setCruiseDirection(cruiseDirection);
+            craft.setLastCruiseUpdateTick(Sponge.getServer().getRunningTimeTicks());
+            craft.setState(CraftState.CRUISING);
 
             Task.builder()
-                    .execute(() -> CraftManager.getInstance().removeCraft(c))
+                    .execute(() -> CraftManager.getInstance().removeCraft(craft))
                     .delayTicks(20*15)
                     .submit(Movecraft.getInstance());
 
         } else {
-            if (CraftManager.getInstance().getCraftByPlayer(player) == null) {
-                c.detect(player, player, startPoint);
+            if (CraftManager.getInstance().getCraftByPlayer(player.getUniqueId()) == null) {
+                final Craft craft = new Craft(type, player.getUniqueId(), loc);
             } else {
-                Craft oldCraft = CraftManager.getInstance().getCraftByPlayer(player);
+                Craft oldCraft = CraftManager.getInstance().getCraftByPlayer(player.getUniqueId());
                 if (oldCraft.isNotProcessing()) {
                     CraftManager.getInstance().removeCraft(oldCraft);
-                    c.detect(player, player, startPoint);
+                    final Craft craft = new Craft(type, player.getUniqueId(), loc);
                 }
             }
         }
