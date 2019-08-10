@@ -2,15 +2,14 @@ package io.github.pulverizer.movecraft.async;
 
 import com.flowpowered.math.vector.Vector3d;
 import com.flowpowered.math.vector.Vector3i;
-import io.github.pulverizer.movecraft.CraftState;
+import io.github.pulverizer.movecraft.enums.CraftState;
 import io.github.pulverizer.movecraft.Movecraft;
 import io.github.pulverizer.movecraft.MovecraftLocation;
-import io.github.pulverizer.movecraft.Rotation;
+import io.github.pulverizer.movecraft.enums.Rotation;
 import io.github.pulverizer.movecraft.craft.Craft;
 import io.github.pulverizer.movecraft.event.CraftRotateEvent;
 import io.github.pulverizer.movecraft.utils.*;
 import io.github.pulverizer.movecraft.utils.HashHitBox;
-import io.github.pulverizer.movecraft.async.AsyncTask;
 import io.github.pulverizer.movecraft.config.Settings;
 import io.github.pulverizer.movecraft.craft.CraftManager;
 import io.github.pulverizer.movecraft.mapUpdater.update.CraftRotateCommand;

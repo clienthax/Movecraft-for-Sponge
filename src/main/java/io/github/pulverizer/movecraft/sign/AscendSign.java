@@ -1,7 +1,7 @@
 package io.github.pulverizer.movecraft.sign;
 
 import com.flowpowered.math.vector.Vector3i;
-import io.github.pulverizer.movecraft.CraftState;
+import io.github.pulverizer.movecraft.enums.CraftState;
 import io.github.pulverizer.movecraft.MovecraftLocation;
 import io.github.pulverizer.movecraft.craft.Craft;
 import io.github.pulverizer.movecraft.craft.CraftManager;
@@ -41,9 +41,7 @@ public class AscendSign {
         }
     }
 
-
-    @Listener
-    public void onSignClickEvent(InteractBlockEvent.Secondary.MainHand event, @Root Player player){
+    public static void onSignClick(InteractBlockEvent.Secondary.MainHand event, Player player) {
 
         BlockSnapshot block = event.getTargetBlock();
         if (block.getState().getType() != BlockTypes.STANDING_SIGN && block.getState().getType() != BlockTypes.WALL_SIGN){
@@ -52,7 +50,7 @@ public class AscendSign {
 
         Craft craft = CraftManager.getInstance().getCraftByPlayer(player.getUniqueId());
 
-        if (!block.getLocation().isPresent() || !block.getLocation().get().getTileEntity().isPresent() || craft.getPilot() != player.getUniqueId())
+        if (!block.getLocation().isPresent() || !block.getLocation().get().getTileEntity().isPresent() || craft == null || craft.getPilot() != player.getUniqueId())
             return;
 
         Sign sign = (Sign) block.getLocation().get().getTileEntity().get();

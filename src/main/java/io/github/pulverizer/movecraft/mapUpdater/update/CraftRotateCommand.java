@@ -5,6 +5,8 @@ import io.github.pulverizer.movecraft.*;
 import io.github.pulverizer.movecraft.config.Settings;
 import io.github.pulverizer.movecraft.craft.Craft;
 import io.github.pulverizer.movecraft.craft.CraftManager;
+import io.github.pulverizer.movecraft.enums.CraftState;
+import io.github.pulverizer.movecraft.enums.Rotation;
 import io.github.pulverizer.movecraft.event.SignTranslateEvent;
 import io.github.pulverizer.movecraft.utils.*;
 import org.slf4j.Logger;

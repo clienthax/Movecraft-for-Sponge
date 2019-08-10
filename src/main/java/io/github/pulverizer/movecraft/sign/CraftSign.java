@@ -1,6 +1,6 @@
 package io.github.pulverizer.movecraft.sign;
 
-import io.github.pulverizer.movecraft.CraftState;
+import io.github.pulverizer.movecraft.enums.CraftState;
 import io.github.pulverizer.movecraft.Movecraft;
 import io.github.pulverizer.movecraft.craft.Craft;
 import io.github.pulverizer.movecraft.config.CraftType;
@@ -16,6 +16,7 @@ import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.event.Listener;
 import org.spongepowered.api.event.block.InteractBlockEvent;
 import org.spongepowered.api.event.block.tileentity.ChangeSignEvent;
+import org.spongepowered.api.event.filter.Getter;
 import org.spongepowered.api.event.filter.cause.Root;
 import org.spongepowered.api.scheduler.Task;
 import org.spongepowered.api.text.Text;
@@ -43,9 +44,8 @@ public final class CraftSign {
     }
 
     @Listener
-    public final void onSignClick(InteractBlockEvent.Secondary.MainHand event, @Root Player player) {
+    public final void onSignClick(InteractBlockEvent.Secondary.MainHand event, @Root Player player, @Getter("getTargetBlock") BlockSnapshot block) {
 
-        BlockSnapshot block = event.getTargetBlock();
         if (block.getState().getType() != BlockTypes.STANDING_SIGN && block.getState().getType() != BlockTypes.WALL_SIGN) {
             return;
         }

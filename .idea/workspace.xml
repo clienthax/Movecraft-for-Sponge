@@ -58,54 +58,6 @@
       </list>
     </option>
   </component>
-  <component name="FindInProjectRecents">
-    <findStrings>
-      <find>doUpt</find>
-      <find>updates</find>
-      <find>Have I failed yet?</find>
-      <find>getAA</find>
-      <find>getPilot</find>
-      <find>we got</find>
-      <find>detection</find>
-      <find>subc</find>
-      <find>crewsign</find>
-      <find>gettype</find>
-      <find>pilottime</find>
-      <find>addcr</find>
-      <find>hitbox</find>
-      <find>setw</find>
-      <find>state</find>
-      <find>process</find>
-      <find>getha</find>
-      <find>fuel</find>
-      <find>getFuelI</find>
-      <find>lastche</find>
-      <find>getCraftLis</find>
-      <find>c.getOriginalPilot()</find>
-      <find>toS</find>
-      <find>dz</find>
-      <find>fail(</find>
-      <find>minSize</find>
-      <find>data.getMinX()</find>
-      <find>setMinX</find>
-      <find>getCraft()</find>
-      <find>com.flowpowered.math.vector.</find>
-    </findStrings>
-    <replaceStrings>
-      <replace />
-      <replace>/</replace>
-      <replace>event.getText().offer(</replace>
-      <replace>event.getText().set(</replace>
-      <replace>set(</replace>
-      <replace>super.c.getOriginalPilot()</replace>
-      <replace>craft.getOriginalPilot()</replace>
-      <replace>moveVector.getZ()</replace>
-      <replace>craft.getType().getMinSize()</replace>
-      <replace>minX</replace>
-      <replace>minZ</replace>
-      <replace>craft</replace>
-    </replaceStrings>
-  </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>

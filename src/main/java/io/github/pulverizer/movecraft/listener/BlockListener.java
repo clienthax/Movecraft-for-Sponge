@@ -1,16 +1,20 @@
 package io.github.pulverizer.movecraft.listener;
 
-import com.flowpowered.math.vector.Vector3i;
-import io.github.pulverizer.movecraft.CraftState;
 import io.github.pulverizer.movecraft.Movecraft;
-import io.github.pulverizer.movecraft.utils.MathUtils;
-import io.github.pulverizer.movecraft.craft.Craft;
 import io.github.pulverizer.movecraft.config.Settings;
+import io.github.pulverizer.movecraft.craft.Craft;
 import io.github.pulverizer.movecraft.craft.CraftManager;
+import io.github.pulverizer.movecraft.enums.CraftState;
+import io.github.pulverizer.movecraft.utils.MathUtils;
+import org.spongepowered.api.Sponge;
 import org.spongepowered.api.block.BlockSnapshot;
 import org.spongepowered.api.block.BlockTypes;
 import org.spongepowered.api.data.Transaction;
+import org.spongepowered.api.data.key.Keys;
+import org.spongepowered.api.data.property.block.MatterProperty;
+import org.spongepowered.api.entity.Entity;
 import org.spongepowered.api.entity.explosive.PrimedTNT;
+import org.spongepowered.api.entity.living.monster.Creeper;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.event.Listener;
 import org.spongepowered.api.event.block.ChangeBlockEvent;
@@ -18,10 +22,12 @@ import org.spongepowered.api.event.filter.cause.Root;
 import org.spongepowered.api.event.world.ExplosionEvent;
 import org.spongepowered.api.scheduler.Task;
 import org.spongepowered.api.text.Text;
+import org.spongepowered.api.util.AABB;
 import org.spongepowered.api.util.Direction;
 import org.spongepowered.api.world.BlockChangeFlags;
 import org.spongepowered.api.world.Location;
 import org.spongepowered.api.world.World;
+import org.spongepowered.api.world.explosion.Explosion;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -33,6 +39,8 @@ import static org.spongepowered.api.event.Order.LAST;
 
 public class BlockListener {
 
+    private HashSet<PrimedTNT> tntControlList = new HashSet<>();
+    private int tntControlTimer = 0;
     private long lastDamagesUpdate = 0;
 
     @Listener(order = LAST)
@@ -77,8 +85,8 @@ public class BlockListener {
         if (block.getState().getType() != BlockTypes.WATER && block.getState().getType() != BlockTypes.LAVA)
             return;
 
-        for (Craft tcraft : CraftManager.getInstance().getCraftsInWorld(block.getLocation().get().getExtent())) {
-            if ((!tcraft.isNotProcessing()) && MathUtils.locIsNearCraftFast(tcraft, block.getLocation().get().getBlockPosition())) {
+        for (Craft craft : CraftManager.getInstance().getCraftsInWorld(block.getLocation().get().getExtent())) {
+            if ((!craft.isNotProcessing()) && MathUtils.locIsNearCraftFast(craft, block.getLocation().get().getBlockPosition())) {
                 event.setCancelled(true);
                 return;
             }
@@ -123,7 +131,59 @@ public class BlockListener {
     }*/
 
     @Listener
+    public void tntBlastCondenser(ExplosionEvent.Pre event) {
+
+        if (!(event.getSource() instanceof PrimedTNT))
+            return;
+
+        if (tntControlTimer < Sponge.getServer().getRunningTimeTicks()) {
+            tntControlTimer = Sponge.getServer().getRunningTimeTicks();
+            tntControlList.clear();
+        }
+
+        PrimedTNT eventTNT = (PrimedTNT) event.getSource();
+        Location<World> tntLoc = eventTNT.getLocation();
+
+        if (tntControlList.contains(eventTNT)) {
+            //event.setCancelled(true);
+            //eventTNT.remove();
+            return;
+        }
+
+        int tntFound = 1;
+
+        for (Entity entity : event.getTargetWorld().getIntersectingEntities(new AABB(tntLoc.getPosition().sub(20, 20, 20), tntLoc.getPosition().add(20, 20, 20)))) {
+
+            if (!(entity instanceof PrimedTNT))
+                continue;
+
+            PrimedTNT tnt = (PrimedTNT) entity;
+
+            if (tnt.getFuseData().ticksRemaining().get() > eventTNT.getFuseData().ticksRemaining().get() + 1 || tnt.equals(eventTNT))
+                continue;
+
+            //tnt.remove();
+            tntControlList.add(tnt);
+            tntFound++;
+        }
+
+        float explosionPower = tntFound * 4;
+
+        if (explosionPower > 4) {
+            Movecraft.getInstance().getLogger().info("BOOM: " + explosionPower);
+
+            Explosion explosion = Explosion.builder()
+                    .from(event.getExplosion())
+                    .radius(explosionPower)
+                    .build();
+
+            event.setExplosion(explosion);
+        }
+    }
+
+    @Listener
     public void explodeEvent(ExplosionEvent.Detonate event) {
+
         // Remove any blocks from the list that were adjacent to water, to prevent spillage
         if (!Settings.DisableSpillProtection) {
 
@@ -185,14 +245,15 @@ public class BlockListener {
 
 
 
-                    //TODO: Is broken in API. Flowing Water should not == BlockTypes.WATER
+                    //TODO: Can't seem to get Fluid Level???
                     for (Location<World> testLoc : blockList) {
 
-                        if (testLoc.getBlockType() == BlockTypes.WATER || testLoc.getBlockType() == BlockTypes.LAVA) {
-                            //testLoc.restoreSnapshot(BlockSnapshot.builder().blockState(BlockTypes.AIR.getDefaultState()).position(testLoc.getBlockPosition()).world(testLoc.getExtent().getProperties()).build(), true, BlockChangeFlags.ALL);
-                        //}
+                        if (testLoc.getProperty(MatterProperty.class).get().getValue() == MatterProperty.Matter.LIQUID && testLoc.getBlock().get(Keys.FLUID_LEVEL).isPresent()) {// && testLoc.get(Keys.FLUID_LEVEL).get() == 1) {
+                            Movecraft.getInstance().getLogger().info("Fluid Level: " + testLoc.getBlock().get(Keys.FLUID_LEVEL).get());
+                            testLoc.restoreSnapshot(BlockTypes.AIR.getDefaultState().snapshotFor(testLoc), true, BlockChangeFlags.ALL);
+                        }
 
-                        //if (testLoc.getBlockType() == BlockTypes.FLOWING_WATER || testLoc.getBlockType() == BlockTypes.FLOWING_LAVA) {
+                        if (testLoc.getProperty(MatterProperty.class).isPresent() && testLoc.getProperty(MatterProperty.class).get().getValue() == MatterProperty.Matter.LIQUID) {
                             event.getAffectedLocations().remove(affectedLocation);
                         }
                     }
@@ -226,7 +287,7 @@ public class BlockListener {
 
                 // then remove it
                 Task.builder()
-                        .delayTicks(65)
+                        .delayTicks(105)
                         .execute(() -> finalisedPlayer.resetBlockChange(location.getBlockPosition()))
                         .submit(Movecraft.getInstance());
             }

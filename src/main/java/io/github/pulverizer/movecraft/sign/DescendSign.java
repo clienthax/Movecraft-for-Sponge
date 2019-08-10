@@ -1,7 +1,7 @@
 package io.github.pulverizer.movecraft.sign;
 
 import com.flowpowered.math.vector.Vector3i;
-import io.github.pulverizer.movecraft.CraftState;
+import io.github.pulverizer.movecraft.enums.CraftState;
 import io.github.pulverizer.movecraft.MovecraftLocation;
 import io.github.pulverizer.movecraft.craft.Craft;
 import io.github.pulverizer.movecraft.craft.CraftManager;
@@ -61,7 +61,7 @@ public final class DescendSign {
             }
 
             Craft craft = CraftManager.getInstance().getCraftByPlayer(player.getUniqueId());
-            if (!craft.getType().getCanCruise()) {
+            if (!craft.getType().getCanCruise() || player.getUniqueId() != craft.getPilot()) {
                 return;
             }
 
@@ -77,7 +77,7 @@ public final class DescendSign {
         }
         if (lines.get(0).toPlain().equalsIgnoreCase("Descend: ON")) {
             Craft craft = CraftManager.getInstance().getCraftByPlayer(player.getUniqueId());
-            if (craft != null && craft.getType().getCanCruise()) {
+            if (craft != null && craft.getType().getCanCruise() && player.getUniqueId() == craft.getPilot()) {
                 lines.set(0, Text.of("Descend: OFF"));
                 sign.offer(lines);
                 craft.setState(CraftState.STOPPED);

@@ -4,17 +4,20 @@ import com.flowpowered.math.vector.Vector3d;
 import com.flowpowered.math.vector.Vector3i;
 import io.github.pulverizer.movecraft.config.Settings;
 import io.github.pulverizer.movecraft.craft.Craft;
+import io.github.pulverizer.movecraft.enums.Rotation;
 import io.github.pulverizer.movecraft.utils.HashHitBox;
 import org.spongepowered.api.block.BlockSnapshot;
 import org.spongepowered.api.block.BlockTypes;
-import org.spongepowered.api.block.ScheduledBlockUpdate;
 import org.spongepowered.api.data.key.Keys;
 import org.spongepowered.api.entity.Entity;
 import org.spongepowered.api.util.Direction;
-import org.spongepowered.api.world.*;
 import io.github.pulverizer.movecraft.utils.MathUtils;
+import org.spongepowered.api.world.BlockChangeFlags;
+import org.spongepowered.api.world.Location;
+import org.spongepowered.api.world.World;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.HashSet;
 
 /**
  * An interface for all interactions with the World.
@@ -53,36 +56,37 @@ public class WorldHandler {
         //*******************************************
         //*      Step one: Convert to Positions     *
         //*******************************************
-        HashMap<Vector3i, Vector3i> rotatedBlockPositions = new HashMap<>();
+        HashSet<Location<World>> oldLocations = new HashSet<>();
+        HashMap<Location<World>, BlockSnapshot> blocks = new HashMap<>();
         Rotation counterRotation = rotation == Rotation.CLOCKWISE ? Rotation.ANTICLOCKWISE : Rotation.CLOCKWISE;
-        HashMap<Vector3i, HashMap<Integer, Integer>> updates = new HashMap<>();
-        for(Vector3i newLocation : craft.getHitBox()){
-            rotatedBlockPositions.put(MathUtils.rotateVec(counterRotation, newLocation.sub(originPoint)).add(originPoint), newLocation);
-        }
+        HashMap<Location<World>, HashMap<Integer, Integer>> updates = new HashMap<>();
 
-        //get the old blocks and add them
-        HashMap<Vector3i,BlockSnapshot> blockData = new HashMap<>();
-        for(Vector3i blockPosition : rotatedBlockPositions.keySet()){
-            blockData.put(blockPosition,nativeWorld.createSnapshot(blockPosition));
+        //get blocks and updates from old locations
+        for(Vector3i newPosition : craft.getHitBox()) {
+            Location<World> oldLocation = nativeWorld.getLocation(MathUtils.rotateVec(counterRotation, newPosition.sub(originPoint)).add(originPoint));
+            oldLocations.add(oldLocation);
+
+            Location<World> newLocation = nativeWorld.getLocation(newPosition);
+            blocks.put(newLocation, oldLocation.createSnapshot());
 
             HashMap<Integer, Integer> blockUpdates = new HashMap<>();
-            nativeWorld.getLocation(blockPosition).getScheduledUpdates().forEach(update -> blockUpdates.put(update.getPriority(), update.getTicks()));
+            oldLocation.getScheduledUpdates().forEach(update -> blockUpdates.put(update.getPriority(), update.getTicks()));
 
-            updates.put(blockPosition, blockUpdates);
-        }
+            updates.put(newLocation, blockUpdates);
 
-        //remove the old blocks from the world
-        for (Vector3i blockPosition : rotatedBlockPositions.keySet()) {
-            nativeWorld.getLocation(blockPosition).getScheduledUpdates().forEach(update -> nativeWorld.getLocation(blockPosition).removeScheduledUpdate(update));
-            nativeWorld.getLocation(blockPosition).getTileEntity().ifPresent(tileEntity -> tileEntity.setValid(false));
-            setBlock(nativeWorld, blockPosition, BlockSnapshot.builder().blockState(BlockTypes.AIR.getDefaultState()).world(nativeWorld.getProperties()).position(blockPosition).build());
+            oldLocation.getScheduledUpdates().forEach(oldLocation::removeScheduledUpdate);
+            oldLocation.getTileEntity().ifPresent(tileEntity -> tileEntity.setValid(false));
         }
 
         //create the new blocks
-        for(Map.Entry<Vector3i,BlockSnapshot> entry : blockData.entrySet()) {
-            setBlock(nativeWorld, rotatedBlockPositions.get(entry.getKey()), rotation, entry.getValue());
-            updates.get(entry.getKey()).forEach((priority , ticks) -> nativeWorld.getLocation(rotatedBlockPositions.get(entry.getKey())).addScheduledUpdate(priority, ticks));
+        for(Location<World> location : blocks.keySet()) {
+            setBlock(location, rotation, blocks.get(location).withLocation(location));
+            updates.get(location).forEach(location::addScheduledUpdate);
         }
+
+        //remove the old blocks
+        oldLocations.removeAll(blocks.keySet());
+        oldLocations.forEach(location -> setBlock(location, BlockTypes.AIR.getDefaultState().snapshotFor(location)));
     }
 
     /**
@@ -99,46 +103,37 @@ public class WorldHandler {
         //*******************************************
         //*          Convert to Positions           *
         //*******************************************
-        List<Vector3i> blockPositions = new ArrayList<>();
-        for(Vector3i vector3i : craft.getHitBox()) {
-            blockPositions.add(vector3i);
-        }
 
         //get the old blocks
-        List<BlockSnapshot> blocks = new ArrayList<>();
-        HashMap<Vector3i, HashMap<Integer, Integer>> updates = new HashMap<>();
-        for(Vector3i blockPosition : blockPositions){
-            blocks.add(nativeWorld.createSnapshot(blockPosition));
-        }
+        HashSet<Location<World>> oldLocations = new HashSet<>();
+        HashMap<Location<World>, BlockSnapshot> blocks = new HashMap<>();
+        HashMap<Location<World>, HashMap<Integer, Integer>> updates = new HashMap<>();
 
-        //add the blockPositions
-        List<Vector3i> newBlockPositions = new ArrayList<>();
-        for(Vector3i blockPosition : blockPositions){
-            newBlockPositions.add(blockPosition.add(translateBlockVector));
-        }
+        for(Vector3i blockPosition : craft.getHitBox()) {
+            Location<World> oldLocation = nativeWorld.getLocation(blockPosition);
+            oldLocations.add(oldLocation);
 
-        //remove the old blocks from the world
-        for (Vector3i blockPosition : blockPositions) {
+            Location<World> newLocation = nativeWorld.getLocation(blockPosition.add(translateBlockVector));
+            blocks.put(newLocation, nativeWorld.createSnapshot(blockPosition));
+
             HashMap<Integer, Integer> blockUpdates = new HashMap<>();
-            nativeWorld.getLocation(blockPosition).getScheduledUpdates().forEach(update -> blockUpdates.put(update.getPriority(), update.getTicks()));
+            oldLocation.getScheduledUpdates().forEach(update -> blockUpdates.put(update.getPriority(), update.getTicks()));
 
-            Vector3i position = blockPosition.add(translateBlockVector);
-            updates.put(position, blockUpdates);
+            updates.put(newLocation, blockUpdates);
 
-            nativeWorld.getLocation(blockPosition).getScheduledUpdates().forEach(update -> nativeWorld.getLocation(blockPosition).removeScheduledUpdate(update));
-            nativeWorld.getLocation(blockPosition).getTileEntity().ifPresent(tileEntity -> tileEntity.setValid(false));
-            //setBlock(nativeWorld, blockPosition, BlockTypes.AIR.getDefaultState().snapshotFor(nativeWorld.getLocation(position)));
+            oldLocation.getScheduledUpdates().forEach(oldLocation::removeScheduledUpdate);
+            oldLocation.getTileEntity().ifPresent(tileEntity -> tileEntity.setValid(false));
         }
 
         //create the new blocks
-        for(int i = 0; i < newBlockPositions.size(); i++) {
-            setBlock(nativeWorld, newBlockPositions.get(i), blocks.get(i).withLocation(nativeWorld.getLocation(newBlockPositions.get(i))));
-            int finalI = i;
-            updates.get(newBlockPositions.get(i)).forEach((priority , ticks) -> nativeWorld.getLocation(newBlockPositions.get(finalI)).addScheduledUpdate(priority, ticks));
+        for(Location<World> location : blocks.keySet()) {
+            setBlock(location, blocks.get(location).withLocation(location));
+            updates.get(location).forEach(location::addScheduledUpdate);
         }
 
-        blockPositions.removeAll(newBlockPositions);
-        blockPositions.forEach(position -> setBlock(nativeWorld, position, BlockTypes.AIR.getDefaultState().snapshotFor(nativeWorld.getLocation(position))));
+        //remove the old blocks
+        oldLocations.removeAll(blocks.keySet());
+        oldLocations.forEach(location -> setBlock(location, BlockTypes.AIR.getDefaultState().snapshotFor(location)));
 
         craft.setHitBox(newHitBox);
 
@@ -199,112 +194,158 @@ public class WorldHandler {
         if (rotation == Rotation.NONE || !block.supports(Keys.DIRECTION) || !block.get(Keys.DIRECTION).isPresent())
             return block;
 
-        BlockSnapshot rotatedBlock = block;
         Direction oldBlockDirection = block.get(Keys.DIRECTION).get();
         Direction newBlockDirection = Direction.NONE;
 
-        if (rotation == Rotation.CLOCKWISE && oldBlockDirection == Direction.NORTH)
-            newBlockDirection = Direction.EAST;
-
-        if (rotation == Rotation.CLOCKWISE && oldBlockDirection == Direction.NORTH_NORTHEAST)
-            newBlockDirection = Direction.EAST_SOUTHEAST;
-
-        if (rotation == Rotation.CLOCKWISE && oldBlockDirection == Direction.NORTHEAST)
-            newBlockDirection = Direction.SOUTHEAST;
-
-        if (rotation == Rotation.CLOCKWISE && oldBlockDirection == Direction.EAST_NORTHEAST)
-            newBlockDirection = Direction.SOUTH_SOUTHEAST;
-
-        if (rotation == Rotation.CLOCKWISE && oldBlockDirection == Direction.EAST)
-            newBlockDirection = Direction.SOUTH;
-
-        if (rotation == Rotation.CLOCKWISE && oldBlockDirection == Direction.EAST_SOUTHEAST)
-            newBlockDirection = Direction.SOUTH_SOUTHWEST;
-
-        if (rotation == Rotation.CLOCKWISE && oldBlockDirection == Direction.SOUTHEAST)
-            newBlockDirection = Direction.SOUTHWEST;
-
-        if (rotation == Rotation.CLOCKWISE && oldBlockDirection == Direction.SOUTH_SOUTHEAST)
-            newBlockDirection = Direction.WEST_SOUTHWEST;
-
-        if (rotation == Rotation.CLOCKWISE && oldBlockDirection == Direction.SOUTH)
-            newBlockDirection = Direction.WEST;
-
-        if (rotation == Rotation.CLOCKWISE && oldBlockDirection == Direction.SOUTH_SOUTHWEST)
-            newBlockDirection = Direction.WEST_NORTHWEST;
-
-        if (rotation == Rotation.CLOCKWISE && oldBlockDirection == Direction.SOUTHWEST)
-            newBlockDirection = Direction.NORTHWEST;
-
-        if (rotation == Rotation.CLOCKWISE && oldBlockDirection == Direction.WEST_SOUTHWEST)
-            newBlockDirection = Direction.NORTH_NORTHWEST;
-
-        if (rotation == Rotation.CLOCKWISE && oldBlockDirection == Direction.WEST)
-            newBlockDirection = Direction.NORTH;
-
-        if (rotation == Rotation.CLOCKWISE && oldBlockDirection == Direction.WEST_NORTHWEST)
-            newBlockDirection = Direction.NORTH_NORTHEAST;
-
-        if (rotation == Rotation.CLOCKWISE && oldBlockDirection == Direction.NORTHWEST)
-            newBlockDirection = Direction.NORTHEAST;
-
-        if (rotation == Rotation.CLOCKWISE && oldBlockDirection == Direction.NORTH_NORTHWEST)
-            newBlockDirection = Direction.EAST_NORTHEAST;
-
-        if (rotation == Rotation.ANTICLOCKWISE && oldBlockDirection == Direction.NORTH)
-            newBlockDirection = Direction.WEST;
-
-        if (rotation == Rotation.ANTICLOCKWISE && oldBlockDirection == Direction.NORTH_NORTHWEST)
-            newBlockDirection = Direction.WEST_SOUTHWEST;
-
-        if (rotation == Rotation.ANTICLOCKWISE && oldBlockDirection == Direction.NORTHWEST)
-            newBlockDirection = Direction.SOUTHWEST;
-
-        if (rotation == Rotation.ANTICLOCKWISE && oldBlockDirection == Direction.WEST_NORTHWEST)
-            newBlockDirection = Direction.SOUTH_SOUTHWEST;
-
-        if (rotation == Rotation.ANTICLOCKWISE && oldBlockDirection == Direction.WEST)
-            newBlockDirection = Direction.SOUTH;
-
-        if (rotation == Rotation.ANTICLOCKWISE && oldBlockDirection == Direction.WEST_SOUTHWEST)
-            newBlockDirection = Direction.SOUTH_SOUTHEAST;
-
-        if (rotation == Rotation.ANTICLOCKWISE && oldBlockDirection == Direction.SOUTHWEST)
-            newBlockDirection = Direction.SOUTHEAST;
-
-        if (rotation == Rotation.ANTICLOCKWISE && oldBlockDirection == Direction.SOUTH_SOUTHWEST)
-            newBlockDirection = Direction.EAST_SOUTHEAST;
-
-        if (rotation == Rotation.ANTICLOCKWISE && oldBlockDirection == Direction.SOUTH)
-            newBlockDirection = Direction.EAST;
-
-        if (rotation == Rotation.ANTICLOCKWISE && oldBlockDirection == Direction.SOUTH_SOUTHEAST)
-            newBlockDirection = Direction.EAST_NORTHEAST;
-
-        if (rotation == Rotation.ANTICLOCKWISE && oldBlockDirection == Direction.SOUTHEAST)
-            newBlockDirection = Direction.NORTHEAST;
-
-        if (rotation == Rotation.ANTICLOCKWISE && oldBlockDirection == Direction.EAST_SOUTHEAST)
-            newBlockDirection = Direction.NORTH_NORTHEAST;
-
-        if (rotation == Rotation.ANTICLOCKWISE && oldBlockDirection == Direction.EAST)
-            newBlockDirection = Direction.NORTH;
-
-        if (rotation == Rotation.ANTICLOCKWISE && oldBlockDirection == Direction.EAST_NORTHEAST)
-            newBlockDirection = Direction.NORTH_NORTHWEST;
-
-        if (rotation == Rotation.ANTICLOCKWISE && oldBlockDirection == Direction.NORTHEAST)
-            newBlockDirection = Direction.NORTHWEST;
-
-        if (rotation == Rotation.ANTICLOCKWISE && oldBlockDirection == Direction.NORTH_NORTHEAST)
-            newBlockDirection = Direction.WEST_NORTHWEST;
-
-        if (newBlockDirection == Direction.NONE)
+        if (oldBlockDirection == Direction.DOWN || oldBlockDirection == Direction.UP || oldBlockDirection == Direction.NONE)
             return block;
 
-        rotatedBlock = rotatedBlock.with(Keys.DIRECTION, newBlockDirection).get();
+        if (rotation == Rotation.CLOCKWISE) {
+            switch (oldBlockDirection) {
+                case NORTH:
+                    newBlockDirection = Direction.EAST;
+                    break;
 
-        return rotatedBlock;
+                case NORTH_NORTHEAST:
+                    newBlockDirection = Direction.EAST_SOUTHEAST;
+                    break;
+
+                case NORTHEAST:
+                    newBlockDirection = Direction.SOUTHEAST;
+                    break;
+
+                case EAST_NORTHEAST:
+                    newBlockDirection = Direction.SOUTH_SOUTHEAST;
+                    break;
+
+                case EAST:
+                    newBlockDirection = Direction.SOUTH;
+                    break;
+
+                case EAST_SOUTHEAST:
+                    newBlockDirection = Direction.SOUTH_SOUTHWEST;
+                    break;
+
+                case SOUTHEAST:
+                    newBlockDirection = Direction.SOUTHWEST;
+                    break;
+
+                case SOUTH_SOUTHEAST:
+                    newBlockDirection = Direction.WEST_SOUTHWEST;
+                    break;
+
+                case SOUTH:
+                    newBlockDirection = Direction.WEST;
+                    break;
+
+                case SOUTH_SOUTHWEST:
+                    newBlockDirection = Direction.WEST_NORTHWEST;
+                    break;
+
+                case SOUTHWEST:
+                    newBlockDirection = Direction.NORTHWEST;
+                    break;
+
+                case WEST_SOUTHWEST:
+                    newBlockDirection = Direction.NORTH_NORTHWEST;
+                    break;
+
+                case WEST:
+                    newBlockDirection = Direction.NORTH;
+                    break;
+
+                case WEST_NORTHWEST:
+                    newBlockDirection = Direction.NORTH_NORTHEAST;
+                    break;
+
+                case NORTHWEST:
+                    newBlockDirection = Direction.NORTHEAST;
+                    break;
+
+                case NORTH_NORTHWEST:
+                    newBlockDirection = Direction.EAST_NORTHEAST;
+                    break;
+
+                default:
+                    newBlockDirection = oldBlockDirection;
+            }
+
+        } else if (rotation == Rotation.ANTICLOCKWISE) {
+            switch (oldBlockDirection) {
+
+                case NORTH:
+                    newBlockDirection = Direction.WEST;
+                    break;
+
+                case NORTH_NORTHWEST:
+                    newBlockDirection = Direction.WEST_SOUTHWEST;
+                    break;
+
+                case NORTHWEST:
+                    newBlockDirection = Direction.SOUTHWEST;
+                    break;
+
+                case WEST_NORTHWEST:
+                    newBlockDirection = Direction.SOUTH_SOUTHWEST;
+                    break;
+
+                case WEST:
+                    newBlockDirection = Direction.SOUTH;
+                    break;
+
+                case WEST_SOUTHWEST:
+                    newBlockDirection = Direction.SOUTH_SOUTHEAST;
+                    break;
+
+                case SOUTHWEST:
+                    newBlockDirection = Direction.SOUTHEAST;
+                    break;
+
+                case SOUTH_SOUTHWEST:
+                    newBlockDirection = Direction.EAST_SOUTHEAST;
+                    break;
+
+                case SOUTH:
+                    newBlockDirection = Direction.EAST;
+                    break;
+
+                case SOUTH_SOUTHEAST:
+                    newBlockDirection = Direction.EAST_NORTHEAST;
+                    break;
+
+                case SOUTHEAST:
+                    newBlockDirection = Direction.NORTHEAST;
+                    break;
+
+                case EAST_SOUTHEAST:
+                    newBlockDirection = Direction.NORTH_NORTHEAST;
+                    break;
+
+                case EAST:
+                    newBlockDirection = Direction.NORTH;
+                    break;
+
+                case EAST_NORTHEAST:
+                    newBlockDirection = Direction.NORTH_NORTHWEST;
+                    break;
+
+                case NORTHEAST:
+                    newBlockDirection = Direction.NORTHWEST;
+                    break;
+
+                case NORTH_NORTHEAST:
+                    newBlockDirection = Direction.WEST_NORTHWEST;
+                    break;
+
+                default:
+                    newBlockDirection = oldBlockDirection;
+            }
+        }
+
+            if (newBlockDirection == Direction.NONE)
+                return block;
+
+            return block.with(Keys.DIRECTION, newBlockDirection).get();
     }
 
     /* Temp Disabled

@@ -61,6 +61,14 @@ public class HashHitBox implements MutableHitBox {
         return maxZ;
     }
 
+    public Vector3i getMinPosition() {
+        return new Vector3i(minX, minY, minZ);
+    }
+
+    public Vector3i getMaxPosition() {
+        return new Vector3i(maxX, maxY, maxZ);
+    }
+
     public int getXLength(){
         if(locationSet.isEmpty()){
             return 0;
@@ -80,6 +88,16 @@ public class HashHitBox implements MutableHitBox {
             throw new EmptyHitBoxException();
         }
         return Math.abs(maxZ-minZ);
+    }
+
+    public Vector3i get3dSize() {
+        if (locationSet.isEmpty())
+            throw new EmptyHitBoxException();
+
+        int x = Math.abs(maxX-minX);
+        int y = Math.abs(maxY-minY);
+        int z = Math.abs(maxZ-minZ);
+        return new Vector3i(x, y, z);
     }
 
     //TODO: Optomize

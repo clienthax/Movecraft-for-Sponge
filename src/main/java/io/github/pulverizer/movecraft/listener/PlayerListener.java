@@ -20,9 +20,11 @@ public class PlayerListener {
 
     @Listener
     public void onPLayerLogout(ClientConnectionEvent.Disconnect event) {
-        Craft craft = CraftManager.getInstance().getCraftByPlayer(event.getTargetEntity().getUniqueId());
 
-        craft.removeCrewMember(event.getTargetEntity().getUniqueId());
+        UUID playerID = event.getTargetEntity().getUniqueId();
+        Craft craft = CraftManager.getInstance().getCraftByPlayer(playerID);
+
+        craft.removeCrewMember(playerID);
 
         if (craft.getCrewList().isEmpty())
             CraftManager.getInstance().removeCraft(craft);
@@ -30,7 +32,7 @@ public class PlayerListener {
 
 
     @Listener
-    public void onPlayerDeath(DestructEntityEvent.Death event, @Getter("getTargetEntity") Player player) {  // changed to death so when you shoot up an airship and hit the pilot, it still sinks
+    public void onPlayerDeath(DestructEntityEvent.Death event, @Getter("getTargetEntity") Player player) {
 
         Craft craft = CraftManager.getInstance().getCraftByPlayer(player.getUniqueId());
 

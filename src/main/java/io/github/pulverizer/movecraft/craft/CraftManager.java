@@ -75,7 +75,7 @@ public class CraftManager implements Iterable<Craft>{
 
         // if its sinking, just remove the craft without notifying or checking
         this.craftList.remove(c);
-        if(!c.getHitBox().isEmpty()) {
+        if(c.getHitBox() != null && !c.getHitBox().isEmpty()) {
             if (player != null) {
                 player.sendMessage(Text.of("You have released your craft."));
                 Movecraft.getInstance().getLogger().info(String.format(player.getName() + " has released a craft of type %s with size %d at coordinates : %d x , %d z", c.getType().getName(), c.getHitBox().size(), c.getHitBox().getMinX(), c.getHitBox().getMinZ()));

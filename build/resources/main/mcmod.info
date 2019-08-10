@@ -10,10 +10,10 @@
             "https://github.com/Pulverizer/Movecraft-for-Sponge/graphs/contributors"
         ],
         "dependencies": [
-            "spongeapi@7.1.0"
+            "spongeapi@7.2.0-SNAPSHOT"
         ],
         "requiredMods": [
-            "spongeapi@7.1.0"
+            "spongeapi@7.2.0-SNAPSHOT"
         ]
     }
 ]

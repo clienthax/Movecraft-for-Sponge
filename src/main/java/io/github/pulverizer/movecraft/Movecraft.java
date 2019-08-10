@@ -2,6 +2,7 @@ package io.github.pulverizer.movecraft;
 
 import com.google.common.reflect.TypeToken;
 import com.google.inject.Inject;
+import io.github.pulverizer.movecraft.listener.SignListener;
 import io.github.pulverizer.movecraft.sign.*;
 import ninja.leaping.configurate.ConfigurationNode;
 import ninja.leaping.configurate.ConfigurationOptions;
@@ -12,6 +13,8 @@ import org.slf4j.Logger;
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.block.BlockType;
 import org.spongepowered.api.config.ConfigDir;
+import org.spongepowered.api.entity.EntityType;
+import org.spongepowered.api.entity.EntityTypes;
 import org.spongepowered.api.event.Listener;
 import org.spongepowered.api.event.game.state.*;
 import org.spongepowered.api.item.ItemType;
@@ -106,6 +109,7 @@ public class Movecraft {
         logger = getLogger();
 
         Path mainConfigPath = getConfigDir().resolve("movecraft.cfg");
+
         mainConfigLoader = createConfigLoader(mainConfigPath);
 
         try {
@@ -207,7 +211,7 @@ public class Movecraft {
         Sponge.getEventManager().registerListeners(this, new InteractListener());
         Sponge.getEventManager().registerListeners(this, new BlockListener());
         Sponge.getEventManager().registerListeners(this, new PlayerListener());
-        Sponge.getEventManager().registerListeners(this, new AntiAircraftDirectorSign());
+        //Sponge.getEventManager().registerListeners(this, new AntiAircraftDirectorSign());
         Sponge.getEventManager().registerListeners(this, new AscendSign());
         Sponge.getEventManager().registerListeners(this, new CannonDirectorSign());
         Sponge.getEventManager().registerListeners(this, new ContactsSign());
@@ -226,6 +230,7 @@ public class Movecraft {
         Sponge.getEventManager().registerListeners(this, new SubcraftRotateSign());
         Sponge.getEventManager().registerListeners(this, new TeleportSign());
         Sponge.getEventManager().registerListeners(this, new PilotSign());
+        Sponge.getEventManager().registerListeners(this, new SignListener());
 
         logger.info("Movecraft Enabled.");
     }

@@ -1,5 +1,6 @@
 package io.github.pulverizer.movecraft.mapUpdater.update;
 
+import org.spongepowered.api.Sponge;
 import org.spongepowered.api.world.Location;
 import org.spongepowered.api.world.World;
 import org.spongepowered.api.world.explosion.Explosion;
@@ -28,12 +29,12 @@ public class ExplosionUpdateCommand extends UpdateCommand {
 
     @Override
     public void doUpdate() {
-        this.createExplosion(explosionLocation.add(.5,.5,.5), explosionStrength);
+        Sponge.getServer().getWorld("world").get().triggerExplosion(this.createExplosion(explosionLocation.add(.5,.5,.5), explosionStrength));
     }
 
-    private void createExplosion(Location<World> loc, float explosionPower) {
+    private Explosion createExplosion(Location<World> loc, float explosionPower) {
 
-        Explosion.builder()
+        return Explosion.builder()
                 .location(loc)
                 .shouldBreakBlocks(true)
                 .shouldDamageEntities(true)

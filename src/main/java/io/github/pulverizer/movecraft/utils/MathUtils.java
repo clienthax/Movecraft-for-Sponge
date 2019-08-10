@@ -1,9 +1,8 @@
 package io.github.pulverizer.movecraft.utils;
 
 import com.flowpowered.math.vector.Vector3i;
-import io.github.pulverizer.movecraft.Movecraft;
 import io.github.pulverizer.movecraft.MovecraftLocation;
-import io.github.pulverizer.movecraft.Rotation;
+import io.github.pulverizer.movecraft.enums.Rotation;
 import io.github.pulverizer.movecraft.craft.Craft;
 import org.spongepowered.api.world.Location;
 
