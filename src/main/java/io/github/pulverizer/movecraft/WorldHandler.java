@@ -18,6 +18,8 @@ import org.spongepowered.api.world.World;
 
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 /**
  * An interface for all interactions with the World.
@@ -56,37 +58,40 @@ public class WorldHandler {
         //*******************************************
         //*      Step one: Convert to Positions     *
         //*******************************************
-        HashSet<Location<World>> oldLocations = new HashSet<>();
-        HashMap<Location<World>, BlockSnapshot> blocks = new HashMap<>();
+
+        HashSet<Vector3i> oldLocations = new HashSet<>();
+        HashMap<Vector3i, BlockSnapshot> blocks = new HashMap<>();
         Rotation counterRotation = rotation == Rotation.CLOCKWISE ? Rotation.ANTICLOCKWISE : Rotation.CLOCKWISE;
-        HashMap<Location<World>, HashMap<Integer, Integer>> updates = new HashMap<>();
+        LinkedHashMap<Vector3i, HashMap<Integer, Integer>> updates = new LinkedHashMap<>();
 
         //get blocks and updates from old locations
         for(Vector3i newPosition : craft.getHitBox()) {
-            Location<World> oldLocation = nativeWorld.getLocation(MathUtils.rotateVec(counterRotation, newPosition.sub(originPoint)).add(originPoint));
-            oldLocations.add(oldLocation);
+            Vector3i oldPosition = MathUtils.rotateVec(counterRotation, newPosition.sub(originPoint)).add(originPoint);
+            oldLocations.add(oldPosition);
 
-            Location<World> newLocation = nativeWorld.getLocation(newPosition);
-            blocks.put(newLocation, oldLocation.createSnapshot());
+            blocks.put(newPosition, nativeWorld.createSnapshot(oldPosition));
 
             HashMap<Integer, Integer> blockUpdates = new HashMap<>();
-            oldLocation.getScheduledUpdates().forEach(update -> blockUpdates.put(update.getPriority(), update.getTicks()));
+            nativeWorld.getScheduledUpdates(oldPosition).forEach(update -> blockUpdates.put(update.getPriority(), update.getTicks()));
 
-            updates.put(newLocation, blockUpdates);
+            updates.put(newPosition, blockUpdates);
 
-            oldLocation.getScheduledUpdates().forEach(oldLocation::removeScheduledUpdate);
-            oldLocation.getTileEntity().ifPresent(tileEntity -> tileEntity.setValid(false));
+            nativeWorld.getScheduledUpdates(oldPosition).forEach(sbu -> nativeWorld.removeScheduledUpdate(oldPosition, sbu));
         }
 
         //create the new blocks
-        for(Location<World> location : blocks.keySet()) {
-            setBlock(location, rotation, blocks.get(location).withLocation(location));
-            updates.get(location).forEach(location::addScheduledUpdate);
+        for(Map.Entry<Vector3i, BlockSnapshot> entry : blocks.entrySet()) {
+            Vector3i location = entry.getKey();
+            final BlockSnapshot blockSnapshot = entry.getValue();
+            nativeWorld.restoreSnapshot(rotateBlock(rotation, blockSnapshot).withLocation(new Location<World>(nativeWorld, location)), true, BlockChangeFlags.NONE);
+            final HashMap<Integer, Integer> integerIntegerHashMap = updates.get(location);
+            integerIntegerHashMap.forEach((key, value) -> nativeWorld.addScheduledUpdate(location, key, value));
+            // Prune the replaced location from old locations
+            oldLocations.remove(location);
         }
 
         //remove the old blocks
-        oldLocations.removeAll(blocks.keySet());
-        oldLocations.forEach(location -> setBlock(location, BlockTypes.AIR.getDefaultState().snapshotFor(location)));
+        oldLocations.forEach(location -> BlockSnapshot.NONE.withLocation(new Location<World>(nativeWorld, location)).restore(true, BlockChangeFlags.NONE));
     }
 
     /**
@@ -100,66 +105,43 @@ public class WorldHandler {
         World nativeWorld = craft.getWorld();
 
         //A craftTranslateCommand should only occur if the craft is moving to a valid position
-        //*******************************************
-        //*          Convert to Positions           *
-        //*******************************************
 
         //get the old blocks
-        HashSet<Location<World>> oldLocations = new HashSet<>();
-        HashMap<Location<World>, BlockSnapshot> blocks = new HashMap<>();
-        HashMap<Location<World>, HashMap<Integer, Integer>> updates = new HashMap<>();
+        HashSet<Vector3i> oldLocations = new HashSet<>();
+        HashMap<Vector3i, BlockSnapshot> blocks = new HashMap<>();
+        LinkedHashMap<Vector3i, HashMap<Integer, Integer>> updates = new LinkedHashMap<>();
 
         for(Vector3i blockPosition : craft.getHitBox()) {
-            Location<World> oldLocation = nativeWorld.getLocation(blockPosition);
-            oldLocations.add(oldLocation);
+            oldLocations.add(blockPosition);
 
-            Location<World> newLocation = nativeWorld.getLocation(blockPosition.add(translateBlockVector));
-            blocks.put(newLocation, nativeWorld.createSnapshot(blockPosition));
+            blocks.put(blockPosition.add(translateBlockVector), nativeWorld.createSnapshot(blockPosition));
 
             HashMap<Integer, Integer> blockUpdates = new HashMap<>();
-            oldLocation.getScheduledUpdates().forEach(update -> blockUpdates.put(update.getPriority(), update.getTicks()));
+            nativeWorld.getScheduledUpdates(blockPosition)
+                    .forEach(update -> blockUpdates.put(update.getPriority(), update.getTicks()));
 
-            updates.put(newLocation, blockUpdates);
+            updates.put(blockPosition.add(translateBlockVector), blockUpdates);
 
-            oldLocation.getScheduledUpdates().forEach(oldLocation::removeScheduledUpdate);
-            oldLocation.getTileEntity().ifPresent(tileEntity -> tileEntity.setValid(false));
+            nativeWorld.getScheduledUpdates(blockPosition).forEach(sbu -> {
+                nativeWorld.removeScheduledUpdate(blockPosition, sbu);
+            });
         }
 
         //create the new blocks
-        for(Location<World> location : blocks.keySet()) {
-            setBlock(location, blocks.get(location).withLocation(location));
-            updates.get(location).forEach(location::addScheduledUpdate);
+        for(Map.Entry<Vector3i, BlockSnapshot> entry : blocks.entrySet()) {
+            Vector3i location = entry.getKey();
+            final BlockSnapshot blockSnapshot = entry.getValue();
+            blockSnapshot.withLocation(new Location<>(nativeWorld, location)).restore(true, BlockChangeFlags.NONE);
+            final HashMap<Integer, Integer> integerIntegerHashMap = updates.get(location);
+            integerIntegerHashMap.forEach((key, value) -> nativeWorld.addScheduledUpdate(location, key, value));
+            // Prune the replaced location from old locations
+            oldLocations.remove(location);
         }
 
         //remove the old blocks
-        oldLocations.removeAll(blocks.keySet());
-        oldLocations.forEach(location -> setBlock(location, BlockTypes.AIR.getDefaultState().snapshotFor(location)));
+        oldLocations.forEach(location -> BlockSnapshot.NONE.withLocation(new Location<World>(nativeWorld, location)).restore(true, BlockChangeFlags.NONE));
 
         craft.setHitBox(newHitBox);
-
-    }
-
-    /**
-     * Sets the Block at the Location in the World to the BlockSnapshot.
-     * @param world World in which the block will be placed.
-     * @param blockPosition Vector3i location at which the BlockSnapshot will be placed.
-     * @param block BlockSnapshot to be placed.
-     */
-    private void setBlock(World world, Vector3i blockPosition, BlockSnapshot block) {
-
-        world.getLocation(blockPosition).restoreSnapshot(block, true, BlockChangeFlags.NONE);
-    }
-
-    /**
-     * Rotates the BlockSnapshot and then sets the Block at the Location in the World to the BlockSnapshot.
-     * @param world World in which the block will be placed.
-     * @param blockPosition Vector3i location at which the BlockSnapshot will be placed.
-     * @param rotation Rotation that the block will be rotated with.
-     * @param block BlockSnapshot to be placed.
-     */
-    private void setBlock(World world, Vector3i blockPosition, Rotation rotation, BlockSnapshot block) {
-        BlockSnapshot rotatedBlock = rotateBlock(rotation, block);
-        world.getLocation(blockPosition).restoreSnapshot(rotatedBlock, true, BlockChangeFlags.NONE);
     }
 
     /**
@@ -167,20 +149,9 @@ public class WorldHandler {
      * @param location Location at which the BlockSnapshot will be placed.
      * @param block BlockSnapshot to be placed.
      */
+    @Deprecated
     public void setBlock(Location<World> location, BlockSnapshot block){
         location.restoreSnapshot(block, true, BlockChangeFlags.NONE);
-    }
-
-    /**
-     * Rotates the BlockSnapshot and then sets the Block at the Location to the BlockSnapshot.
-     * @param location Location at which the BlockSnapshot will be placed.
-     * @param rotation Rotation that the block will be rotated with.
-     * @param block BlockSnapshot to be placed.
-     */
-    public void setBlock(Location<World> location, Rotation rotation, BlockSnapshot block) {
-
-        BlockSnapshot rotatedBlock = rotateBlock(rotation, block);
-        location.restoreSnapshot(rotatedBlock, true, BlockChangeFlags.NONE);
     }
 
     /**

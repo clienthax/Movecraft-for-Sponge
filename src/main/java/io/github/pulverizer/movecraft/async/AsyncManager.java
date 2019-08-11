@@ -571,7 +571,7 @@ public class AsyncManager implements Runnable {
             if (world == null || world.getPlayers().isEmpty())
                 continue;
 
-            for (Entity entity : world.getEntities(entity -> entity.getType().equals(EntityTypes.SMALL_FIREBALL) || entity.getType().getId().equalsIgnoreCase("minecraft:smallfireball"))) {
+            for (Entity entity : world.getEntities(entity -> entity.getType().equals(EntityTypes.SMALL_FIREBALL))) {
                 SmallFireball fireball = (SmallFireball) entity;
 
                 if (!(fireball.getShooter() instanceof Dispenser) || FireballTracking.containsKey(fireball))
