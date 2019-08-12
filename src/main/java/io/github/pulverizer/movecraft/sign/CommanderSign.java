@@ -11,8 +11,7 @@ public final class CommanderSign {
 
     private static final String HEADER = "Commander:";
 
-    @Listener
-    public final void onSignChange(ChangeSignEvent event, @Root Player player){
+    public static void onSignChange(ChangeSignEvent event, Player player){
 
         ListValue<Text> lines = event.getText().lines();
 

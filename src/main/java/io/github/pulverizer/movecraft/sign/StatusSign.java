@@ -1,10 +1,10 @@
 package io.github.pulverizer.movecraft.sign;
 
 import com.flowpowered.math.vector.Vector3i;
-import io.github.pulverizer.movecraft.MovecraftLocation;
 import io.github.pulverizer.movecraft.craft.Craft;
 import io.github.pulverizer.movecraft.event.CraftDetectEvent;
 import io.github.pulverizer.movecraft.event.SignTranslateEvent;
+import io.github.pulverizer.movecraft.utils.HashHitBox;
 import org.spongepowered.api.block.BlockSnapshot;
 import org.spongepowered.api.block.BlockType;
 import org.spongepowered.api.block.BlockTypes;
@@ -22,19 +22,14 @@ import java.util.Map;
 
 public final class StatusSign {
 
-    @Listener
-    public void onCraftDetect(CraftDetectEvent event){
-        World world = event.getCraft().getWorld();
-        for(Vector3i location: event.getCraft().getHitBox()){
-            BlockSnapshot block = MovecraftLocation.toSponge(world, location).createSnapshot();
+    public static void onCraftDetect(CraftDetectEvent event, World world, HashHitBox hitBox){
 
-            if(block.getState().getType() != BlockTypes.WALL_SIGN && block.getState().getType() != BlockTypes.STANDING_SIGN)
-                return;
+        for(Vector3i location: hitBox){
 
-            if (!block.getLocation().isPresent() || !block.getLocation().get().getTileEntity().isPresent())
-                return;
+            if(world.getBlockType(location) != BlockTypes.WALL_SIGN && world.getBlockType(location) != BlockTypes.STANDING_SIGN || !world.getTileEntity(location).isPresent())
+                continue;
 
-            Sign sign = (Sign) block.getLocation().get().getTileEntity().get();
+            Sign sign = (Sign) world.getTileEntity(location).get();
             ListValue<Text> lines = sign.lines();
 
             if (lines.get(0).toPlain().equalsIgnoreCase("Status:")) {
@@ -46,17 +41,12 @@ public final class StatusSign {
         }
     }
 
+    public static void onSignTranslate(SignTranslateEvent event, Craft craft, World world, Vector3i location) {
 
-    @Listener
-    public final void onSignTranslate(SignTranslateEvent event) {
-        Craft craft = event.getCraft();
-
-        BlockSnapshot block = event.getBlock();
-
-        if (!block.getLocation().isPresent() || !block.getLocation().get().getTileEntity().isPresent())
+        if (!world.getTileEntity(location).isPresent())
             return;
 
-        Sign sign = (Sign) block.getLocation().get().getTileEntity().get();
+        Sign sign = (Sign) world.getTileEntity(location).get();
         ListValue<Text> lines = sign.lines();
 
         if (!lines.get(0).toPlain().equalsIgnoreCase("Status:")) {
@@ -66,8 +56,8 @@ public final class StatusSign {
         double fuel = craft.checkFuelStored() + craft.getBurningFuel();
         int totalBlocks=0;
         Map<BlockType, Integer> foundBlocks = new HashMap<>();
-        for (Vector3i ml : craft.getHitBox()) {
-            BlockType blockType = craft.getWorld().getBlockType(ml.getX(), ml.getY(), ml.getZ());
+        for (Vector3i loc : craft.getHitBox()) {
+            BlockType blockType = craft.getWorld().getBlockType(loc);
 
             if (foundBlocks.containsKey(blockType)) {
                 Integer count = foundBlocks.get(blockType);

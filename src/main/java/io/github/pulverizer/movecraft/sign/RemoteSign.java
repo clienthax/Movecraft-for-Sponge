@@ -24,14 +24,8 @@ import java.util.LinkedList;
 public final class RemoteSign {
     private static final String HEADER = "Remote Sign";
 
-    @Listener
-    @Include({InteractBlockEvent.Primary.class, InteractBlockEvent.Secondary.MainHand.class})
-    public final void onSignClick(InteractBlockEvent event) {
+    public static void onSignClick(InteractBlockEvent event, Player player, BlockSnapshot block) {
 
-        BlockSnapshot block = event.getTargetBlock();
-        if (block.getState().getType() != BlockTypes.STANDING_SIGN && block.getState().getType() != BlockTypes.WALL_SIGN) {
-            return;
-        }
 
         if (!block.getLocation().isPresent() || !block.getLocation().get().getTileEntity().isPresent())
             return;
@@ -44,18 +38,12 @@ public final class RemoteSign {
         World blockWorld = block.getLocation().get().getExtent();
         for (Craft tcraft : CraftManager.getInstance().getCraftsInWorld(blockWorld)) {
             if (MathUtils.locationInHitbox(tcraft.getHitBox(), block.getLocation().get())) {
-                // don't use a craft with a null player. This is
-                // mostly to avoid trying to use subcrafts
+                // don't use a craft with a null player. This is mostly to avoid trying to use subcrafts
                 if (!tcraft.getCrewList().isEmpty()) {
                     foundCraft = tcraft;
                     break;
                 }
             }
-        }
-
-        Player player = null;
-        if (event.getSource() instanceof Player) {
-            player = ((Player) event.getSource()).getPlayer().orElse(null);
         }
 
         if (foundCraft == null) {

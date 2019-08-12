@@ -17,14 +17,7 @@ import org.spongepowered.api.world.World;
 public class PilotSign {
     private static final String HEADER = "Pilot";
 
-    @Listener
-    @Include({InteractBlockEvent.Primary.class, InteractBlockEvent.Secondary.MainHand.class})
-    public final void onSignClick(InteractBlockEvent event, @Root Player player) {
-
-        BlockSnapshot block = event.getTargetBlock();
-        if (block.getState().getType() != BlockTypes.STANDING_SIGN && block.getState().getType() != BlockTypes.WALL_SIGN) {
-            return;
-        }
+    public static void onSignClick(InteractBlockEvent event, Player player, BlockSnapshot block) {
 
         if (!block.getLocation().isPresent() || !block.getLocation().get().getTileEntity().isPresent())
             return;

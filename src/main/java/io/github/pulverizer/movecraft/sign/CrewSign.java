@@ -2,12 +2,12 @@ package io.github.pulverizer.movecraft.sign;
 
 import com.flowpowered.math.vector.Vector3i;
 import io.github.pulverizer.movecraft.enums.CraftState;
-import io.github.pulverizer.movecraft.MovecraftLocation;
 import io.github.pulverizer.movecraft.craft.Craft;
 import io.github.pulverizer.movecraft.craft.CraftManager;
 import io.github.pulverizer.movecraft.event.CraftDetectEvent;
 import io.github.pulverizer.movecraft.event.SignTranslateEvent;
 import io.github.pulverizer.movecraft.config.Settings;
+import io.github.pulverizer.movecraft.utils.HashHitBox;
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.block.BlockSnapshot;
 import org.spongepowered.api.block.BlockTypes;
@@ -20,7 +20,6 @@ import org.spongepowered.api.event.Listener;
 import org.spongepowered.api.event.block.InteractBlockEvent;
 import org.spongepowered.api.event.block.tileentity.ChangeSignEvent;
 import org.spongepowered.api.event.entity.living.humanoid.player.RespawnPlayerEvent;
-import org.spongepowered.api.event.filter.cause.Root;
 import org.spongepowered.api.text.Text;
 import org.spongepowered.api.util.RespawnLocation;
 import org.spongepowered.api.world.Location;
@@ -33,25 +32,21 @@ import static org.spongepowered.api.event.Order.FIRST;
 
 public class CrewSign {
 
-    @Listener
-    public final void onSignChange(ChangeSignEvent event, @Root Player player) {
-        if (!event.getText().lines().get(0).toPlain().equalsIgnoreCase("Crew:")) {
+    public static void onSignChange(ChangeSignEvent event, Player player) {
+        if (!event.getText().lines().get(0).toPlain().equalsIgnoreCase("Crew:"))
             return;
-        }
+
         ListValue<Text> lines = event.getText().lines();
         lines.set(1, Text.of(player.getName()));
         event.getText().set(lines);
     }
 
-    @Listener
-    public final void onSignTranslate(SignTranslateEvent event) {
-        Craft craft = event.getCraft();
-        BlockSnapshot block = event.getBlock();
+    public static void onSignTranslate(SignTranslateEvent event, Craft craft, World world, Vector3i location) {
 
-        if (!block.getLocation().isPresent() || !block.getLocation().get().getTileEntity().isPresent())
+        if (!world.getTileEntity(location).isPresent())
             return;
 
-        Sign sign = (Sign) block.getLocation().get().getTileEntity().get();
+        Sign sign = (Sign) world.getTileEntity(location).get();
         ListValue<Text> lines = sign.lines();
 
         if (!Settings.AllowCrewSigns || !lines.get(0).toPlain().equalsIgnoreCase("Crew:")) {
@@ -64,26 +59,19 @@ public class CrewSign {
 
         Player crewPlayer = Sponge.getServer().getPlayer(crewName).get();
 
-        Location<World> location = block.getLocation().get().sub(0,1,0);
-        if (!location.getBlockType().equals(BlockTypes.BED)) {
+        if (!world.getBlockType(location.sub(0,1,0)).equals(BlockTypes.BED)) {
             return;
         }
         craft.getCrewSigns().put(crewPlayer.getUniqueId(), location);
     }
 
-    @Listener
-    public final void onSignRightClick(InteractBlockEvent.Secondary.MainHand event, @Root Player player) {
+    public static void onSignRightClick(InteractBlockEvent.Secondary.MainHand event, Player player, BlockSnapshot block) {
 
         if (!Settings.AllowCrewSigns) {
             return;
         }
 
         if (!player.get(Keys.IS_SNEAKING).isPresent())
-            return;
-
-        BlockSnapshot block = event.getTargetBlock();
-
-        if (!block.getLocation().isPresent() || !block.getLocation().get().getTileEntity().isPresent())
             return;
 
         if (!player.get(Keys.IS_SNEAKING).get() || block.getState().getType() != BlockTypes.STANDING_SIGN || block.getState().getType() != BlockTypes.WALL_SIGN)
@@ -128,6 +116,8 @@ public class CrewSign {
             return;
 
         Player player = event.getTargetEntity();
+
+        //TODO: Fix this? A player is removed from the craft upon death so this will return null atm?
         Craft craft = CraftManager.getInstance().getCraftByPlayer(player.getUniqueId());
         if (craft == null) {
             return;
@@ -137,30 +127,24 @@ public class CrewSign {
         }
         player.sendMessage(Text.of("Respawning at crew bed!"));
         Transform<World> respawnTransform = event.getToTransform();
-        respawnTransform.setLocation(craft.getCrewSigns().get(player.getUniqueId()));
+        respawnTransform.setLocation(new Location<World>(craft.getWorld(), craft.getCrewSigns().get(player.getUniqueId())));
         event.setToTransform(respawnTransform);
     }
 
-    @Listener
-    public void onCraftDetect(CraftDetectEvent event){
+    public static void onCraftDetect(CraftDetectEvent event, World world, HashHitBox hitBox){
 
-        World world = event.getCraft().getWorld();
-        for(Vector3i location: event.getCraft().getHitBox()){
-            BlockSnapshot block = MovecraftLocation.toSponge(world, location).createSnapshot();
-            if (block.getState().getType() != BlockTypes.WALL_SIGN && block.getState().getType() != BlockTypes.STANDING_SIGN) {
-                continue;
-            }
+        for(Vector3i location: hitBox){
 
-            if (!block.getLocation().isPresent() || !block.getLocation().get().getTileEntity().isPresent())
+            if (world.getBlockType(location) != BlockTypes.WALL_SIGN && world.getBlockType(location) != BlockTypes.STANDING_SIGN || !world.getTileEntity(location).isPresent())
                 continue;
 
-            Sign sign = (Sign) block.getLocation().get().getTileEntity().get();
+            Sign sign = (Sign) world.getTileEntity(location).get();
             ListValue<Text> lines = sign.lines();
 
             if (lines.get(0).toPlain().equalsIgnoreCase("Crew:")) {
 
                 if (Sponge.getServer().getPlayer(lines.get(1).toPlain()).isPresent())
-                    event.getCraft().getCrewSigns().put(Sponge.getServer().getPlayer(lines.get(1).toPlain()).get().getUniqueId(),block.getLocation().get());
+                    event.getCraft().getCrewSigns().put(Sponge.getServer().getPlayer(lines.get(1).toPlain()).get().getUniqueId(), location);
             }
         }
     }

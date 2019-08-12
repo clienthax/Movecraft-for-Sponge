@@ -84,8 +84,8 @@ public class WorldHandler {
             Vector3i location = entry.getKey();
             final BlockSnapshot blockSnapshot = entry.getValue();
             nativeWorld.restoreSnapshot(rotateBlock(rotation, blockSnapshot).withLocation(new Location<World>(nativeWorld, location)), true, BlockChangeFlags.NONE);
-            final HashMap<Integer, Integer> integerIntegerHashMap = updates.get(location);
-            integerIntegerHashMap.forEach((key, value) -> nativeWorld.addScheduledUpdate(location, key, value));
+            final HashMap<Integer, Integer> blockUpdates = updates.get(location);
+            blockUpdates.forEach((key, value) -> nativeWorld.addScheduledUpdate(location, key, value));
             // Prune the replaced location from old locations
             oldLocations.remove(location);
         }
@@ -132,8 +132,8 @@ public class WorldHandler {
             Vector3i location = entry.getKey();
             final BlockSnapshot blockSnapshot = entry.getValue();
             blockSnapshot.withLocation(new Location<>(nativeWorld, location)).restore(true, BlockChangeFlags.NONE);
-            final HashMap<Integer, Integer> integerIntegerHashMap = updates.get(location);
-            integerIntegerHashMap.forEach((key, value) -> nativeWorld.addScheduledUpdate(location, key, value));
+            final HashMap<Integer, Integer> blockUpdates = updates.get(location);
+            blockUpdates.forEach((key, value) -> nativeWorld.addScheduledUpdate(location, key, value));
             // Prune the replaced location from old locations
             oldLocations.remove(location);
         }

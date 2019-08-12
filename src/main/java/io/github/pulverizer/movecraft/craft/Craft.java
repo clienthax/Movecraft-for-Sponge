@@ -71,7 +71,7 @@ public class Craft {
     private float meanMoveTime;
 
     //TODO: Rewrite these variables
-    private final HashMap<UUID, Location<World>> crewSigns = new HashMap<>();
+    private final HashMap<UUID, Vector3i> crewSigns = new HashMap<>();
 
     /**
      * Initialises the craft and detects the craft's hitbox.
@@ -748,7 +748,7 @@ public class Craft {
         return waterLine;
     }
 
-    public Map<UUID, Location<World>> getCrewSigns(){
+    public Map<UUID, Vector3i> getCrewSigns(){
         return crewSigns;
     }
 

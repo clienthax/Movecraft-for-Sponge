@@ -7,6 +7,7 @@ import io.github.pulverizer.movecraft.config.Settings;
 import io.github.pulverizer.movecraft.craft.Craft;
 import io.github.pulverizer.movecraft.craft.CraftManager;
 import io.github.pulverizer.movecraft.event.CraftDetectEvent;
+import io.github.pulverizer.movecraft.utils.HashHitBox;
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.block.BlockSnapshot;
 import org.spongepowered.api.block.BlockTypes;
@@ -24,33 +25,24 @@ import org.spongepowered.api.world.World;
 
 public final class CruiseSign {
 
-    @Listener
-    public void onCraftDetect(CraftDetectEvent event){
-        World world = event.getCraft().getWorld();
-        for(Vector3i location: event.getCraft().getHitBox()){
-            BlockSnapshot block = MovecraftLocation.toSponge(world, location).createSnapshot();
-            if(block.getState().getType() == BlockTypes.WALL_SIGN || block.getState().getType() == BlockTypes.STANDING_SIGN){
+    public static void onCraftDetect(CraftDetectEvent event, World world, HashHitBox hitBox){
 
-                if (!block.getLocation().isPresent() || !block.getLocation().get().getTileEntity().isPresent())
-                    return;
+        for(Vector3i location: hitBox) {
 
-                Sign sign = (Sign) block.getLocation().get().getTileEntity().get();
-                ListValue<Text> lines = sign.lines();
-                if (lines.get(0).toPlain().equalsIgnoreCase("Cruise: ON")) {
-                    lines.set(0, Text.of("Cruise: OFF"));
-                    sign.offer(lines);
-                }
+            if (world.getBlockType(location) != BlockTypes.WALL_SIGN && world.getBlockType(location) != BlockTypes.STANDING_SIGN || !world.getTileEntity(location).isPresent())
+                continue;
+
+            Sign sign = (Sign) world.getTileEntity(location).get();
+            ListValue<Text> lines = sign.lines();
+
+            if (lines.get(0).toPlain().equalsIgnoreCase("Cruise: ON")) {
+                lines.set(0, Text.of("Cruise: OFF"));
+                sign.offer(lines);
             }
         }
     }
 
-    @Listener
-    public final void onSignClick(InteractBlockEvent.Secondary.MainHand event, @Root Player player) {
-
-        BlockSnapshot block = event.getTargetBlock();
-        if (block.getState().getType() != BlockTypes.STANDING_SIGN && block.getState().getType() != BlockTypes.WALL_SIGN) {
-            return;
-        }
+    public static void onSignClick(InteractBlockEvent.Secondary.MainHand event, Player player, BlockSnapshot block) {
 
         if (!block.getLocation().isPresent() || !block.getLocation().get().getTileEntity().isPresent())
             return;
@@ -109,8 +101,7 @@ public final class CruiseSign {
         }
     }
 
-    @Listener
-    public void onSignChange(ChangeSignEvent event, @Root Player player) {
+    public static void onSignChange(ChangeSignEvent event, Player player) {
 
         if (!event.getText().lines().get(0).toPlain().equalsIgnoreCase("Cruise: OFF") && !event.getText().lines().get(0).toPlain().equalsIgnoreCase("Cruise: ON")) {
             return;

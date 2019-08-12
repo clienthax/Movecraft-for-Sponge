@@ -18,8 +18,7 @@ import org.spongepowered.api.text.Text;
 
 public final class HelmSign {
 
-    @Listener
-    public final void onSignChange(ChangeSignEvent event){
+    public static void onSignChange(ChangeSignEvent event){
         ListValue<Text> lines = event.getText().lines();
         if (!lines.get(0).toPlain().equalsIgnoreCase("[helm]")) {
             return;
@@ -30,20 +29,13 @@ public final class HelmSign {
         event.getText().set(lines);
     }
 
-    @Listener
-    @Include({InteractBlockEvent.Primary.class, InteractBlockEvent.Secondary.MainHand.class})
-    public final void onSignClick(InteractBlockEvent event, @Root Player player) {
+    public static void onSignClick(InteractBlockEvent event, Player player, BlockSnapshot block) {
         Rotation rotation;
         if (event instanceof InteractBlockEvent.Secondary) {
             rotation = Rotation.CLOCKWISE;
         }else if(event instanceof InteractBlockEvent.Primary){
             rotation = Rotation.ANTICLOCKWISE;
         }else{
-            return;
-        }
-
-        BlockSnapshot block = event.getTargetBlock();
-        if (block.getState().getType() != BlockTypes.STANDING_SIGN && block.getState().getType() != BlockTypes.WALL_SIGN) {
             return;
         }
 

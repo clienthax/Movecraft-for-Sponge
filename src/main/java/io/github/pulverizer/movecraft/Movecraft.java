@@ -94,8 +94,7 @@ public class Movecraft {
     }
 
     public ConfigurationLoader<ConfigurationNode> createConfigLoader(Path file) {
-        ConfigurationLoader<ConfigurationNode> loader = YAMLConfigurationLoader.builder().setPath(file).setDefaultOptions(ConfigurationOptions.defaults().setShouldCopyDefaults(true)).build();
-            return loader;
+        return YAMLConfigurationLoader.builder().setPath(file).setDefaultOptions(ConfigurationOptions.defaults().setShouldCopyDefaults(true)).build();
     }
 
     /**
@@ -211,26 +210,8 @@ public class Movecraft {
         Sponge.getEventManager().registerListeners(this, new InteractListener());
         Sponge.getEventManager().registerListeners(this, new BlockListener());
         Sponge.getEventManager().registerListeners(this, new PlayerListener());
-        //Sponge.getEventManager().registerListeners(this, new AntiAircraftDirectorSign());
-        Sponge.getEventManager().registerListeners(this, new AscendSign());
-        Sponge.getEventManager().registerListeners(this, new CannonDirectorSign());
-        Sponge.getEventManager().registerListeners(this, new ContactsSign());
-        Sponge.getEventManager().registerListeners(this, new CraftSign());
-        Sponge.getEventManager().registerListeners(this, new CrewSign());
-        Sponge.getEventManager().registerListeners(this, new CruiseSign());
-        Sponge.getEventManager().registerListeners(this, new DescendSign());
-        Sponge.getEventManager().registerListeners(this, new HelmSign());
-        Sponge.getEventManager().registerListeners(this, new MoveSign());
-        Sponge.getEventManager().registerListeners(this, new CommanderSign());
-        Sponge.getEventManager().registerListeners(this, new RelativeMoveSign());
-        Sponge.getEventManager().registerListeners(this, new ReleaseSign());
-        Sponge.getEventManager().registerListeners(this, new RemoteSign());
-        Sponge.getEventManager().registerListeners(this, new SpeedSign());
-        Sponge.getEventManager().registerListeners(this, new StatusSign());
-        Sponge.getEventManager().registerListeners(this, new SubcraftRotateSign());
-        Sponge.getEventManager().registerListeners(this, new TeleportSign());
-        Sponge.getEventManager().registerListeners(this, new PilotSign());
         Sponge.getEventManager().registerListeners(this, new SignListener());
+        Sponge.getEventManager().registerListeners(this, new CrewSign());
 
         logger.info("Movecraft Enabled.");
     }

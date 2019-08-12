@@ -1,11 +1,11 @@
 package io.github.pulverizer.movecraft.sign;
 
 import com.flowpowered.math.vector.Vector3i;
-import io.github.pulverizer.movecraft.MovecraftLocation;
 import io.github.pulverizer.movecraft.craft.Craft;
 import io.github.pulverizer.movecraft.event.CraftDetectEvent;
 import io.github.pulverizer.movecraft.event.SignTranslateEvent;
 import io.github.pulverizer.movecraft.craft.CraftManager;
+import io.github.pulverizer.movecraft.utils.HashHitBox;
 import org.spongepowered.api.block.BlockSnapshot;
 import org.spongepowered.api.block.BlockTypes;
 import org.spongepowered.api.block.tileentity.Sign;
@@ -17,38 +17,33 @@ import org.spongepowered.api.world.World;
 
 public class ContactsSign {
 
-    @Listener
-    public void onCraftDetect(CraftDetectEvent event){
-        World world = event.getCraft().getWorld();
-        for(Vector3i location: event.getCraft().getHitBox()){
-            BlockSnapshot block = MovecraftLocation.toSponge(world, location).createSnapshot();
-            if(block.getState().getType() == BlockTypes.WALL_SIGN || block.getState().getType() == BlockTypes.STANDING_SIGN){
+    public static void onCraftDetect(CraftDetectEvent event, World world, HashHitBox hitBox){
 
-                if (!MovecraftLocation.toSponge(world, location).getTileEntity().isPresent())
-                    return;
+        for(Vector3i location : hitBox) {
 
-                Sign sign = (Sign) MovecraftLocation.toSponge(world, location).getTileEntity().get();
-                ListValue<Text> lines = sign.lines();
-                if (lines.get(0).toPlain().equalsIgnoreCase("Contacts:")) {
-                    lines.set(1, Text.of(""));
-                    lines.set(2, Text.of(""));
-                    lines.set(3, Text.of(""));
-                    sign.offer(lines);
-                }
+            if (world.getBlockType(location) != BlockTypes.WALL_SIGN && world.getBlockType(location) != BlockTypes.STANDING_SIGN || world.getTileEntity(location).isPresent())
+                continue;
+
+            Sign sign = (Sign) world.getTileEntity(location).get();
+            ListValue<Text> lines = sign.lines();
+
+            if (lines.get(0).toPlain().equalsIgnoreCase("Contacts:")) {
+                lines.set(1, Text.of(""));
+                lines.set(2, Text.of(""));
+                lines.set(3, Text.of(""));
+                sign.offer(lines);
             }
         }
     }
 
-    @Listener
-    public final void onSignTranslateEvent(SignTranslateEvent event){
+    public static void onSignTranslateEvent(SignTranslateEvent event, Craft craft, World world, Vector3i location){
 
-        BlockSnapshot block = event.getBlock();
-        if (!block.getLocation().isPresent() || !block.getLocation().get().getTileEntity().isPresent())
+        if (!world.getTileEntity(location).isPresent())
             return;
 
-        Sign sign = (Sign) block.getLocation().get().getTileEntity().get();
+        Sign sign = (Sign) world.getTileEntity(location).get();
         ListValue<Text> lines = sign.lines();
-        Craft craft = event.getCraft();
+
         if (!lines.get(0).toPlain().equalsIgnoreCase("Contacts:")) {
             return;
         }

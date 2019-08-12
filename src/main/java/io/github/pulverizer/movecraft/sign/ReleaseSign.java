@@ -15,13 +15,7 @@ import org.spongepowered.api.text.Text;
 public final class ReleaseSign {
     private static final String HEADER = "Release";
 
-    @Listener
-    public final void onSignClick(InteractBlockEvent.Secondary.MainHand event, @Root Player player) {
-
-        BlockSnapshot block = event.getTargetBlock();
-        if (block.getState().getType() != BlockTypes.STANDING_SIGN && block.getState().getType() != BlockTypes.WALL_SIGN) {
-            return;
-        }
+    public static void onSignClick(InteractBlockEvent.Secondary.MainHand event, Player player, BlockSnapshot block) {
 
         if (!block.getLocation().isPresent() || !block.getLocation().get().getTileEntity().isPresent())
             return;

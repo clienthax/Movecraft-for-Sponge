@@ -63,7 +63,7 @@ public class CraftTranslateCommand extends UpdateCommand {
             for(Vector3i location : craft.getHitBox()){
                 BlockSnapshot block = MovecraftLocation.toSponge(craft.getWorld(), location).createSnapshot();
                 if(block.getState().getType() == BlockTypes.WALL_SIGN || block.getState().getType() == BlockTypes.STANDING_SIGN){
-                    Sponge.getEventManager().post(new SignTranslateEvent(block, craft));
+                    Sponge.getEventManager().post(new SignTranslateEvent(block.getPosition(), craft));
                 }
             }
         } else {
@@ -144,7 +144,7 @@ public class CraftTranslateCommand extends UpdateCommand {
             for (Vector3i location : craft.getHitBox()) {
                 BlockSnapshot block = craft.getWorld().createSnapshot(location);
                 if (block.getState().getType() == BlockTypes.WALL_SIGN || block.getState().getType() == BlockTypes.STANDING_SIGN) {
-                    Sponge.getEventManager().post(new SignTranslateEvent(block, craft));
+                    Sponge.getEventManager().post(new SignTranslateEvent(block.getPosition(), craft));
                 }
             }
 

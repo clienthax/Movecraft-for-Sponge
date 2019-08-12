@@ -24,11 +24,9 @@ import java.util.*;
 
 public final class SubcraftRotateSign {
     private static final String HEADER = "Subcraft Rotate";
-    private final Set<UUID> rotatingPlayers = new HashSet<>();
+    private static final Set<UUID> rotatingPlayers = new HashSet<>();
 
-    @Listener
-    @Include({InteractBlockEvent.Primary.class, InteractBlockEvent.Secondary.MainHand.class})
-    public final void onSignClick(InteractBlockEvent event, @Root Player player) {
+    public static void onSignClick(InteractBlockEvent event, Player player, BlockSnapshot block) {
 
         Rotation rotation;
         if (event instanceof InteractBlockEvent.Secondary) {
@@ -36,10 +34,6 @@ public final class SubcraftRotateSign {
         }else if(event instanceof InteractBlockEvent.Primary){
             rotation = Rotation.ANTICLOCKWISE;
         }else{
-            return;
-        }
-        BlockSnapshot block = event.getTargetBlock();
-        if (block.getState().getType() != BlockTypes.STANDING_SIGN && block.getState().getType() != BlockTypes.WALL_SIGN) {
             return;
         }
 

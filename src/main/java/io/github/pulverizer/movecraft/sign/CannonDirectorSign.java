@@ -17,14 +17,7 @@ import org.spongepowered.api.world.World;
 public final class CannonDirectorSign {
     private static final String HEADER = "Cannon Director";
 
-    @Listener
-    @Include({InteractBlockEvent.Primary.class, InteractBlockEvent.Secondary.MainHand.class})
-    public final void onSignClick(InteractBlockEvent event, @Root Player player) {
-
-        BlockSnapshot block = event.getTargetBlock();
-        if (block.getState().getType() != BlockTypes.STANDING_SIGN && block.getState().getType() != BlockTypes.WALL_SIGN) {
-            return;
-        }
+    public static void onSignClick(InteractBlockEvent event, Player player, BlockSnapshot block) {
 
         if (!block.getLocation().isPresent() || !block.getLocation().get().getTileEntity().isPresent())
             return;
@@ -46,23 +39,31 @@ public final class CannonDirectorSign {
         }
 
         if (foundCraft == null) {
-            if (player != null) {player.sendMessage(Text.of("ERROR: Sign must be a part of a piloted craft!"));}
+            if (player != null) {
+                player.sendMessage(Text.of("ERROR: Sign must be a part of a piloted craft!"));
+            }
             return;
         }
 
         if (!foundCraft.getType().allowCannonDirectorSign()) {
-            if (player != null) {player.sendMessage(Text.of("ERROR: Cannon Director Signs not allowed on this craft!"));}
+            if (player != null) {
+                player.sendMessage(Text.of("ERROR: Cannon Director Signs not allowed on this craft!"));
+            }
             return;
         }
         if(event instanceof InteractBlockEvent.Primary && player.getUniqueId() == foundCraft.getCannonDirector()){
             foundCraft.setCannonDirector(null);
-            if (player != null) {player.sendMessage(Text.of("You are no longer directing the cannons of this craft."));}
+            if (player != null) {
+                player.sendMessage(Text.of("You are no longer directing the cannons of this craft."));
+            }
             return;
         }
 
 
         foundCraft.setCannonDirector(player.getUniqueId());
-        if(player != null) {player.sendMessage(Text.of("You are now directing the cannons of this craft."));}
+        if(player != null) {
+            player.sendMessage(Text.of("You are now directing the cannons of this craft."));
+        }
         if (foundCraft.getAADirector() == player.getUniqueId())
             foundCraft.setAADirector(null);
 

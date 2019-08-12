@@ -19,13 +19,7 @@ import org.spongepowered.api.util.Direction;
 public final class RelativeMoveSign {
     private static final String HEADER = "RMove:";
 
-    @Listener
-    public final void onSignClick(InteractBlockEvent.Secondary.MainHand event, @Root Player player) {
-
-        BlockSnapshot block = event.getTargetBlock();
-        if (block.getState().getType() != BlockTypes.STANDING_SIGN && block.getState().getType() != BlockTypes.WALL_SIGN) {
-            return;
-        }
+    public static void onSignClick(InteractBlockEvent.Secondary.MainHand event, Player player, BlockSnapshot block) {
 
         if (!block.getLocation().isPresent() || !block.getLocation().get().getTileEntity().isPresent())
             return;
@@ -40,17 +34,13 @@ public final class RelativeMoveSign {
             return;
         }
         String[] numbers = lines.get(1).toPlain().split(",");
-        int dLeftRight = Integer.parseInt(numbers[0]); // negative =
-        // left,
-        // positive =
-        // right
+        int dLeftRight = Integer.parseInt(numbers[0]);
+        // negative = left,
+        // positive = right
         int dy = Integer.parseInt(numbers[1]);
-        int dBackwardForward = Integer.parseInt(numbers[2]); // negative
-        // =
-        // backwards,
-        // positive
-        // =
-        // forwards
+        int dBackwardForward = Integer.parseInt(numbers[2]);
+        // negative = backwards,
+        // positive = forwards
         int maxMove = CraftManager.getInstance().getCraftByPlayer(player.getUniqueId()).getType().maxStaticMove();
 
         if (dLeftRight > maxMove)
