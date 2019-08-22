@@ -518,7 +518,7 @@ public class AsyncManager implements Runnable {
         if (ticksElapsed > Settings.TracerRateTicks) {
             for (World world : Sponge.getServer().getWorlds()) {
                 if (world != null) {
-                    for (Entity entity : world.getEntities(entity -> entity.getType().equals(EntityTypes.PRIMED_TNT) || entity instanceof PrimedTNT)) {
+                    for (Entity entity : world.getEntities(entity -> entity instanceof PrimedTNT)) {
                         PrimedTNT tnt = (PrimedTNT) entity;
 
                         if (tnt.getVelocity().lengthSquared() > 0.25) {
@@ -572,7 +572,7 @@ public class AsyncManager implements Runnable {
             if (world == null || world.getPlayers().isEmpty())
                 continue;
 
-            for (Entity entity : world.getEntities(entity -> entity.getType().equals(EntityTypes.SMALL_FIREBALL))) {
+            for (Entity entity : world.getEntities(entity -> entity instanceof SmallFireball)) {
                 SmallFireball fireball = (SmallFireball) entity;
 
                 if (!(fireball.getShooter() instanceof Dispenser) || FireballTracking.containsKey(fireball))
@@ -713,7 +713,7 @@ public class AsyncManager implements Runnable {
             if (world == null)
                 continue;
 
-            for (Entity entity : world.getEntities(entity -> entity.getType().equals(EntityTypes.PRIMED_TNT) || entity.getType().getId().equalsIgnoreCase("minecraft:primedtnt"))) {
+            for (Entity entity : world.getEntities(entity -> entity instanceof PrimedTNT)) {
 
                 PrimedTNT tnt = (PrimedTNT) entity;
 
