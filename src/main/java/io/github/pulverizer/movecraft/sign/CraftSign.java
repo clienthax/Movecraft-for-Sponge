@@ -30,9 +30,6 @@ public final class CraftSign {
 
         ListValue<Text> lines = event.getText().lines();
 
-        if (CraftManager.getInstance().getCraftTypeFromString(lines.get(0).toPlain()) == null) {
-            return;
-        }
         if (!Settings.RequireCreatePerm) {
             return;
         }

@@ -11,17 +11,16 @@ public final class CommanderSign {
 
     private static final String HEADER = "Commander:";
 
-    public static void onSignChange(ChangeSignEvent event, Player player){
+    public static void onSignChange(ChangeSignEvent event, Player player) {
 
         ListValue<Text> lines = event.getText().lines();
 
-        if (lines.get(0).toPlain().equalsIgnoreCase(HEADER)) {
-            String pilotName = lines.get(1).toPlain();
+        String pilotName = lines.get(1).toPlain();
 
-            if (pilotName.isEmpty()) {
-                lines.set(1, Text.of(player.getName()));
-                event.getText().set(lines);
-            }
+        if (pilotName.isEmpty()) {
+            lines.set(1, Text.of(player.getName()));
+            event.getText().set(lines);
         }
+
     }
 }

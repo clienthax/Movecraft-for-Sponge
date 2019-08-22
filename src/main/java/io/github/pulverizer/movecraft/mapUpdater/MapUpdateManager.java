@@ -29,15 +29,10 @@ public class MapUpdateManager implements Runnable {
         long startTime = System.currentTimeMillis();
         // and set all crafts that were updated to not processing
 
-
-
-        synchronized (updates) {
-            UpdateCommand next = updates.poll();
-            while(next != null) {
-                next.doUpdate();
-                next = updates.poll();
-            }
-        }
+        updates.forEach(update -> {
+            update.doUpdate();
+            updates.remove(update);
+        });
 
         if (Settings.Debug) {
             long endTime = System.currentTimeMillis();

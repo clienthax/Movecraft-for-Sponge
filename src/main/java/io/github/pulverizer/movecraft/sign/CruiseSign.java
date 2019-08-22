@@ -35,7 +35,7 @@ public final class CruiseSign {
             Sign sign = (Sign) world.getTileEntity(location).get();
             ListValue<Text> lines = sign.lines();
 
-            if (lines.get(0).toPlain().equalsIgnoreCase("Cruise: ON")) {
+            if (lines.get(0).toPlain().equalsIgnoreCase("Cruise: ON") || lines.get(0).toPlain().equalsIgnoreCase("Cruise:")) {
                 lines.set(0, Text.of("Cruise: OFF"));
                 sign.offer(lines);
             }
@@ -103,9 +103,6 @@ public final class CruiseSign {
 
     public static void onSignChange(ChangeSignEvent event, Player player) {
 
-        if (!event.getText().lines().get(0).toPlain().equalsIgnoreCase("Cruise: OFF") && !event.getText().lines().get(0).toPlain().equalsIgnoreCase("Cruise: ON")) {
-            return;
-        }
         if (player.hasPermission("movecraft.cruisesign") || !Settings.RequireCreatePerm) {
             return;
         }

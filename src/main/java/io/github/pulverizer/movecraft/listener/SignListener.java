@@ -1,13 +1,14 @@
 package io.github.pulverizer.movecraft.listener;
 
-import com.flowpowered.math.vector.Vector3i;
 import io.github.pulverizer.movecraft.craft.Craft;
+import io.github.pulverizer.movecraft.craft.CraftManager;
 import io.github.pulverizer.movecraft.event.CraftDetectEvent;
 import io.github.pulverizer.movecraft.event.SignTranslateEvent;
 import io.github.pulverizer.movecraft.sign.*;
 import io.github.pulverizer.movecraft.utils.HashHitBox;
 import org.spongepowered.api.block.BlockSnapshot;
 import org.spongepowered.api.block.BlockTypes;
+import org.spongepowered.api.block.tileentity.Sign;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.event.Listener;
 import org.spongepowered.api.event.block.InteractBlockEvent;
@@ -70,23 +71,65 @@ public class SignListener {
     @Listener
     public final void onSignChange(ChangeSignEvent event, @Root Player player) {
 
-        CruiseSign.onSignChange(event, player);
-        CraftSign.onSignChange(event, player);
-        HelmSign.onSignChange(event);
-        CommanderSign.onSignChange(event, player);
-        CrewSign.onSignChange(event, player);
+        String header = event.getText().lines().get(0).toPlain().toLowerCase();
+
+        switch (header) {
+
+            case "[helm]":
+                HelmSign.onSignChange(event);
+                break;
+
+            case "commander:":
+                CommanderSign.onSignChange(event, player);
+                break;
+
+            case "crew:":
+                CrewSign.onSignChange(event, player);
+                break;
+
+
+            default:
+                if (header.equals("cruise:") || header.equals("cruise: off") || header.equals("cruise: on")) {
+                    CruiseSign.onSignChange(event, player);
+                    return;
+                }
+
+                if (CraftManager.getInstance().getCraftTypeFromString(header) != null)
+                    CraftSign.onSignChange(event, player);
+
+                break;
+        }
     }
 
     @Listener
     public final void onSignTranslate(SignTranslateEvent event) {
 
         Craft craft = event.getCraft();
-        World world = event.getWorld();
-        Vector3i location = event.getBlockPosition();
 
-        CrewSign.onSignTranslate(event, craft, world, location);
-        StatusSign.onSignTranslate(event, craft, world, location);
-        SpeedSign.onSignTranslate(event, craft, world, location);
-        ContactsSign.onSignTranslateEvent(event, craft, world, location);
+        if (!event.getWorld().getTileEntity(event.getBlockPosition()).isPresent())
+            return;
+
+        Sign sign = (Sign) event.getWorld().getTileEntity(event.getBlockPosition()).get();
+
+        String header = sign.lines().get(0).toPlain().toLowerCase();
+
+        switch (header) {
+
+            case "crew:":
+                CrewSign.onSignTranslate(craft, event.getWorld(), event.getBlockPosition(), sign);
+                break;
+
+            case "status:":
+                StatusSign.onSignTranslate(craft, sign);
+                break;
+
+            case "speed:":
+                SpeedSign.onSignTranslate(craft, sign);
+                break;
+
+            case "contacts:":
+                ContactsSign.onSignTranslateEvent(craft, sign);
+                break;
+        }
     }
 }

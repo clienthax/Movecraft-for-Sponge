@@ -40,18 +40,19 @@ public class TranslationTask extends AsyncTask {
     private boolean collisionExplosion = false;
     private String failMessage;
     private Collection<UpdateCommand> updates = new HashSet<>();
-
+    private World world;
 
     private final List<BlockType> harvestBlocks = craft.getType().getHarvestBlocks();
-    private final List<Location<World>> harvestedBlocks = new ArrayList<>();
+    private final List<Vector3i> harvestedBlocks = new ArrayList<>();
     private final List<BlockType> harvesterBladeBlocks = craft.getType().getHarvesterBladeBlocks();
     private final HashHitBox collisionBox = new HashHitBox();
 
-    public TranslationTask(Craft c, Vector3i moveVector) {
-        super(c, "Translation");
+    public TranslationTask(Craft craft, Vector3i moveVector) {
+        super(craft, "Translation");
+        world = craft.getWorld();
         this.moveVector = moveVector;
         newHitBox = new HashHitBox();
-        oldHitBox = new HashHitBox(c.getHitBox());
+        oldHitBox = new HashHitBox(craft.getHitBox());
     }
 
     @Override
@@ -94,9 +95,8 @@ public class TranslationTask extends AsyncTask {
             for(Vector3i location : collisionBox){
                 if (craft.getType().getExplodeOnCrash() > 0.0F) {
 
-                    Location<World> loc = MovecraftLocation.toSponge(craft.getWorld(), location);
-                    if (!loc.getBlock().getType().equals(BlockTypes.AIR)  && ThreadLocalRandom.current().nextDouble(1) < .05) {
-                        updates.add(new ExplosionUpdateCommand( loc, craft.getType().getExplodeOnCrash()));
+                    if (!world.getBlockType(location).equals(BlockTypes.AIR)  && ThreadLocalRandom.current().nextDouble(1) < .05) {
+                        updates.add(new ExplosionUpdateCommand( world, location, craft.getType().getExplodeOnCrash()));
                         collisionExplosion=true;
                     }
                 }
@@ -127,9 +127,8 @@ public class TranslationTask extends AsyncTask {
                     explosionForce += 25;//TODO: find the correct amount
                 }*/
                 explosionKey = explosionForce;
-                Location<World> loc = MovecraftLocation.toSponge(craft.getWorld(), location);
-                if (!loc.getBlock().getType().equals(BlockTypes.AIR)) {
-                    updates.add(new ExplosionUpdateCommand(loc, explosionKey));
+                if (!world.getBlockType(location).equals(BlockTypes.AIR)) {
+                    updates.add(new ExplosionUpdateCommand(world, location, explosionKey));
                     collisionExplosion = true;
                 }
                 if (craft.getType().getFocusedExplosion()) { // don't handle any further collisions if it is set to focusedexplosion
@@ -267,7 +266,7 @@ public class TranslationTask extends AsyncTask {
                 BlockType tmpType = MovecraftLocation.toSponge(craft.getWorld(), oldLocation).getBlockType();
                 if (harvesterBladeBlocks.contains(tmpType)) {
                     blockObstructed = false;
-                    harvestedBlocks.add(MovecraftLocation.toSponge(craft.getWorld(), newLocation));
+                    harvestedBlocks.add(newLocation);
                 }
             }
 

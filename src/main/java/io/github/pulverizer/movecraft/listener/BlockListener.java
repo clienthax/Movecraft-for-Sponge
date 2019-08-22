@@ -13,6 +13,7 @@ import org.spongepowered.api.data.Transaction;
 import org.spongepowered.api.data.key.Keys;
 import org.spongepowered.api.data.property.block.MatterProperty;
 import org.spongepowered.api.entity.Entity;
+import org.spongepowered.api.entity.EntityTypes;
 import org.spongepowered.api.entity.explosive.PrimedTNT;
 import org.spongepowered.api.entity.living.monster.Creeper;
 import org.spongepowered.api.entity.living.player.Player;
@@ -29,10 +30,7 @@ import org.spongepowered.api.world.Location;
 import org.spongepowered.api.world.World;
 import org.spongepowered.api.world.explosion.Explosion;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 
 import static org.spongepowered.api.event.Order.FIRST;
 import static org.spongepowered.api.event.Order.LAST;
@@ -133,7 +131,7 @@ public class BlockListener {
     @Listener
     public void tntBlastCondenser(ExplosionEvent.Pre event) {
 
-        if (!(event.getSource() instanceof PrimedTNT))
+        if (!event.getExplosion().getSourceExplosive().isPresent() || !(event.getExplosion().getSourceExplosive().get() instanceof PrimedTNT))
             return;
 
         if (tntControlTimer < Sponge.getServer().getRunningTimeTicks()) {
@@ -141,18 +139,26 @@ public class BlockListener {
             tntControlList.clear();
         }
 
-        PrimedTNT eventTNT = (PrimedTNT) event.getSource();
+        PrimedTNT eventTNT = (PrimedTNT) event.getExplosion().getSourceExplosive().get();
         Location<World> tntLoc = eventTNT.getLocation();
 
         if (tntControlList.contains(eventTNT)) {
-            //event.setCancelled(true);
-            //eventTNT.remove();
+            event.setCancelled(true);
+            eventTNT.remove();
             return;
         }
 
         int tntFound = 1;
 
-        for (Entity entity : event.getTargetWorld().getIntersectingEntities(new AABB(tntLoc.getPosition().sub(20, 20, 20), tntLoc.getPosition().add(20, 20, 20)))) {
+        int radius = 1;
+
+        //TODO: Seems to only be finding the first 8 TNT Entities when using World#getIntersectingEntities(AABB)?
+        Collection<Entity> entities = event.getTargetWorld().getNearbyEntities(tntLoc.getPosition(), 3);
+
+        if (Settings.Debug)
+            Movecraft.getInstance().getLogger().info("Entity Count: " + entities.size());
+
+        for (Entity entity : entities) {
 
             if (!(entity instanceof PrimedTNT))
                 continue;
@@ -162,23 +168,27 @@ public class BlockListener {
             if (tnt.getFuseData().ticksRemaining().get() > eventTNT.getFuseData().ticksRemaining().get() + 1 || tnt.equals(eventTNT))
                 continue;
 
-            //tnt.remove();
+            tnt.remove();
             tntControlList.add(tnt);
             tntFound++;
+
+            //30 breaks the water block it's in and has a large AoE, going to max out at 16.
+            if (tntFound >= 16)
+                break;
         }
 
-        float explosionPower = tntFound * 4;
+        float explosionPower = tntFound;
 
-        if (explosionPower > 4) {
+        if (Settings.Debug)
             Movecraft.getInstance().getLogger().info("BOOM: " + explosionPower);
 
-            Explosion explosion = Explosion.builder()
-                    .from(event.getExplosion())
-                    .radius(explosionPower)
-                    .build();
+        //TODO: Waiting on Explosion Settings PR on SpongeCommon
+        Explosion explosion = Explosion.builder()
+                .from(event.getExplosion())
+                .radius(explosionPower)
+                .build();
 
-            event.setExplosion(explosion);
-        }
+        event.setExplosion(explosion);
     }
 
     @Listener

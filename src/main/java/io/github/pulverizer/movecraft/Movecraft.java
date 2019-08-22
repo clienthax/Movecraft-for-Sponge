@@ -13,8 +13,6 @@ import org.slf4j.Logger;
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.block.BlockType;
 import org.spongepowered.api.config.ConfigDir;
-import org.spongepowered.api.entity.EntityType;
-import org.spongepowered.api.entity.EntityTypes;
 import org.spongepowered.api.event.Listener;
 import org.spongepowered.api.event.game.state.*;
 import org.spongepowered.api.item.ItemType;
@@ -29,7 +27,6 @@ import io.github.pulverizer.movecraft.listener.BlockListener;
 import io.github.pulverizer.movecraft.listener.InteractListener;
 import io.github.pulverizer.movecraft.listener.PlayerListener;
 import io.github.pulverizer.movecraft.mapUpdater.MapUpdateManager;
-import io.github.pulverizer.movecraft.sign.CommanderSign;
 import org.spongepowered.api.scheduler.Task;
 
 import java.io.IOException;

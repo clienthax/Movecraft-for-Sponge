@@ -472,15 +472,15 @@ public class Craft {
 
         if (burningFuel < movePoints) {
 
-            HashSet<Location<World>> furnaceBlocks = new HashSet<>();
+            HashSet<Vector3i> furnaceBlocks = new HashSet<>();
 
             //Find all the furnace blocks
             getType().getFurnaceBlocks().forEach(blockType -> furnaceBlocks.addAll(findBlockType(blockType)));
 
             //Find and burn fuel
-            for (Location<World> furnaceBlock : furnaceBlocks) {
-                if (furnaceBlock.getTileEntity().isPresent() && furnaceBlock.getTileEntity().get() instanceof TileEntityCarrier) {
-                    Inventory inventory = ((TileEntityCarrier) furnaceBlock.getTileEntity().get()).getInventory();
+            for (Vector3i furnaceLocation : furnaceBlocks) {
+                if (world.getTileEntity(furnaceLocation).isPresent() && world.getTileEntity(furnaceLocation).get() instanceof TileEntityCarrier) {
+                    Inventory inventory = ((TileEntityCarrier) world.getTileEntity(furnaceLocation).get()).getInventory();
 
                     Set<ItemType> fuelItems = getType().getFuelItems().keySet();
 
@@ -521,15 +521,15 @@ public class Craft {
     public int checkFuelStored() {
 
         int fuelStored = 0;
-        HashSet<Location<World>> furnaceBlocks = new HashSet<>();
+        HashSet<Vector3i> furnaceBlocks = new HashSet<>();
 
         //Find all the furnace blocks
         getType().getFurnaceBlocks().forEach(blockType -> furnaceBlocks.addAll(findBlockType(blockType)));
 
         //Find and count the fuel
-        for (Location<World> furnaceBlock : furnaceBlocks) {
-            if (furnaceBlock.getTileEntity().isPresent() && furnaceBlock.getTileEntity().get() instanceof TileEntityCarrier) {
-                Inventory inventory = ((TileEntityCarrier) furnaceBlock.getTileEntity().get()).getInventory();
+        for (Vector3i furnaceLocation : furnaceBlocks) {
+            if (world.getTileEntity(furnaceLocation).isPresent() && world.getTileEntity(furnaceLocation).get() instanceof TileEntityCarrier) {
+                Inventory inventory = ((TileEntityCarrier) world.getTileEntity(furnaceLocation).get()).getInventory();
 
                 Set<ItemType> fuelItems = getType().getFuelItems().keySet();
 
@@ -559,11 +559,11 @@ public class Craft {
      * @param blockType The BlockType to find.
      * @return The locations of the matching blocks.
      */
-    public HashSet<Location<World>> findBlockType(BlockType blockType) {
-        HashSet<Location<World>> foundBlocks = new HashSet<>();
-        getHitBox().forEach(mLoc -> {
-            if (getWorld().getBlockType(mLoc) == blockType)
-                foundBlocks.add(MovecraftLocation.toSponge(getWorld(), mLoc));
+    public HashSet<Vector3i> findBlockType(BlockType blockType) {
+        HashSet<Vector3i> foundBlocks = new HashSet<>();
+        getHitBox().forEach(location -> {
+            if (world.getBlockType(location) == blockType)
+                foundBlocks.add(location);
         });
 
         return foundBlocks;
@@ -656,11 +656,11 @@ public class Craft {
                 return;
             }
             setLastRotateTime(System.nanoTime());
-            submitTask(new RotationTask(this, moveVector, rotation, this.getWorld(), isSubCraft));
+            submitTask(new RotationTask(this, moveVector, rotation, world, isSubCraft));
 
         } else {
 
-            submitTask(new RotationTask(this, moveVector, rotation, this.getWorld(), isSubCraft));
+            submitTask(new RotationTask(this, moveVector, rotation, world, isSubCraft));
 
         }
     }

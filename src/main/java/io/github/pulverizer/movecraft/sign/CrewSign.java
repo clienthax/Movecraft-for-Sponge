@@ -33,23 +33,17 @@ import static org.spongepowered.api.event.Order.FIRST;
 public class CrewSign {
 
     public static void onSignChange(ChangeSignEvent event, Player player) {
-        if (!event.getText().lines().get(0).toPlain().equalsIgnoreCase("Crew:"))
-            return;
 
         ListValue<Text> lines = event.getText().lines();
         lines.set(1, Text.of(player.getName()));
         event.getText().set(lines);
     }
 
-    public static void onSignTranslate(SignTranslateEvent event, Craft craft, World world, Vector3i location) {
+    public static void onSignTranslate(Craft craft, World world, Vector3i location, Sign sign) {
 
-        if (!world.getTileEntity(location).isPresent())
-            return;
-
-        Sign sign = (Sign) world.getTileEntity(location).get();
         ListValue<Text> lines = sign.lines();
 
-        if (!Settings.AllowCrewSigns || !lines.get(0).toPlain().equalsIgnoreCase("Crew:")) {
+        if (!Settings.AllowCrewSigns) {
             return;
         }
 

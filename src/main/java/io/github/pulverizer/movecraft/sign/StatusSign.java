@@ -41,17 +41,9 @@ public final class StatusSign {
         }
     }
 
-    public static void onSignTranslate(SignTranslateEvent event, Craft craft, World world, Vector3i location) {
+    public static void onSignTranslate(Craft craft, Sign sign) {
 
-        if (!world.getTileEntity(location).isPresent())
-            return;
-
-        Sign sign = (Sign) world.getTileEntity(location).get();
         ListValue<Text> lines = sign.lines();
-
-        if (!lines.get(0).toPlain().equalsIgnoreCase("Status:")) {
-            return;
-        }
 
         double fuel = craft.checkFuelStored() + craft.getBurningFuel();
         int totalBlocks=0;

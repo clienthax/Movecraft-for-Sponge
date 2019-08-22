@@ -36,17 +36,9 @@ public class ContactsSign {
         }
     }
 
-    public static void onSignTranslateEvent(SignTranslateEvent event, Craft craft, World world, Vector3i location){
+    public static void onSignTranslateEvent(Craft craft, Sign sign){
 
-        if (!world.getTileEntity(location).isPresent())
-            return;
-
-        Sign sign = (Sign) world.getTileEntity(location).get();
         ListValue<Text> lines = sign.lines();
-
-        if (!lines.get(0).toPlain().equalsIgnoreCase("Contacts:")) {
-            return;
-        }
 
         boolean foundContact = false;
         int signLine = 1;

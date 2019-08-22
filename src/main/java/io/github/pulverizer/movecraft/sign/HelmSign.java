@@ -20,9 +20,7 @@ public final class HelmSign {
 
     public static void onSignChange(ChangeSignEvent event){
         ListValue<Text> lines = event.getText().lines();
-        if (!lines.get(0).toPlain().equalsIgnoreCase("[helm]")) {
-            return;
-        }
+
         lines.set(0, Text.of("\\  ||  /"));
         lines.set(1, Text.of("==      =="));
         lines.set(2, Text.of("/  ||  \\"));

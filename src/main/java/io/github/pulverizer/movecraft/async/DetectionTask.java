@@ -1,5 +1,6 @@
 package io.github.pulverizer.movecraft.async;
 
+import com.flowpowered.math.vector.Vector3i;
 import io.github.pulverizer.movecraft.Movecraft;
 import io.github.pulverizer.movecraft.config.Settings;
 import io.github.pulverizer.movecraft.craft.Craft;
@@ -16,11 +17,12 @@ import org.spongepowered.api.world.World;
 import java.util.*;
 
 public class DetectionTask extends AsyncTask {
-    private final Location<World> startLocation;
-    private final Stack<Location<World>> blockStack = new Stack<>();
+    private final World world;
+    private final Vector3i startLocation;
+    private final Stack<Vector3i> blockStack = new Stack<>();
     private final HashHitBox detectedHitBox = new HashHitBox();
     private HashHitBox hitBox;
-    private final HashSet<Location<World>> visited = new HashSet<>();
+    private final HashSet<Vector3i> visited = new HashSet<>();
     private final HashMap<List<BlockType>, Integer> blockTypeCount = new HashMap<>();
     private Map<List<BlockType>, List<Double>> dynamicFlyBlocks;
     private boolean waterContact = false;
@@ -31,7 +33,8 @@ public class DetectionTask extends AsyncTask {
 
     public DetectionTask(Craft craft, Location<World> startLocation) {
         super(craft, "Detection");
-        this.startLocation = startLocation;
+        this.startLocation = startLocation.getBlockPosition();
+        world = startLocation.getExtent();
     }
 
     @Override
@@ -64,15 +67,15 @@ public class DetectionTask extends AsyncTask {
             Movecraft.getInstance().getLogger().info("Detection Task Took: " + (endTime - startTime) + "ms");
     }
 
-    private void detectBlock(Location<World> workingLocation) {
+    private void detectBlock(Vector3i workingLocation) {
 
         if (!notVisited(workingLocation))
             return;
 
-        if (workingLocation.getBlockType() == BlockTypes.AIR)
+        if (world.getBlockType(workingLocation) == BlockTypes.AIR)
             return;
 
-        BlockType testID = workingLocation.getBlockType();
+        BlockType testID = world.getBlockType(workingLocation);
 
         if (isForbiddenBlock(testID))
             fail("Detection Failed - Forbidden block found.");
@@ -82,9 +85,9 @@ public class DetectionTask extends AsyncTask {
             waterContact = true;
         }
 
-        if ((testID == BlockTypes.STANDING_SIGN || testID == BlockTypes.WALL_SIGN) && workingLocation.getTileEntity().isPresent()) {
+        if ((testID == BlockTypes.STANDING_SIGN || testID == BlockTypes.WALL_SIGN) && world.getTileEntity(workingLocation).isPresent()) {
 
-            Sign s = (Sign) workingLocation.getTileEntity().get();
+            Sign s = (Sign) world.getTileEntity(workingLocation).get();
             if (s.lines().get(0).toString().equalsIgnoreCase("Commander:") && craft.getOriginalPilot() != null) {
                 String playerName = Sponge.getServer().getPlayer(craft.getOriginalPilot()).get().getName();
                 foundCommanderSign = true;
@@ -124,40 +127,66 @@ public class DetectionTask extends AsyncTask {
         }
     }
 
-    private void detectSurrounding(Location<World> location) {
+    private void detectSurrounding(Vector3i location) {
 
-        HashSet<Location<World>> surroundingLocations = new HashSet<>();
+        HashSet<Vector3i> surroundingLocations = new HashSet<>();
 
-        //Above
-        surroundingLocations.add(location.getBlockRelative(Direction.UP));
-        surroundingLocations.add(location.getBlockRelative(Direction.UP).getBlockRelative(Direction.NORTH));
-        surroundingLocations.add(location.getBlockRelative(Direction.UP).getBlockRelative(Direction.NORTHEAST));
-        surroundingLocations.add(location.getBlockRelative(Direction.UP).getBlockRelative(Direction.EAST));
-        surroundingLocations.add(location.getBlockRelative(Direction.UP).getBlockRelative(Direction.SOUTHEAST));
-        surroundingLocations.add(location.getBlockRelative(Direction.UP).getBlockRelative(Direction.SOUTH));
-        surroundingLocations.add(location.getBlockRelative(Direction.UP).getBlockRelative(Direction.SOUTHWEST));
-        surroundingLocations.add(location.getBlockRelative(Direction.UP).getBlockRelative(Direction.WEST));
-        surroundingLocations.add(location.getBlockRelative(Direction.UP).getBlockRelative(Direction.NORTHWEST));
+        //UP
+        surroundingLocations.add(location.add(0, 1, 0));
+        //UP - NORTH
+        surroundingLocations.add(location.add(0, 1, -1));
+        //UP - NORTHEAST
+        surroundingLocations.add(location.add(1, 1, -1));
+        //UP - EAST
+        surroundingLocations.add(location.add(1, 1, 0));
+        //UP - SOUTHEAST
+        surroundingLocations.add(location.add(1, 1, 1));
+        //UP - SOUTH
+        surroundingLocations.add(location.add(0, 1, 1));
+        //UP - SOUTHWEST
+        surroundingLocations.add(location.add(-1, 1, 1));
+        //UP - WEST
+        surroundingLocations.add(location.add(-1, 1, 0));
+        //UP - NORTHWEST
+        surroundingLocations.add(location.add(-1, 1, -1));
 
-        //Vertical
-        surroundingLocations.add(location.getBlockRelative(Direction.NORTH));
-        surroundingLocations.add(location.getBlockRelative(Direction.NORTHEAST));
-        surroundingLocations.add(location.getBlockRelative(Direction.EAST));
-        surroundingLocations.add(location.getBlockRelative(Direction.SOUTHEAST));
-        surroundingLocations.add(location.getBlockRelative(Direction.SOUTH));
-        surroundingLocations.add(location.getBlockRelative(Direction.SOUTHWEST));
-        surroundingLocations.add(location.getBlockRelative(Direction.WEST));
-        surroundingLocations.add(location.getBlockRelative(Direction.NORTHWEST));
 
-        //Below
-        surroundingLocations.add(location.getBlockRelative(Direction.DOWN).getBlockRelative(Direction.NORTH));
-        surroundingLocations.add(location.getBlockRelative(Direction.DOWN).getBlockRelative(Direction.NORTHEAST));
-        surroundingLocations.add(location.getBlockRelative(Direction.DOWN).getBlockRelative(Direction.EAST));
-        surroundingLocations.add(location.getBlockRelative(Direction.DOWN).getBlockRelative(Direction.SOUTHEAST));
-        surroundingLocations.add(location.getBlockRelative(Direction.DOWN).getBlockRelative(Direction.SOUTH));
-        surroundingLocations.add(location.getBlockRelative(Direction.DOWN).getBlockRelative(Direction.SOUTHWEST));
-        surroundingLocations.add(location.getBlockRelative(Direction.DOWN).getBlockRelative(Direction.WEST));
-        surroundingLocations.add(location.getBlockRelative(Direction.DOWN).getBlockRelative(Direction.NORTHWEST));
+
+        //NORTH
+        surroundingLocations.add(location.add(0, 0, -1));
+        //NORTHEAST
+        surroundingLocations.add(location.add(1, 0, -1));
+        //EAST
+        surroundingLocations.add(location.add(1, 0, 0));
+        //SOUTHEAST
+        surroundingLocations.add(location.add(1, 0, 1));
+        //SOUTH
+        surroundingLocations.add(location.add(0, 0, 1));
+        //SOUTHWEST
+        surroundingLocations.add(location.add(-1, 0, 1));
+        //WEST
+        surroundingLocations.add(location.add(-1, 0, 0));
+        //NORTHWEST
+        surroundingLocations.add(location.add(-1, 0, -1));
+
+        //DOWN
+        surroundingLocations.add(location.add(0, -1, 0));
+        //DOWN - NORTH
+        surroundingLocations.add(location.add(0, -1, -1));
+        //DOWN - NORTHEAST
+        surroundingLocations.add(location.add(1, -1, -1));
+        //DOWN - EAST
+        surroundingLocations.add(location.add(1, -1, 0));
+        //DOWN - SOUTHEAST
+        surroundingLocations.add(location.add(1, -1, 1));
+        //DOWN - SOUTH
+        surroundingLocations.add(location.add(0, -1, 1));
+        //DOWN - SOUTHWEST
+        surroundingLocations.add(location.add(-1, -1, 1));
+        //DOWN - WEST
+        surroundingLocations.add(location.add(-1, -1, 0));
+        //DOWN - NORTHWEST
+        surroundingLocations.add(location.add(-1, -1, -1));
 
         //Detect blocks in surrounding locations.
         surroundingLocations.forEach(this::detectBlock);
@@ -226,7 +255,7 @@ public class DetectionTask extends AsyncTask {
         failMessage = message;
     }
 
-    private boolean notVisited(Location<World> location) {
+    private boolean notVisited(Vector3i location) {
         if (visited.contains(location)) {
             return false;
         } else {
@@ -235,11 +264,11 @@ public class DetectionTask extends AsyncTask {
         }
     }
 
-    private void addToBlockList(Location<World> location) {
-        detectedHitBox.add(location.getBlockPosition());
+    private void addToBlockList(Vector3i location) {
+        detectedHitBox.add(location);
     }
 
-    private void addToDetectionStack(Location<World> location) {
+    private void addToDetectionStack(Vector3i location) {
         blockStack.push(location);
     }
 

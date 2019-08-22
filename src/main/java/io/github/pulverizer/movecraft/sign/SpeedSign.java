@@ -33,17 +33,9 @@ public final class SpeedSign {
         }
     }
 
-    public static void onSignTranslate(SignTranslateEvent event, Craft craft, World world, Vector3i location) {
+    public static void onSignTranslate(Craft craft, Sign sign) {
 
-        if (!world.getTileEntity(location).isPresent())
-            return;
-
-        Sign sign = (Sign) world.getTileEntity(location).get();
         ListValue<Text> lines = sign.lines();
-
-        if (!lines.get(0).toPlain().equalsIgnoreCase("Speed:")) {
-            return;
-        }
 
         lines.set(1, Text.of(String.format("%.2f",craft.getSpeed()) + "m/s"));
         lines.set(2, Text.of(String.format("%.2f",craft.getMeanMoveTime()) + "ms"));
