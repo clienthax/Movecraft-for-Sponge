@@ -4,16 +4,20 @@ import com.flowpowered.math.vector.Vector3i;
 import io.github.pulverizer.movecraft.Movecraft;
 import io.github.pulverizer.movecraft.config.Settings;
 import io.github.pulverizer.movecraft.craft.Craft;
+import io.github.pulverizer.movecraft.sign.CommanderSign;
 import io.github.pulverizer.movecraft.utils.*;
 
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.block.BlockType;
 import org.spongepowered.api.block.BlockTypes;
 import org.spongepowered.api.block.tileentity.Sign;
-import org.spongepowered.api.util.Direction;
+import org.spongepowered.api.data.value.mutable.ListValue;
+import org.spongepowered.api.text.Text;
 import org.spongepowered.api.world.Location;
 import org.spongepowered.api.world.World;
 
+import java.sql.Date;
+import java.sql.Time;
 import java.util.*;
 
 public class DetectionTask extends AsyncTask {
@@ -27,6 +31,10 @@ public class DetectionTask extends AsyncTask {
     private Map<List<BlockType>, List<Double>> dynamicFlyBlocks;
     private boolean waterContact = false;
     private boolean foundCommanderSign = false;
+    private Date commanderSignDate;
+    private Time commanderSignTime;
+    private String commanderSignUsername;
+    private int commanderSignID;
     private boolean foundCommander = false;
     private boolean failed;
     private String failMessage;
@@ -49,8 +57,16 @@ public class DetectionTask extends AsyncTask {
             detectSurrounding(blockStack.pop());
         } while (!blockStack.isEmpty());
 
-        if (foundCommanderSign && !foundCommander && !Sponge.getServer().getPlayer(craft.getOriginalPilot()).get().hasPermission("movecraft.bypasslock")) {
-            fail("Not one of the registered commanders for this craft.");
+        if (foundCommanderSign) {
+
+            HashMap<UUID, Boolean> commanderSignMemberMap = CommanderSign.getMembers(commanderSignUsername, commanderSignID);
+
+            if (commanderSignMemberMap.get(Sponge.getServer().getPlayer(craft.getOriginalPilot()).get().getUniqueId()) != null)
+                foundCommander = true;
+
+            if (!foundCommander && !Sponge.getServer().getPlayer(craft.getOriginalPilot()).get().hasPermission("movecraft.bypasslock"))
+                fail("Not one of the registered commanders for this craft.");
+
         }
 
         if (failed()) {
@@ -87,17 +103,36 @@ public class DetectionTask extends AsyncTask {
 
         if ((testID == BlockTypes.STANDING_SIGN || testID == BlockTypes.WALL_SIGN) && world.getTileEntity(workingLocation).isPresent()) {
 
-            Sign s = (Sign) world.getTileEntity(workingLocation).get();
-            if (s.lines().get(0).toString().equalsIgnoreCase("Commander:") && craft.getOriginalPilot() != null) {
-                String playerName = Sponge.getServer().getPlayer(craft.getOriginalPilot()).get().getName();
-                foundCommanderSign = true;
-                if (s.lines().get(1).toString().equalsIgnoreCase(playerName) || s.lines().get(2).toString().equalsIgnoreCase(playerName) || s.lines().get(3).toString().equalsIgnoreCase(playerName)) {
-                    foundCommander = true;
+            ListValue<Text> signText = ((Sign) world.getTileEntity(workingLocation).get()).lines();
+            if (signText.get(0).toString().equalsIgnoreCase("Commander:") && craft.getOriginalPilot() != null) {
+
+                Map.Entry<Date, Time> timestamp = CommanderSign.getCreationTimeStamp(signText.get(1).toPlain(), Integer.parseInt(signText.get(2).toPlain()));
+                if (timestamp != null) {
+                    if (!foundCommanderSign) {
+                        foundCommanderSign = true;
+                        commanderSignDate = timestamp.getKey();
+                        commanderSignTime = timestamp.getValue();
+                        commanderSignUsername = signText.get(1).toPlain();
+                        commanderSignID = Integer.parseInt(signText.get(2).toPlain());
+
+                    } else if (timestamp.getKey().before(commanderSignDate)) {
+                        commanderSignDate = timestamp.getKey();
+                        commanderSignTime = timestamp.getValue();
+                        commanderSignUsername = signText.get(1).toPlain();
+                        commanderSignID = Integer.parseInt(signText.get(2).toPlain());
+
+                    } else if (timestamp.getKey().equals(commanderSignDate) && timestamp.getValue().before(commanderSignTime)) {
+                        commanderSignDate = timestamp.getKey();
+                        commanderSignTime = timestamp.getValue();
+                        commanderSignUsername = signText.get(1).toPlain();
+                        commanderSignID = Integer.parseInt(signText.get(2).toPlain());
+
+                    }
                 }
             }
 
             for (int i = 0; i < 4; i++) {
-                if (isForbiddenSignString(s.lines().get(i).toString())) {
+                if (isForbiddenSignString(signText.get(i).toString())) {
                     fail("Detection Failed - Forbidden sign string found.");
                 }
             }

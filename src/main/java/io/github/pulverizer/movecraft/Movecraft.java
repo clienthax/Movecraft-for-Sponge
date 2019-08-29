@@ -28,9 +28,12 @@ import io.github.pulverizer.movecraft.listener.InteractListener;
 import io.github.pulverizer.movecraft.listener.PlayerListener;
 import io.github.pulverizer.movecraft.mapUpdater.MapUpdateManager;
 import org.spongepowered.api.scheduler.Task;
+import org.spongepowered.api.service.sql.SqlService;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -54,6 +57,10 @@ public class Movecraft {
 
     private ConfigurationLoader<ConfigurationNode> mainConfigLoader;
     private ConfigurationNode mainConfigNode;
+
+    private SqlService sql;
+    private final String databaseSettings = "jdbc:h2:";
+    private final String databaseName = "/movecraft.db";
 
     @Inject
     private Logger logger;
@@ -92,6 +99,20 @@ public class Movecraft {
 
     public ConfigurationLoader<ConfigurationNode> createConfigLoader(Path file) {
         return YAMLConfigurationLoader.builder().setPath(file).setDefaultOptions(ConfigurationOptions.defaults().setShouldCopyDefaults(true)).build();
+    }
+
+    public Connection connectToSQL() {
+        if (sql == null) {
+            sql = Sponge.getServiceManager().provide(SqlService.class).get();
+        }
+
+        try {
+            return sql.getDataSource(databaseSettings + configDir.toString() + databaseName).getConnection();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return null;
     }
 
     /**
@@ -209,6 +230,7 @@ public class Movecraft {
         Sponge.getEventManager().registerListeners(this, new PlayerListener());
         Sponge.getEventManager().registerListeners(this, new SignListener());
         Sponge.getEventManager().registerListeners(this, new CrewSign());
+        Sponge.getEventManager().registerListeners(this, new CommanderSign());
 
         logger.info("Movecraft Enabled.");
     }
@@ -229,6 +251,7 @@ public class Movecraft {
         CraftManager.initialize();
         AsyncManager.initialize();
         MapUpdateManager.initialize();
+        CommanderSign.initDatabase();
 
         // Startup procedure
         asyncManager = AsyncManager.getInstance();

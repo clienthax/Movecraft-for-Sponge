@@ -46,8 +46,9 @@ public final class StatusSign {
         ListValue<Text> lines = sign.lines();
 
         double fuel = craft.checkFuelStored() + craft.getBurningFuel();
-        int totalBlocks=0;
+        int totalBlocks = 0;
         Map<BlockType, Integer> foundBlocks = new HashMap<>();
+
         for (Vector3i loc : craft.getHitBox()) {
             BlockType blockType = craft.getWorld().getBlockType(loc);
 
@@ -66,8 +67,9 @@ public final class StatusSign {
                 totalBlocks++;
             }
         }
-        int signLine=1;
-        int signColumn=0;
+
+        int signLine = 1;
+        int signColumn = 0;
         for(List<BlockType> flyBlockIDs : craft.getType().getFlyBlocks().keySet()) {
             BlockType flyBlockID = flyBlockIDs.get(0);
             Double minimum = craft.getType().getFlyBlocks().get(flyBlockIDs).get(0);
@@ -77,7 +79,7 @@ public final class StatusSign {
                 String signText = "";
                 if (percentPresent > minimum * 1.04) {
                     signText+= TextColors.GREEN;
-                } else if(percentPresent>minimum*1.02) {
+                } else if(percentPresent > minimum*1.02) {
                     signText+= TextColors.YELLOW;
                 } else {
                     signText+= TextColors.RED;
@@ -121,6 +123,7 @@ public final class StatusSign {
         } else {
             fuelColor = TextColors.RED;
         }
+
         fuelText+="Fuel range:";
         fuelText+=fuelRange;
         lines.set(signLine, Text.of("Fuel range: " + fuelRange).toBuilder().color(fuelColor).build());

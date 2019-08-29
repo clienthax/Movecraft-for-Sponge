@@ -5,6 +5,7 @@ import io.github.pulverizer.movecraft.config.Settings;
 import io.github.pulverizer.movecraft.craft.Craft;
 import io.github.pulverizer.movecraft.craft.CraftManager;
 import io.github.pulverizer.movecraft.enums.CraftState;
+import io.github.pulverizer.movecraft.sign.CommanderSign;
 import io.github.pulverizer.movecraft.utils.MathUtils;
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.block.BlockSnapshot;
@@ -19,6 +20,8 @@ import org.spongepowered.api.entity.living.monster.Creeper;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.event.Listener;
 import org.spongepowered.api.event.block.ChangeBlockEvent;
+import org.spongepowered.api.event.cause.EventContextKey;
+import org.spongepowered.api.event.cause.EventContextKeys;
 import org.spongepowered.api.event.filter.cause.Root;
 import org.spongepowered.api.event.world.ExplosionEvent;
 import org.spongepowered.api.scheduler.Task;
@@ -42,51 +45,51 @@ public class BlockListener {
     private long lastDamagesUpdate = 0;
 
     @Listener(order = LAST)
-    public void onBlockBreak(ChangeBlockEvent.Break event, @Root Player player) {
-
-        if (!Settings.ProtectPilotedCrafts)
-            return;
+    public void onBlockBreak(ChangeBlockEvent.Break event) {
 
         for (Transaction<BlockSnapshot> transaction : event.getTransactions()) {
             BlockSnapshot blockSnapshot = transaction.getOriginal();
 
-            for (Craft craft : CraftManager.getInstance().getCraftsInWorld(blockSnapshot.getLocation().get().getExtent())) {
+            if (Settings.ProtectPilotedCrafts) {
+                for (Craft craft : CraftManager.getInstance().getCraftsInWorld(blockSnapshot.getLocation().get().getExtent())) {
 
-                if (craft == null || craft.getState() == CraftState.SINKING) {
-                    continue;
-                }
+                    if (craft == null || craft.getState() == CraftState.SINKING) {
+                        continue;
+                    }
 
-                if(craft.getHitBox().contains(blockSnapshot.getLocation().get().getBlockPosition())) {
+                    if (craft.getHitBox().contains(blockSnapshot.getLocation().get().getBlockPosition())) {
 
-                    transaction.setValid(false);
+                        transaction.setValid(false);
 
-                    if (event.getCause().root() instanceof Player)
-                        ((Player) event.getCause().root()).sendMessage(Text.of("BLOCK IS PART OF A PILOTED CRAFT"));
+                        if (event.getCause().root() instanceof Player)
+                            ((Player) event.getCause().root()).sendMessage(Text.of("BLOCK IS PART OF A PILOTED CRAFT"));
+                    }
                 }
             }
+
+            if (transaction.isValid())
+                CommanderSign.onSignBreak(event, transaction);
         }
     }
 
     // prevent water and lava from spreading on moving crafts
     //TODO: This doesn't actually seem to work.
     @Listener(order = FIRST)
-    public void onBlockFromTo(ChangeBlockEvent.Pre event) {
+    public void onBlockFromTo(ChangeBlockEvent.Modify event) {
 
-        if (!(event.getSource() instanceof BlockSnapshot))
+        if (!event.getContext().containsKey(EventContextKeys.LIQUID_FLOW))
             return;
 
-        BlockSnapshot block = (BlockSnapshot) event.getSource();
+        for (Transaction<BlockSnapshot> transaction : event.getTransactions()) {
 
-        if (!block.getLocation().isPresent())
-            return;
+            if (!transaction.getOriginal().getLocation().isPresent() || transaction.getOriginal().getProperty(MatterProperty.class).get().getValue() != MatterProperty.Matter.LIQUID)
+                continue;
 
-        if (block.getState().getType() != BlockTypes.WATER && block.getState().getType() != BlockTypes.LAVA)
-            return;
-
-        for (Craft craft : CraftManager.getInstance().getCraftsInWorld(block.getLocation().get().getExtent())) {
-            if ((!craft.isNotProcessing()) && MathUtils.locIsNearCraftFast(craft, block.getLocation().get().getBlockPosition())) {
-                event.setCancelled(true);
-                return;
+            for (Craft craft : CraftManager.getInstance().getCraftsInWorld(transaction.getOriginal().getLocation().get().getExtent())) {
+                if (!craft.isNotProcessing() && craft.getHitBox().contains(transaction.getOriginal().getLocation().get().getBlockPosition())) {
+                    transaction.setValid(false);
+                    return;
+                }
             }
         }
     }
