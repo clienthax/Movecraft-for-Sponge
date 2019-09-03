@@ -237,11 +237,13 @@ public class Movecraft {
 
     /**
      * <pre>
-     * Listener for GameStartedServerEvent. Loads the Plugin's various content Managers.
+     * Listener for GameStartedServerEvent. Loads the Plugin's various content managers and databases.
      *
      * CraftManager
      * AsyncManager
      * MapUpdateManager
+     * Commander Sign Database
+     * Crew Sign Database
      * </pre>
      * @param event GameStartedServerEvent from Listener.
      */
@@ -252,6 +254,9 @@ public class Movecraft {
         AsyncManager.initialize();
         MapUpdateManager.initialize();
         CommanderSign.initDatabase();
+        if (Settings.AllowCrewSigns) {
+            CrewSign.initDatabase();
+        }
 
         // Startup procedure
         asyncManager = AsyncManager.getInstance();

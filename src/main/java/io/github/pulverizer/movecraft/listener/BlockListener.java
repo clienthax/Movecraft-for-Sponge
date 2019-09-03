@@ -6,6 +6,7 @@ import io.github.pulverizer.movecraft.craft.Craft;
 import io.github.pulverizer.movecraft.craft.CraftManager;
 import io.github.pulverizer.movecraft.enums.CraftState;
 import io.github.pulverizer.movecraft.sign.CommanderSign;
+import io.github.pulverizer.movecraft.sign.CrewSign;
 import io.github.pulverizer.movecraft.utils.MathUtils;
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.block.BlockSnapshot;
@@ -59,16 +60,19 @@ public class BlockListener {
 
                     if (craft.getHitBox().contains(blockSnapshot.getLocation().get().getBlockPosition())) {
 
-                        transaction.setValid(false);
+                        if (event.getCause().root() instanceof Player) {
 
-                        if (event.getCause().root() instanceof Player)
+                            transaction.setValid(false);
                             ((Player) event.getCause().root()).sendMessage(Text.of("BLOCK IS PART OF A PILOTED CRAFT"));
+                        }
                     }
                 }
             }
 
-            if (transaction.isValid())
+            if (transaction.isValid()) {
                 CommanderSign.onSignBreak(event, transaction);
+                CrewSign.onSignBreak(event, transaction);
+            }
         }
     }
 

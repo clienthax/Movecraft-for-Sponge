@@ -37,9 +37,6 @@ public final class CommanderSign {
             return;
         }
 
-        createTable(sqlConnection, MAIN_TABLE);
-        createTable(sqlConnection, MEMBER_TABLE);
-
         try {
 
             PreparedStatement statement = sqlConnection.prepareStatement("SELECT ID FROM " + MAIN_TABLE + " WHERE Username = ?");
@@ -119,6 +116,7 @@ public final class CommanderSign {
         player.sendMessage(Text.of("There was an error. Please try placing the sign again. If this continues, please contact a Server Admin."));
     }
 
+    //TODO: TileEntity missing if attached surface is broken, otherwise is okay?
     public static void onSignBreak(ChangeBlockEvent.Break event, Transaction<BlockSnapshot> transaction) {
 
         BlockSnapshot blockSnapshot = transaction.getOriginal();
@@ -259,55 +257,19 @@ public final class CommanderSign {
         event.getText().set(lines);
     }
 
-    private static void createTable(Connection sqlConnection, String tableName) {
-
-        PreparedStatement statement = null;
-
-        try {
-
-            if (tableName.equals(MAIN_TABLE)) {
-                statement = sqlConnection.prepareStatement("CREATE TABLE IF NOT EXISTS " + MAIN_TABLE + " (" +
-                                "Username CHAR(16) NOT NULL, " +
-                                "ID INT(16) NOT NULL, " +
-                                "DateCreated DATE DEFAULT CURRENT_DATE, " +
-                                "TimeCreated TIME DEFAULT CURRENT_TIME," +
-                                "CONSTRAINT " + MAIN_TABLE + "_PKey PRIMARY KEY (Username, ID)" +
-                                ")");
-            }
-
-            if (tableName.equals(MEMBER_TABLE)) {
-                statement = sqlConnection.prepareStatement("CREATE TABLE IF NOT EXISTS " + MEMBER_TABLE + " (" +
-                                "UUID CHAR(36) NOT NULL, " +
-                                "Username CHAR(16) NOT NULL, " +
-                                "ID CHAR(16) NOT NULL," +
-                                "isOwner BOOL NOT NULL DEFAULT FALSE," +
-                                "CONSTRAINT FKey FOREIGN KEY (Username, ID) REFERENCES " + MAIN_TABLE + "(Username, ID)," +
-                                "CONSTRAINT " + MEMBER_TABLE + "_PKey PRIMARY KEY (UUID, Username, ID)" +
-                                ")");
-            }
-
-            if (statement != null) {
-                statement.execute();
-                statement.close();
-            }
-
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
-
     public static void initDatabase() {
 
         Connection sqlConnection = Movecraft.getInstance().connectToSQL();
 
-        PreparedStatement statement = null;
+        PreparedStatement statement;
 
         try {
 
             statement = sqlConnection.prepareStatement("CREATE TABLE IF NOT EXISTS " + MAIN_TABLE + " (" +
                     "Username CHAR(16) NOT NULL, " +
                     "ID INT(16) NOT NULL, " +
-                    "DateCreated DATETIME(0) DEFAULT CURRENT_TIMESTAMP(0), " +
+                    "DateCreated DATE DEFAULT CURRENT_DATE, " +
+                    "TimeCreated TIME DEFAULT CURRENT_TIME," +
                     "CONSTRAINT " + MAIN_TABLE + "_PKey PRIMARY KEY (Username, ID)" +
                     ")");
 
@@ -315,13 +277,12 @@ public final class CommanderSign {
             statement.close();
 
 
-
             statement = sqlConnection.prepareStatement("CREATE TABLE IF NOT EXISTS " + MEMBER_TABLE + " (" +
                     "UUID CHAR(36) NOT NULL, " +
                     "Username CHAR(16) NOT NULL, " +
                     "ID CHAR(16) NOT NULL," +
                     "isOwner BOOL NOT NULL DEFAULT FALSE," +
-                    "CONSTRAINT FKey FOREIGN KEY (Username, ID) REFERENCES " + MAIN_TABLE + "(Username, ID)," +
+                    "CONSTRAINT " + MEMBER_TABLE + "_FKey FOREIGN KEY (Username, ID) REFERENCES " + MAIN_TABLE + "(Username, ID)," +
                     "CONSTRAINT " + MEMBER_TABLE + "_PKey PRIMARY KEY (UUID, Username, ID)" +
                     ")");
 

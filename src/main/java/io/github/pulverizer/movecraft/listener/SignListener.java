@@ -1,5 +1,6 @@
 package io.github.pulverizer.movecraft.listener;
 
+import io.github.pulverizer.movecraft.config.Settings;
 import io.github.pulverizer.movecraft.craft.Craft;
 import io.github.pulverizer.movecraft.craft.CraftManager;
 import io.github.pulverizer.movecraft.event.CraftDetectEvent;
@@ -41,7 +42,6 @@ public class SignListener {
 
             AscendSign.onSignClick(rightClickEvent, player, block);
             CraftSign.onSignClick(rightClickEvent, player, block);
-            CrewSign.onSignRightClick(rightClickEvent, player, block);
             CruiseSign.onSignClick(rightClickEvent, player, block);
             DescendSign.onSignClick(rightClickEvent, player, block);
             MoveSign.onSignClick(rightClickEvent, player, block);
@@ -63,7 +63,6 @@ public class SignListener {
         DescendSign.onCraftDetect(event, world, hitBox);
         AscendSign.onCraftDetect(event, world, hitBox);
         CruiseSign.onCraftDetect(event, world, hitBox);
-        CrewSign.onCraftDetect(event, world, hitBox);
         ContactsSign.onCraftDetect(event, world, hitBox);
 
     }
@@ -84,7 +83,10 @@ public class SignListener {
                 break;
 
             case "crew:":
-                CrewSign.onSignChange(event, player);
+
+                if (Settings.AllowCrewSigns) {
+                    CrewSign.onSignChange(event, player);
+                }
                 break;
 
 
@@ -116,7 +118,7 @@ public class SignListener {
         switch (header) {
 
             case "crew:":
-                CrewSign.onSignTranslate(craft, event.getWorld(), event.getBlockPosition(), sign);
+                CrewSign.onSignTranslate(event.getWorld(), event.getBlockPosition(), sign);
                 break;
 
             case "status:":
