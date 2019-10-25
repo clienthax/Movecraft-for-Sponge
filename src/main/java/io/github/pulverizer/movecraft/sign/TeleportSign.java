@@ -1,6 +1,7 @@
 package io.github.pulverizer.movecraft.sign;
 
 import com.flowpowered.math.vector.Vector3i;
+import io.github.pulverizer.movecraft.craft.Craft;
 import io.github.pulverizer.movecraft.enums.Rotation;
 import io.github.pulverizer.movecraft.craft.CraftManager;
 import org.spongepowered.api.block.BlockSnapshot;
@@ -25,7 +26,10 @@ public final class TeleportSign {
             return;
         }
 
-        if (CraftManager.getInstance().getCraftByPlayer(player.getUniqueId()) == null) {
+        Craft craft = CraftManager.getInstance().getCraftByPlayer(player.getUniqueId());
+
+        if (craft == null || player.getUniqueId() != craft.getPilot()) {
+            player.sendMessage(Text.of("You are not piloting a craft."));
             return;
         }
         String[] numbers = sign.lines().get(1).toPlain().split(",");
@@ -33,15 +37,15 @@ public final class TeleportSign {
         int tY = Integer.parseInt(numbers[1]);
         int tZ = Integer.parseInt(numbers[2]);
 
-        if (!player.hasPermission("movecraft." + CraftManager.getInstance().getCraftByPlayer(player.getUniqueId()).getType().getName() + ".move")) {
-            player.sendMessage(Text.of("Insufficient Permissions"));
+        if (!player.hasPermission("movecraft." + craft.getType().getName() + ".movement.teleport")) {
+            player.sendMessage(Text.of("Insufficient Permissions!"));
             return;
         }
-        if (CraftManager.getInstance().getCraftByPlayer(player.getUniqueId()).getType().getCanTeleport()) {
+        if (craft.getType().getCanTeleport()) {
             int dx = tX - block.getLocation().get().getBlockPosition().getX();
             int dy = tY - block.getLocation().get().getBlockPosition().getY();
             int dz = tZ - block.getLocation().get().getBlockPosition().getZ();
-            CraftManager.getInstance().getCraftByPlayer(player.getUniqueId()).translate(Rotation.NONE, new Vector3i(dx, dy, dz), false);
+            craft.translate(Rotation.NONE, new Vector3i(dx, dy, dz), false);
         }
     }
 }

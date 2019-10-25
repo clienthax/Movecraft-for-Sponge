@@ -30,12 +30,14 @@ public class DetectionTask extends AsyncTask {
     private final HashMap<List<BlockType>, Integer> blockTypeCount = new HashMap<>();
     private Map<List<BlockType>, List<Double>> dynamicFlyBlocks;
     private boolean waterContact = false;
+
     private boolean foundCommanderSign = false;
     private Date commanderSignDate;
     private Time commanderSignTime;
     private String commanderSignUsername;
     private int commanderSignID;
     private boolean foundCommander = false;
+
     private boolean failed;
     private String failMessage;
 
@@ -61,10 +63,12 @@ public class DetectionTask extends AsyncTask {
 
             HashMap<UUID, Boolean> commanderSignMemberMap = CommanderSign.getMembers(commanderSignUsername, commanderSignID);
 
-            if (commanderSignMemberMap.get(Sponge.getServer().getPlayer(craft.getOriginalPilot()).get().getUniqueId()) != null)
+            if (commanderSignMemberMap.get(Sponge.getServer().getPlayer(craft.getCommander()).get().getUniqueId()) != null)
                 foundCommander = true;
 
-            if (!foundCommander && !Sponge.getServer().getPlayer(craft.getOriginalPilot()).get().hasPermission("movecraft.bypasslock"))
+            commanderSignMemberMap.forEach((uuid, isOwner) -> Movecraft.getInstance().getLogger().info(Sponge.getServer().getPlayer(uuid).get().getName()));
+
+            if (foundCommander && !Sponge.getServer().getPlayer(craft.getCommander()).get().hasPermission("movecraft.bypasslock"))
                 fail("Not one of the registered commanders for this craft.");
 
         }
@@ -88,10 +92,10 @@ public class DetectionTask extends AsyncTask {
         if (!notVisited(workingLocation))
             return;
 
-        if (world.getBlockType(workingLocation) == BlockTypes.AIR)
-            return;
-
         BlockType testID = world.getBlockType(workingLocation);
+
+        if (testID == BlockTypes.AIR)
+            return;
 
         if (isForbiddenBlock(testID))
             fail("Detection Failed - Forbidden block found.");
@@ -101,13 +105,15 @@ public class DetectionTask extends AsyncTask {
             waterContact = true;
         }
 
-        if ((testID == BlockTypes.STANDING_SIGN || testID == BlockTypes.WALL_SIGN) && world.getTileEntity(workingLocation).isPresent()) {
+        if (testID == BlockTypes.STANDING_SIGN || testID == BlockTypes.WALL_SIGN && world.getTileEntity(workingLocation).isPresent()) {
 
             ListValue<Text> signText = ((Sign) world.getTileEntity(workingLocation).get()).lines();
-            if (signText.get(0).toString().equalsIgnoreCase("Commander:") && craft.getOriginalPilot() != null) {
+            if (signText.get(0).toPlain().equalsIgnoreCase("Commander:") && craft.getCommander() != null) {
 
                 Map.Entry<Date, Time> timestamp = CommanderSign.getCreationTimeStamp(signText.get(1).toPlain(), Integer.parseInt(signText.get(2).toPlain()));
+
                 if (timestamp != null) {
+
                     if (!foundCommanderSign) {
                         foundCommanderSign = true;
                         commanderSignDate = timestamp.getKey();
@@ -142,7 +148,7 @@ public class DetectionTask extends AsyncTask {
         if (!isAllowedBlock(testID))
             return;
 
-        UUID player = craft.getOriginalPilot();
+        UUID player = craft.getCommander();
         if (player != null) {
 
             addToBlockList(workingLocation);

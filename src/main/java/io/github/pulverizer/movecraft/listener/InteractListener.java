@@ -24,7 +24,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 public final class InteractListener {
-    private static final Map<Player, Long> timeMap = new HashMap<>();
 
     @Listener
     public final void onPlayerInteract(InteractBlockEvent.Primary event, @Root Player player) {
@@ -44,16 +43,13 @@ public final class InteractListener {
     @Include({InteractItemEvent.Primary.class, InteractItemEvent.Secondary.MainHand.class})
     public void onPlayerInteractStick(InteractItemEvent event, @Root Player player) {
 
-        Craft craft = CraftManager.getInstance().getCraftByPlayer(player.getUniqueId());
-        // if not in command of craft, don't process pilot tool clicks
-        if (craft == null)
-            return;
-
         if (!player.getItemInHand(HandTypes.MAIN_HAND).isPresent() || player.getItemInHand(HandTypes.MAIN_HAND).get().getType() != Settings.PilotTool)
             return;
 
-        if (player.getUniqueId() != craft.getPilot()) {
-            player.sendMessage(Text.of("You are not the Pilot of this craft."));
+        Craft craft = CraftManager.getInstance().getCraftByPlayer(player.getUniqueId());
+        // if not in command of craft, don't process pilot tool clicks
+        if (craft == null || player.getUniqueId() != craft.getPilot()) {
+            player.sendMessage(Text.of("You are not piloting a craft."));
             return;
         }
 
@@ -61,40 +57,38 @@ public final class InteractListener {
 
             event.setCancelled(true);
 
-            Long time = timeMap.get(player);
-            if (time != null) {
-                long ticksElapsed = (System.currentTimeMillis() - time) / 50;
+            long ticksElapsed = Sponge.getServer().getRunningTimeTicks() - craft.getLastMoveTick();
 
-                // if the craft should go slower underwater, make time
-                // pass more slowly there
-                if (craft.getType().getHalfSpeedUnderwater() && craft.getHitBox().getMinY() < craft.getWorld().getSeaLevel())
-                    ticksElapsed = ticksElapsed >> 1;
+            // if the craft should go slower underwater, make time
+            // pass more slowly there
+            if (craft.getType().getHalfSpeedUnderwater() && craft.getHitBox().getMinY() < craft.getWorld().getSeaLevel())
+                ticksElapsed = ticksElapsed >> 1;
 
-                if (Math.abs(ticksElapsed) < craft.getType().getTickCooldown()) {
-                    return;
-                }
-            }
 
-            if (!MathUtils.locationNearHitBox(craft.getHitBox(),player.getLocation(),2)) {
+            if (Math.abs(ticksElapsed) < craft.getType().getTickCooldown())
                 return;
-            }
 
-            if (!player.hasPermission("movecraft." + craft.getType().getName() + ".move")) {
+
+            if (!MathUtils.locationNearHitBox(craft.getHitBox(),player.getLocation(),2))
+                return;
+
+
+            if (!player.hasPermission("movecraft." + craft.getType().getName() + ".movement.move")) {
                 player.sendMessage(Text.of("Insufficient Permissions"));
                 return;
             }
+
             if (craft.isUnderDirectControl()) {
-                // right click moves up or down if using direct
-                // control
+                // right click moves up or down if using direct control
                 int dy = 1;
                 if (player.get(Keys.IS_SNEAKING).get())
                     dy = -1;
 
                 craft.translate(Rotation.NONE, new Vector3i(0, dy, 0), false);
-                timeMap.put(player, System.currentTimeMillis());
-                craft.setLastCruiseUpdateTick(Sponge.getServer().getRunningTimeTicks());
+                craft.setLastMoveTick(Sponge.getServer().getRunningTimeTicks());
                 return;
             }
+
             // Player is onboard craft and right clicking
             float rotation = (float) Math.PI * (float) player.getRotation().getY() / 180f;
 
@@ -115,10 +109,10 @@ public final class InteractListener {
             }
 
             craft.translate(Rotation.NONE, new Vector3i(dx, dy, dz), false);
-            timeMap.put(player, System.currentTimeMillis());
-            craft.setLastCruiseUpdateTick(Sponge.getServer().getRunningTimeTicks());
+            craft.setLastMoveTick(Sponge.getServer().getRunningTimeTicks());
             return;
         }
+
         if (event instanceof InteractItemEvent.Primary) {
 
             if (craft.isUnderDirectControl()) {
@@ -128,7 +122,7 @@ public final class InteractListener {
                 return;
             }
 
-            if (!player.hasPermission("movecraft." + craft.getType().getName() + ".move") || !craft.getType().getCanDirectControl()) {
+            if (!player.hasPermission("movecraft." + craft.getType().getName() + ".movement.move") || !craft.getType().getCanDirectControl()) {
                 player.sendMessage(Text.of("Insufficient Permissions"));
                 return;
             }

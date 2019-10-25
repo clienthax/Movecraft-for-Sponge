@@ -37,6 +37,7 @@ public class CraftManager implements Iterable<Craft>{
     }
 
     private Set<CraftType> loadCraftTypes(){
+
         File craftsFile = Movecraft.getInstance().getConfigDir().resolve("types").toFile();
 
         Set<CraftType> craftTypes = new HashSet<>();

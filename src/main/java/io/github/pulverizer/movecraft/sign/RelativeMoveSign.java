@@ -5,14 +5,11 @@ import io.github.pulverizer.movecraft.enums.Rotation;
 import io.github.pulverizer.movecraft.craft.CraftManager;
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.block.BlockSnapshot;
-import org.spongepowered.api.block.BlockTypes;
 import org.spongepowered.api.block.tileentity.Sign;
 import org.spongepowered.api.data.key.Keys;
 import org.spongepowered.api.data.value.mutable.ListValue;
 import org.spongepowered.api.entity.living.player.Player;
-import org.spongepowered.api.event.Listener;
 import org.spongepowered.api.event.block.InteractBlockEvent;
-import org.spongepowered.api.event.filter.cause.Root;
 import org.spongepowered.api.text.Text;
 import org.spongepowered.api.util.Direction;
 
@@ -99,13 +96,13 @@ public final class RelativeMoveSign {
                 break;
         }
 
-        if (!player.hasPermission("movecraft." + CraftManager.getInstance().getCraftByPlayer(player.getUniqueId()).getType().getName() + ".move")) {
+        if (!player.hasPermission("movecraft." + CraftManager.getInstance().getCraftByPlayer(player.getUniqueId()).getType().getName() + ".movement.relativemove")) {
             player.sendMessage(Text.of("Insufficient Permissions"));
             return;
         }
         if (CraftManager.getInstance().getCraftByPlayer(player.getUniqueId()).getType().getCanStaticMove()) {
             CraftManager.getInstance().getCraftByPlayer(player.getUniqueId()).translate(Rotation.NONE, new Vector3i(dx, dy, dz), false);
-            CraftManager.getInstance().getCraftByPlayer(player.getUniqueId()).setLastCruiseUpdateTick(Sponge.getServer().getRunningTimeTicks());
+            CraftManager.getInstance().getCraftByPlayer(player.getUniqueId()).setLastMoveTick(Sponge.getServer().getRunningTimeTicks());
         }
     }
 }

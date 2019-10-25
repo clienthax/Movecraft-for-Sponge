@@ -50,10 +50,11 @@ public final class HelmSign {
         }
 
         Craft craft = CraftManager.getInstance().getCraftByPlayer(player.getUniqueId());
-        if (craft == null) {
+
+        if (craft == null)
             return;
-        }
-        if (!player.hasPermission("movecraft." + craft.getType().getName() + ".add")) {
+
+        if (!player.hasPermission("movecraft." + craft.getType().getName() + ".movement.rotate")) {
             player.sendMessage(Text.of("Insufficient Permissions"));
             return;
         }
@@ -63,21 +64,14 @@ public final class HelmSign {
         }
 
         if (craft.getType().rotateAtMidpoint()) {
-            CraftManager.getInstance().getCraftByPlayer(player.getUniqueId()).translate(rotation, craft.getHitBox().getMidPoint(), false);
+            craft.translate(rotation, craft.getHitBox().getMidPoint(), false);
         } else {
-            CraftManager.getInstance().getCraftByPlayer(player.getUniqueId()).translate(rotation, sign.getLocation().getBlockPosition(), false);
+            craft.translate(rotation, sign.getLocation().getBlockPosition(), false);
         }
 
-        //timeMap.put(event.getPlayer(), System.currentTimeMillis());
         event.setCancelled(true);
+
         //TODO: Lower speed while turning
-            /*int curTickCooldown = CraftManager.getInstance().getCraftByPlayer(event.getPlayer()).getCurTickCooldown();
-            int baseTickCooldown = CraftManager.getInstance().getCraftByPlayer(event.getPlayer()).getType().getCruiseTickCooldown();
-            if (curTickCooldown * 2 > baseTickCooldown)
-                curTickCooldown = baseTickCooldown;
-            else
-                curTickCooldown = curTickCooldown * 2;*/
-        //CraftManager.getInstance().getCraftByPlayer(event.getPlayer()).setCurTickCooldown(curTickCooldown); // lose half your speed when turning
 
     }
 }

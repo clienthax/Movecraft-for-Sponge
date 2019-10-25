@@ -19,6 +19,7 @@ import org.spongepowered.api.Sponge;
 import org.spongepowered.api.block.BlockSnapshot;
 import org.spongepowered.api.block.BlockType;
 import org.spongepowered.api.block.BlockTypes;
+import org.spongepowered.api.world.BlockChangeFlags;
 
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -153,13 +154,13 @@ public class CraftTranslateCommand extends UpdateCommand {
 
                 if (exterior.contains(new Vector3i(block.getPosition().getX(), block.getPosition().getY(), block.getPosition().getZ()))) {
 
-                    handler.setBlock(block.getLocation().get(), block);
+                    craft.getWorld().restoreSnapshot(block, true, BlockChangeFlags.NONE);
                     craft.getPhasedBlocks().remove(block);
                 }
 
                 if (originalLocations.contains(new Vector3i(block.getPosition().getX(), block.getPosition().getY(), block.getPosition().getZ())) && !craft.getHitBox().inBounds(new Vector3i(block.getPosition().getX(), block.getPosition().getY(), block.getPosition().getZ()))) {
 
-                    handler.setBlock(block.getLocation().get(), block);
+                    craft.getWorld().restoreSnapshot(block, true, BlockChangeFlags.NONE);
                     craft.getPhasedBlocks().remove(block);
                 }
             }
@@ -168,7 +169,7 @@ public class CraftTranslateCommand extends UpdateCommand {
                 final BlockSnapshot material = MovecraftLocation.toSponge(craft.getWorld(), location).createSnapshot();
                 if (passthroughBlocks.contains(material.getState().getType())) {
                     craft.getPhasedBlocks().add(material);
-                    handler.setBlock(MovecraftLocation.toSponge(craft.getWorld(), location), BlockSnapshot.builder().blockState(BlockTypes.AIR.getDefaultState()).world(craft.getWorld().getProperties()).position(location).build());
+                    craft.getWorld().restoreSnapshot(location, BlockTypes.AIR.getDefaultState().snapshotFor(MovecraftLocation.toSponge(craft.getWorld(), location)), true, BlockChangeFlags.NONE);
 
                 }
             }

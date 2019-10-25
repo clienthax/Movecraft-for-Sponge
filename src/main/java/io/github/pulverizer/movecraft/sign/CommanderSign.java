@@ -1,22 +1,15 @@
 package io.github.pulverizer.movecraft.sign;
 
-import com.sun.corba.se.impl.orb.ParserTable;
 import io.github.pulverizer.movecraft.Movecraft;
-import javafx.collections.transformation.SortedList;
 import org.spongepowered.api.block.BlockSnapshot;
 import org.spongepowered.api.block.BlockTypes;
 import org.spongepowered.api.block.tileentity.Sign;
 import org.spongepowered.api.data.Transaction;
 import org.spongepowered.api.data.value.mutable.ListValue;
-import org.spongepowered.api.data.value.mutable.MapValue;
 import org.spongepowered.api.entity.living.player.Player;
-import org.spongepowered.api.event.Listener;
 import org.spongepowered.api.event.block.ChangeBlockEvent;
 import org.spongepowered.api.event.block.tileentity.ChangeSignEvent;
-import org.spongepowered.api.event.filter.IsCancelled;
-import org.spongepowered.api.event.filter.cause.Root;
 import org.spongepowered.api.text.Text;
-import org.spongepowered.api.util.Tristate;
 
 import java.sql.*;
 import java.sql.Date;

@@ -46,58 +46,58 @@ public final class StatusSign {
         ListValue<Text> lines = sign.lines();
 
         double fuel = craft.checkFuelStored() + craft.getBurningFuel();
-        int totalBlocks = 0;
+        int totalBlocks = craft.getHitBox().size();
         Map<BlockType, Integer> foundBlocks = new HashMap<>();
 
         for (Vector3i loc : craft.getHitBox()) {
             BlockType blockType = craft.getWorld().getBlockType(loc);
 
             if (foundBlocks.containsKey(blockType)) {
-                Integer count = foundBlocks.get(blockType);
-                if (count == null) {
-                    foundBlocks.put(blockType, 1);
-                } else {
-                    foundBlocks.put(blockType, count + 1);
-                }
+                foundBlocks.merge(blockType, 1, Integer::sum);
             } else {
                 foundBlocks.put(blockType, 1);
-            }
-
-            if (blockType != BlockTypes.AIR) {
-                totalBlocks++;
             }
         }
 
         int signLine = 1;
         int signColumn = 0;
-        for(List<BlockType> flyBlockIDs : craft.getType().getFlyBlocks().keySet()) {
-            BlockType flyBlockID = flyBlockIDs.get(0);
-            Double minimum = craft.getType().getFlyBlocks().get(flyBlockIDs).get(0);
-            if(foundBlocks.containsKey(flyBlockID) && minimum > 0) { // if it has a minimum, it should be considered for sinking consideration
-                int amount = foundBlocks.get(flyBlockID);
-                Double percentPresent = (double) (amount*100/totalBlocks);
-                String signText = "";
-                if (percentPresent > minimum * 1.04) {
-                    signText+= TextColors.GREEN;
-                } else if(percentPresent > minimum*1.02) {
-                    signText+= TextColors.YELLOW;
-                } else {
-                    signText+= TextColors.RED;
-                }
-                //TODO: Change to Fly and Move Blocks
-                if(flyBlockID == BlockTypes.REDSTONE_BLOCK) {
-                    signText+="R";
-                } else if(flyBlockID == BlockTypes.IRON_BLOCK) {
-                    signText+="I";
-                } else {
-                    signText+= flyBlockID.getName().charAt(0);
+
+        for(Map.Entry<List<BlockType>, List<Double>> flyBlockMapEntry : craft.getType().getFlyBlocks().entrySet()) {
+
+            Double minimum = flyBlockMapEntry.getValue().get(0);
+
+            if (minimum > 0) {
+                int amount = 0;
+
+                for (BlockType blockType : flyBlockMapEntry.getKey()) {
+                    if (foundBlocks.containsKey(blockType))
+                        amount += foundBlocks.get(blockType);
                 }
 
-                signText+=" ";
-                signText+=percentPresent.intValue();
-                signText+="/";
-                signText+=minimum.intValue();
-                signText+="  ";
+                if (amount <= 0)
+                    continue;
+
+                Double percentPresent = (double) (amount * 100 / totalBlocks);
+                String signText = "";
+
+                if (percentPresent > minimum * 1.05) {
+                    signText += TextColors.GREEN;
+                } else if (percentPresent > minimum * 1.025) {
+                    signText += TextColors.YELLOW;
+                } else {
+                    signText += TextColors.RED;
+                }
+
+                //TODO: Change to Fly and Move Blocks
+                String[] strings = flyBlockMapEntry.getKey().get(0).getName().split(":");
+                signText += strings[strings.length - 1].substring(0, 1).toUpperCase();
+
+                signText += ": ";
+                signText += percentPresent.intValue();
+                signText += "/";
+                signText += minimum.intValue();
+                signText += "  ";
+
                 if(signColumn == 0) {
                     lines.set(signLine,Text.of(signText));
                     sign.offer(lines);

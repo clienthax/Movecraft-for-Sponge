@@ -3,7 +3,6 @@ package io.github.pulverizer.movecraft.craft;
 import com.flowpowered.math.vector.Vector3d;
 import com.flowpowered.math.vector.Vector3i;
 import io.github.pulverizer.movecraft.enums.CraftState;
-import io.github.pulverizer.movecraft.MovecraftLocation;
 import io.github.pulverizer.movecraft.enums.Rotation;
 import io.github.pulverizer.movecraft.async.AsyncTask;
 import io.github.pulverizer.movecraft.async.DetectionTask;
@@ -37,7 +36,6 @@ public class Craft {
     private final UUID id = UUID.randomUUID();
     private int initialSize;
     private final Long originalPilotTime;
-    private final UUID originalPilot;
 
 
     //State
@@ -49,6 +47,8 @@ public class Craft {
 
 
     //Crew
+    private UUID commander;
+    private UUID nextInCommand;
     private UUID pilot;
     private UUID AADirector;
     private UUID cannonDirector;
@@ -70,9 +70,6 @@ public class Craft {
     private long lastRotateTime = 0;
     private float meanMoveTime;
 
-    //TODO: Rewrite these variables
-    private final HashMap<UUID, Vector3i> crewSigns = new HashMap<>();
-
     /**
      * Initialises the craft and detects the craft's hitbox.
      * @param type The type of craft to detect.
@@ -82,10 +79,9 @@ public class Craft {
     public Craft(CraftType type, UUID player, Location<World> startLocation) {
         this.type = type;
         setWorld(startLocation.getExtent());
-        addCrewMember(player);
-        setLastCruiseUpdateTick(Sponge.getServer().getRunningTimeTicks() - 10000);
+        setLastMoveTick(Sponge.getServer().getRunningTimeTicks() - 10000);
         this.originalPilotTime = System.currentTimeMillis();
-        this.originalPilot = player;
+        setCommander(player);
         submitTask(new DetectionTask(this, startLocation));
     }
 
@@ -120,6 +116,9 @@ public class Craft {
 
         if (getCannonDirector() == player)
             setCannonDirector(null);
+
+        if (getNextInCommand() == player)
+            setNextInCommand(null);
     }
 
     /**
@@ -151,6 +150,7 @@ public class Craft {
         setPilot(null);
         setAADirector(null);
         setCannonDirector(null);
+        setNextInCommand(null);
     }
 
     /**
@@ -296,7 +296,7 @@ public class Craft {
      * Fetches the time when the craft last cruised.
      * @return Time when craft last cruised.
      */
-    public int getLastCruiseUpdateTick() {
+    public int getLastMoveTick() {
         return lastCruiseUpdateTick;
     }
 
@@ -304,7 +304,7 @@ public class Craft {
      * Fetches the time when the craft last cruised.
      * @param time Time when the craft last cruised.
      */
-    public void setLastCruiseUpdateTick(int time) {
+    public void setLastMoveTick(int time) {
         lastCruiseUpdateTick = time;
     }
 
@@ -570,32 +570,50 @@ public class Craft {
     }
 
     /**
-     * Fetches the UUID of the player that triggered craft detection.
-     * @return The UUID of the player that triggered craft detection.
+     * Fetches the UUID of the player currently commanding the craft.
+     * @return The UUID of the player currently commanding the craft.
      */
-    public UUID getOriginalPilot() {
-        return originalPilot;
+    public UUID getCommander() {
+        return commander;
     }
 
-    //TODO: Complete this!
     /**
-     * Checks if the craft is unable to move through any fault of it's own or if it should be sinking. CODE NOT COMPLETE YET!
-     * @return TRUE - If the craft can move.
+     * Fetches the UUID of the player currently commanding the craft.
+     * @return The UUID of the player currently commanding the craft.
      */
-    public boolean runChecks()  {
+    public void setCommander(UUID player) {
+        if (!crewList.contains(player))
+            addCrewMember(player);
 
-        if (getHitBox().isEmpty())
+        commander = player;
+    }
+
+    /**
+     * Sets the player as the craft's Next-In-Command.
+     * @param player The player to be set as the Next-In-Command. Use null to remove but not replace the existing cannon director.
+     * @return FALSE - If you are attempting to set a player as the Next-In-Command but the player is not a member of the crew.
+     */
+    public boolean setNextInCommand(UUID player) {
+        if (!isCrewMember(player) && player != null)
             return false;
 
-        if (getState() == CraftState.DISABLED)
-            return false;
-
+        nextInCommand = player;
         return true;
+    }
+
+    /**
+     * Fetches the current Next-In-Command of the craft.
+     * @return The current Next-In-Command of the craft.
+     */
+    public UUID getNextInCommand() {
+        return nextInCommand;
     }
 
 
 
     //--------------------------//
+
+
 
     public void setLastCheckTime(long time) {
         lastCheckTime = time;
@@ -606,7 +624,7 @@ public class Craft {
      * @return the speed of the craft
      */
     public double getSpeed(){
-        return 20*type.getCruiseSkipBlocks()/(double)getTickCooldown();
+        return Sponge.getServer().getTicksPerSecond() * type.getCruiseSkipBlocks()/(double)getTickCooldown();
     }
 
     public long getLastRotateTime() {
@@ -650,7 +668,7 @@ public class Craft {
 
         } else if (!isSubCraft) {
 
-            if(getLastRotateTime()+1e9>System.nanoTime()){
+            if(getLastRotateTime() + 1e9 > System.nanoTime()){
                 if(getPilot()!= null)
                     Sponge.getServer().getPlayer(getPilot()).ifPresent(player -> player.sendMessage(Text.of("You're turning too quickly!")));
                 return;
@@ -666,38 +684,36 @@ public class Craft {
     }
 
     public int getTickCooldown() {
+
         if(state == CraftState.SINKING)
             return type.getSinkRateTicks();
-        double chestPenalty = 0;
-        for(Vector3i location : currentHitbox){
-            if(MovecraftLocation.toSponge(world, location).getBlockType()==BlockTypes.CHEST)
-                chestPenalty++;
-        }
-        chestPenalty*=type.getChestPenalty();
-        if(meanMoveTime==0)
-            return type.getCruiseTickCooldown()+(int)chestPenalty;
+
+        double chestPenalty = findBlockType(BlockTypes.CHEST).size() + findBlockType(BlockTypes.TRAPPED_CHEST).size();
+
+        chestPenalty *= type.getChestPenalty();
+
+        if(meanMoveTime == 0)
+            return type.getCruiseTickCooldown() + (int) chestPenalty;
+
         if(state != CraftState.CRUISING)
-            return type.getTickCooldown()+(int)chestPenalty;
-        if(type.getDynamicFlyBlockSpeedFactor()!=0){
-            double count = 0;
-            BlockType flyBlockMaterial = type.getDynamicFlyBlock();
-            for(Vector3i location : currentHitbox){
-                if(MovecraftLocation.toSponge(world, location).getBlockType()==flyBlockMaterial)
-                    count++;
-            }
-            return Math.max((int) (20 / (type.getCruiseTickCooldown() * (1  + type.getDynamicFlyBlockSpeedFactor() * (count / currentHitbox.size() - .5)))), 1);
-            //return  Math.max((int)(type.getCruiseTickCooldown()* (1 - count /hitBox.size()) +chestPenalty),1);
+            return type.getTickCooldown() + (int) chestPenalty;
+
+        if(type.getDynamicFlyBlockSpeedFactor() != 0){
+            double count = findBlockType(type.getDynamicFlyBlock()).size();
+
+            return Math.max((int) (20 / (type.getCruiseTickCooldown() * (1  + type.getDynamicFlyBlockSpeedFactor() * (count / currentHitbox.size() - 0.5)))), 1);
         }
 
-        if(type.getDynamicLagSpeedFactor()==0)
-            return type.getCruiseTickCooldown()+(int)chestPenalty;
+        if(type.getDynamicLagSpeedFactor() == 0)
+            return type.getCruiseTickCooldown() + (int) chestPenalty;
+
         //TODO: modify skip blocks by an equal proportion to this, than add another modifier based on dynamic speed factor
-        return Math.max((int)(type.getCruiseTickCooldown()*meanMoveTime*20/type.getDynamicLagSpeedFactor() +chestPenalty),1);
+        return Math.max((int)(type.getCruiseTickCooldown() * meanMoveTime * 20/type.getDynamicLagSpeedFactor() + chestPenalty), 1);
     }
 
 
     public int getWaterLine(){
-        //TODO: Remove this temporary system in favor of passthrough blocks
+        //TODO: Remove this temporary system in favor of passthrough blocks. How tho???
         // Find the waterline from the surrounding terrain or from the static level in the craft type
         int waterLine = 0;
         if (currentHitbox.isEmpty())
@@ -746,10 +762,6 @@ public class Craft {
             }
         }
         return waterLine;
-    }
-
-    public Map<UUID, Vector3i> getCrewSigns(){
-        return crewSigns;
     }
 
     public void submitTask(AsyncTask task) {

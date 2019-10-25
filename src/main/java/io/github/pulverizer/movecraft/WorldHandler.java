@@ -145,16 +145,6 @@ public class WorldHandler {
     }
 
     /**
-     * Sets the Block at the Location to the BlockSnapshot.
-     * @param location Location at which the BlockSnapshot will be placed.
-     * @param block BlockSnapshot to be placed.
-     */
-    @Deprecated
-    public void setBlock(Location<World> location, BlockSnapshot block){
-        location.restoreSnapshot(block, true, BlockChangeFlags.NONE);
-    }
-
-    /**
      * Rotates a BlockSnapshot using the Rotation.
      * @param rotation Rotation that the BlockSnapshot will be rotated with.
      * @param block BlockSnapshot to be rotated.

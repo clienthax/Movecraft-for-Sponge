@@ -12,7 +12,7 @@ public class CraftDetectEvent extends CraftEvent {
         super(craft);
 
         cause = Cause.builder()
-                .append(craft.getOriginalPilot())
+                .append(craft.getCommander())
                 .build(EventContext.empty());
     }
 

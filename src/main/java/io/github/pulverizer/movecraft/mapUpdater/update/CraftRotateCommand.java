@@ -14,6 +14,7 @@ import org.spongepowered.api.Sponge;
 import org.spongepowered.api.block.BlockSnapshot;
 import org.spongepowered.api.block.BlockType;
 import org.spongepowered.api.block.BlockTypes;
+import org.spongepowered.api.world.BlockChangeFlags;
 
 import java.util.*;
 
@@ -137,13 +138,13 @@ public class CraftRotateCommand extends UpdateCommand {
             craft.getPhasedBlocks().forEach(block -> {
                 if (exterior.contains((Vector3i) block.getPosition())) {
 
-                    handler.setBlock(block.getLocation().get(), block);
+                    craft.getWorld().restoreSnapshot(block, true, BlockChangeFlags.NONE);
                     craft.getPhasedBlocks().remove(block);
                 }
 
                 if (originalLocations.contains((Vector3i) block.getPosition()) && !craft.getHitBox().inBounds((Vector3i) block.getPosition())) {
 
-                    handler.setBlock(block.getLocation().get(), block);
+                    craft.getWorld().restoreSnapshot(block, true, BlockChangeFlags.NONE);
                     craft.getPhasedBlocks().remove(block);
                 }
             });
@@ -152,7 +153,7 @@ public class CraftRotateCommand extends UpdateCommand {
                 final BlockSnapshot material = MovecraftLocation.toSponge(craft.getWorld(), location).createSnapshot();
                 if (passthroughBlocks.contains(material.getState().getType())) {
                     craft.getPhasedBlocks().add(material);
-                    handler.setBlock(MovecraftLocation.toSponge(craft.getWorld(), location), BlockTypes.AIR.getDefaultState().snapshotFor(MovecraftLocation.toSponge(craft.getWorld(), location)));
+                    craft.getWorld().restoreSnapshot(location, BlockTypes.AIR.getDefaultState().snapshotFor(MovecraftLocation.toSponge(craft.getWorld(), location)), true, BlockChangeFlags.NONE);
 
                 }
             }

@@ -14,7 +14,6 @@ public class ParticleUpdateCommand extends UpdateCommand {
     private Location<World> location;
     private int smokeStrength;
     private Random rand = new Random();
-    private static int silhouetteBlocksSent; //TODO: remove this
 
     public ParticleUpdateCommand(Location<World> location, int smokeStrength) {
         this.location = location;
@@ -29,9 +28,8 @@ public class ParticleUpdateCommand extends UpdateCommand {
             location.getExtent().spawnParticles(ParticleEffect.builder().type(ParticleTypes.SMOKE).build(), location.getPosition());
 
         }
-        if (Settings.SilhouetteViewDistance > 0 && silhouetteBlocksSent < Settings.SilhouetteBlockCount) {
-            if (sendSilhouetteToPlayers())
-                silhouetteBlocksSent++;
+        if (Settings.SilhouetteViewDistance > 0) {
+            sendSilhouetteToPlayers();
         }
 
     }

@@ -15,6 +15,7 @@ final public class MovecraftLocation {
      * @param world World to place the Location in.
      * @return New Location in the specified World.
      */
+    @Deprecated
     public static Location<World> toSponge(World world, Vector3i location){
         return new Location<World>(world, location.getX(), location.getY(), location.getZ());
     }

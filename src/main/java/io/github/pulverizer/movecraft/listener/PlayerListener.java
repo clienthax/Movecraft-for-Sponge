@@ -39,6 +39,10 @@ public class PlayerListener {
         if (craft == null)
             return;
 
+        if (craft.getCommander() == player.getUniqueId()) {
+            craft.setCommander(craft.getNextInCommand());
+        }
+
         craft.removeCrewMember(player.getUniqueId());
 
         //TODO: Change to not release but allow the ship to keep cruising and be sunk or claimed.

@@ -21,10 +21,8 @@ import org.spongepowered.api.block.BlockTypes;
 import org.spongepowered.api.block.tileentity.carrier.Dispenser;
 import org.spongepowered.api.data.key.Keys;
 import org.spongepowered.api.data.type.HandTypes;
-import org.spongepowered.api.data.value.mutable.Value;
 import org.spongepowered.api.effect.sound.SoundTypes;
 import org.spongepowered.api.entity.Entity;
-import org.spongepowered.api.entity.EntityTypes;
 import org.spongepowered.api.entity.explosive.PrimedTNT;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.entity.projectile.explosive.fireball.SmallFireball;
@@ -114,7 +112,7 @@ public class AsyncManager implements Runnable {
 
                 DetectionTask task = (DetectionTask) poll;
 
-                Player player = Sponge.getServer().getPlayer(craft.getOriginalPilot()).orElse(null);
+                Player player = Sponge.getServer().getPlayer(craft.getCommander()).orElse(null);
 
                     if (task.failed()) {
                         if (player != null)
@@ -275,7 +273,7 @@ public class AsyncManager implements Runnable {
             if (craft == null || !craft.isNotProcessing() || craft.getState() != CraftState.CRUISING) {
                 continue;
             }
-            long ticksElapsed = Sponge.getServer().getRunningTimeTicks() - craft.getLastCruiseUpdateTick();
+            long ticksElapsed = Sponge.getServer().getRunningTimeTicks() - craft.getLastMoveTick();
             World w = craft.getWorld();
             // if the craft should go slower underwater, make time pass more slowly there
             //TODO: Replace w.getSeaLevel() with something better
@@ -363,10 +361,10 @@ public class AsyncManager implements Runnable {
             }
             craft.translate(Rotation.NONE, new com.flowpowered.math.vector.Vector3i(dx, dy, dz), false);
             craft.setLastMoveVector(new com.flowpowered.math.vector.Vector3i(dx, dy, dz));
-            if (craft.getLastCruiseUpdateTick() != -1) {
-                craft.setLastCruiseUpdateTick(Sponge.getServer().getRunningTimeTicks());
+            if (craft.getLastMoveTick() != -1) {
+                craft.setLastMoveTick(Sponge.getServer().getRunningTimeTicks());
             } else {
-                craft.setLastCruiseUpdateTick(Sponge.getServer().getRunningTimeTicks() - 600);
+                craft.setLastMoveTick(Sponge.getServer().getRunningTimeTicks() - 600);
             }
         }
     }
@@ -496,7 +494,7 @@ public class AsyncManager implements Runnable {
                 CraftManager.getInstance().removeCraft(craft);
                 continue;
             }
-            long ticksElapsed = Sponge.getServer().getRunningTimeTicks() - craft.getLastCruiseUpdateTick();
+            long ticksElapsed = Sponge.getServer().getRunningTimeTicks() - craft.getLastMoveTick();
             if (Math.abs(ticksElapsed) < craft.getType().getSinkRateTicks()) {
                 continue;
             }
@@ -507,7 +505,7 @@ public class AsyncManager implements Runnable {
                 dz = craft.getLastMoveVector().getZ();
             }
             craft.translate(Rotation.NONE, new Vector3i(dx, -1, dz), false);
-            craft.setLastCruiseUpdateTick(craft.getLastCruiseUpdateTick() != -1 ? Sponge.getServer().getRunningTimeTicks() : Sponge.getServer().getRunningTimeTicks() - 600);
+            craft.setLastMoveTick(craft.getLastMoveTick() != -1 ? Sponge.getServer().getRunningTimeTicks() : Sponge.getServer().getRunningTimeTicks() - 600);
         }
     }
 
@@ -908,12 +906,12 @@ public class AsyncManager implements Runnable {
 
         // Cleanup crafts that are bugged and have not moved in the past 60 seconds, but have no crew or are still processing.
         for (Craft craft : CraftManager.getInstance()) {
-            if (craft.getCrewList().isEmpty() && craft.getLastCruiseUpdateTick() < Sponge.getServer().getRunningTimeTicks() - 1200) {
+            if (craft.getCrewList().isEmpty() && craft.getLastMoveTick() < Sponge.getServer().getRunningTimeTicks() - 1200) {
                 CraftManager.getInstance().forceRemoveCraft(craft);
             }
 
             // Stop crafts from moving if they have taken too long to process.
-            if (!craft.isNotProcessing() && craft.getState() == CraftState.CRUISING && craft.getLastCruiseUpdateTick() < Sponge.getServer().getRunningTimeTicks() - 100) {
+            if (!craft.isNotProcessing() && craft.getState() == CraftState.CRUISING && craft.getLastMoveTick() < Sponge.getServer().getRunningTimeTicks() - 100) {
 
                     craft.setProcessing(false);
             }

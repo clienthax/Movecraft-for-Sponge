@@ -2,7 +2,7 @@ package io.github.pulverizer.movecraft;
 
 import com.google.common.reflect.TypeToken;
 import com.google.inject.Inject;
-import io.github.pulverizer.movecraft.listener.SignListener;
+import io.github.pulverizer.movecraft.listener.*;
 import io.github.pulverizer.movecraft.sign.*;
 import ninja.leaping.configurate.ConfigurationNode;
 import ninja.leaping.configurate.ConfigurationOptions;
@@ -23,9 +23,6 @@ import io.github.pulverizer.movecraft.async.AsyncManager;
 //import io.github.pulverizer.movecraft.commands.*;
 import io.github.pulverizer.movecraft.config.Settings;
 import io.github.pulverizer.movecraft.craft.CraftManager;
-import io.github.pulverizer.movecraft.listener.BlockListener;
-import io.github.pulverizer.movecraft.listener.InteractListener;
-import io.github.pulverizer.movecraft.listener.PlayerListener;
 import io.github.pulverizer.movecraft.mapUpdater.MapUpdateManager;
 import org.spongepowered.api.scheduler.Task;
 import org.spongepowered.api.service.sql.SqlService;
@@ -144,7 +141,7 @@ public class Movecraft {
         ItemType pilotStick = ItemTypes.AIR;
 
         try {
-            // if the PilotTool is specified in the config.yml file, use it
+            // if the PilotTool is specified in the movecraft.cfg file, use it
             if (mainConfigNode.getNode("PilotTool").getValue(TypeToken.of(ItemType.class)) != null) {
                 logger.info("Recognized PilotTool setting of: " + mainConfigNode.getNode("PilotTool").getValue(TypeToken.of(ItemType.class)));
                 pilotStick = mainConfigNode.getNode("PilotTool").getValue(TypeToken.of(ItemType.class));
@@ -231,6 +228,7 @@ public class Movecraft {
         Sponge.getEventManager().registerListeners(this, new SignListener());
         Sponge.getEventManager().registerListeners(this, new CrewSign());
         Sponge.getEventManager().registerListeners(this, new CommanderSign());
+        Sponge.getEventManager().registerListeners(this, new TNTListener());
 
         logger.info("Movecraft Enabled.");
     }
