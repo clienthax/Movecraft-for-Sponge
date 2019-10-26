@@ -175,6 +175,10 @@ public class TNTListener {
         if (!event.getExplosion().getSourceExplosive().isPresent() || !(event.getExplosion().getSourceExplosive().get() instanceof PrimedTNT))
             return;
 
+        //TODO: Debug
+        Movecraft.getInstance().getLogger().info("Listener: " + tntControlTimer);
+        Movecraft.getInstance().getLogger().info("Server: " + Sponge.getServer().getRunningTimeTicks());
+
         if (tntControlTimer < Sponge.getServer().getRunningTimeTicks()) {
             tntControlTimer = Sponge.getServer().getRunningTimeTicks();
             tntControlList.clear();
