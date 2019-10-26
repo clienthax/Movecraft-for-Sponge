@@ -23,11 +23,9 @@ import org.spongepowered.api.data.key.Keys;
 import org.spongepowered.api.data.type.HandTypes;
 import org.spongepowered.api.effect.sound.SoundTypes;
 import org.spongepowered.api.entity.Entity;
-import org.spongepowered.api.entity.explosive.PrimedTNT;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.entity.projectile.explosive.fireball.SmallFireball;
 import org.spongepowered.api.item.inventory.entity.PlayerInventory;
-import org.spongepowered.api.scheduler.Task;
 import org.spongepowered.api.text.Text;
 import org.spongepowered.api.util.Direction;
 import org.spongepowered.api.util.blockray.BlockRay;
@@ -41,49 +39,15 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 public class AsyncManager implements Runnable {
     private static AsyncManager ourInstance;
-    private final HashMap<PrimedTNT, Double> TNTTracking = new HashMap<>();
     private final HashMap<Craft, HashMap<Craft, Long>> recentContactTracking = new HashMap<>();
     private final BlockingQueue<AsyncTask> taskQueue = new LinkedBlockingQueue<>();
     private final HashSet<Craft> clearanceSet = new HashSet<>();
     private HashMap<SmallFireball, Long> FireballTracking = new HashMap<>();
-    private long lastTracerUpdate = 0;
     private long lastFireballCheck = 0;
-    private long lastTNTContactCheck = 0;
     private long lastFadeCheck = 0;
     private long lastContactCheck = 0;
-    private HashSet<BlockType> transparent;
 
-    public AsyncManager() {
-        transparent = new HashSet<>();
-        transparent.add(BlockTypes.AIR);
-        transparent.add(BlockTypes.GLASS);
-        transparent.add(BlockTypes.GLASS_PANE);
-        transparent.add(BlockTypes.STAINED_GLASS);
-        transparent.add(BlockTypes.STAINED_GLASS_PANE);
-        transparent.add(BlockTypes.IRON_BARS);
-        transparent.add(BlockTypes.REDSTONE_WIRE);
-        transparent.add(BlockTypes.IRON_TRAPDOOR);
-        transparent.add(BlockTypes.TRAPDOOR);
-        transparent.add(BlockTypes.NETHER_BRICK_STAIRS);
-        transparent.add(BlockTypes.LEVER);
-        transparent.add(BlockTypes.STONE_BUTTON);
-        transparent.add(BlockTypes.WOODEN_BUTTON);
-        transparent.add(BlockTypes.ACACIA_STAIRS);
-        transparent.add(BlockTypes.SANDSTONE_STAIRS);
-        transparent.add(BlockTypes.BIRCH_STAIRS);
-        transparent.add(BlockTypes.BRICK_STAIRS);
-        transparent.add(BlockTypes.DARK_OAK_STAIRS);
-        transparent.add(BlockTypes.JUNGLE_STAIRS);
-        transparent.add(BlockTypes.OAK_STAIRS);
-        transparent.add(BlockTypes.PURPUR_STAIRS);
-        transparent.add(BlockTypes.QUARTZ_STAIRS);
-        transparent.add(BlockTypes.RED_SANDSTONE_STAIRS);
-        transparent.add(BlockTypes.SPRUCE_STAIRS);
-        transparent.add(BlockTypes.STONE_BRICK_STAIRS);
-        transparent.add(BlockTypes.STONE_STAIRS);
-        transparent.add(BlockTypes.WALL_SIGN);
-        transparent.add(BlockTypes.STANDING_SIGN);
-    }
+    public AsyncManager() {}
 
     public static AsyncManager getInstance() {
         return ourInstance;
@@ -509,55 +473,6 @@ public class AsyncManager implements Runnable {
         }
     }
 
-    private void processTracers() {
-        if (Settings.TracerRateTicks == 0)
-            return;
-        long ticksElapsed = (System.currentTimeMillis() - lastTracerUpdate) / 50;
-        if (ticksElapsed > Settings.TracerRateTicks) {
-            for (World world : Sponge.getServer().getWorlds()) {
-                if (world != null) {
-                    for (Entity entity : world.getEntities(entity -> entity instanceof PrimedTNT)) {
-                        PrimedTNT tnt = (PrimedTNT) entity;
-
-                        if (tnt.getVelocity().lengthSquared() > 0.25) {
-                            for (Player p : world.getPlayers()) {
-                                // is the TNT within the render distance of the player?
-                                long maxDistSquared = world.getViewDistance() * 16;
-                                maxDistSquared = maxDistSquared - 16;
-                                maxDistSquared = maxDistSquared * maxDistSquared;
-
-                                if (p.getLocation().getBlockPosition().distanceSquared(tnt.getLocation().getBlockPosition()) < maxDistSquared) {
-                                    // we
-                                    // use
-                                    // squared
-                                    // because
-                                    // its
-                                    // faster
-                                    final com.flowpowered.math.vector.Vector3i loc = tnt.getLocation().getBlockPosition();
-                                    final Player fp = p;
-                                    // then make a cobweb to look like smoke,
-                                    // place it a little later so it isn't right
-                                    // in the middle of the volley
-                                    Task.builder()
-                                            .delayTicks(5)
-                                            .execute( () -> fp.sendBlockChange(loc, BlockTypes.WEB.getDefaultState()))
-                                            .submit(Movecraft.getInstance());
-
-                                    // then remove it
-                                    Task.builder()
-                                            .delayTicks(65)
-                                            .execute( () -> fp.resetBlockChange(loc))
-                                            .submit(Movecraft.getInstance());
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            lastTracerUpdate = System.currentTimeMillis();
-        }
-    }
-
 
     private void processFireballs() {
         long timeElapsed = System.currentTimeMillis() - lastFireballCheck;
@@ -576,7 +491,7 @@ public class AsyncManager implements Runnable {
                 if (!(fireball.getShooter() instanceof Dispenser) || FireballTracking.containsKey(fireball))
                     continue;
 
-                Craft craft = fastNearestCraftToLoc(fireball.getLocation());
+                Craft craft = CraftManager.getInstance().fastNearestCraftToLoc(fireball.getLocation());
 
                 if (craft == null || craft.getAADirector() == null)
                     continue;
@@ -606,7 +521,7 @@ public class AsyncManager implements Runnable {
                     Optional<BlockRayHit<World>> blockRayHit = BlockRay
                             .from(player)
                             .distanceLimit((player.getViewDistance() + 1) * 16)
-                            .skipFilter(hit -> transparent.contains(hit.getLocation().getBlockType()))
+                            .skipFilter(hit -> CraftManager.getInstance().getTransparentBlocks().contains(hit.getLocation().getBlockType()))
                             .stopFilter(BlockRay.allFilter())
                             .build()
                             .end();
@@ -682,125 +597,6 @@ public class AsyncManager implements Runnable {
         });
 
         lastFireballCheck = System.currentTimeMillis();
-    }
-
-    private Craft fastNearestCraftToLoc(Location loc) {
-        Craft returnedCraft = null;
-        long closestDistSquared = 1000000000L;
-        Set<Craft> craftsList = CraftManager.getInstance().getCraftsInWorld((World) loc.getExtent());
-        for (Craft craft : craftsList) {
-
-            Vector3i hitBoxMidPoint = craft.getHitBox().getMidPoint();
-            int distSquared = hitBoxMidPoint.distanceSquared(loc.getBlockPosition());
-
-            if (distSquared < closestDistSquared) {
-                closestDistSquared = distSquared;
-                returnedCraft = craft;
-            }
-        }
-        return returnedCraft;
-    }
-
-    private void processTNTContactExplosives() {
-        long timeElapsed = (System.currentTimeMillis() - lastTNTContactCheck) / 50;
-        if (timeElapsed <= 0) {
-            return;
-        }
-        // see if there is any new rapid moving TNT in the worlds
-        for (World world : Sponge.getServer().getWorlds()) {
-            if (world == null)
-                continue;
-
-            for (Entity entity : world.getEntities(entity -> entity instanceof PrimedTNT)) {
-
-                PrimedTNT tnt = (PrimedTNT) entity;
-
-                if (!(tnt.getVelocity().lengthSquared() > 0.35) || TNTTracking.containsKey(tnt)) {
-                    continue;
-                }
-                Craft c = fastNearestCraftToLoc(tnt.getLocation());
-                TNTTracking.put(tnt, tnt.getVelocity().lengthSquared());
-                if (c == null) {
-                    continue;
-                }
-                Vector3i midpoint = c.getHitBox().getMidPoint();
-                int distX  = Math.abs(midpoint.getX() - tnt.getLocation().getBlockX());
-                int distY= Math.abs(midpoint.getY() - tnt.getLocation().getBlockY());
-                int distZ = Math.abs(midpoint.getZ() - tnt.getLocation().getBlockZ());
-                if (c.getCannonDirector() == null || distX >= 100 || distY >= 100 || distZ >= 100) {
-                    continue;
-                }
-                Player player = Sponge.getServer().getPlayer(c.getCannonDirector()).orElse(null);
-                if (player == null || player.getItemInHand(HandTypes.MAIN_HAND).get().getType() != Settings.PilotTool)
-                    continue;
-
-                Vector3d tntVelocity = tnt.getVelocity();
-                double speed = tntVelocity.length(); // store the speed to add it back in later, since all the values we will be using are "normalized", IE: have a speed of 1
-                tntVelocity = tntVelocity.normalize(); // you normalize it for comparison with the new direction to see if we are trying to steer too far
-                BlockSnapshot targetBlock = null;
-                Optional<BlockRayHit<World>> blockRayHit = BlockRay
-                        .from(player)
-                        .distanceLimit((player.getViewDistance() + 1) * 16)
-                        .skipFilter(hit -> transparent.contains(hit.getLocation().getBlockType()))
-                        .stopFilter(BlockRay.allFilter())
-                        .build()
-                        .end();
-
-                if (blockRayHit.isPresent())
-                    // Target is Block :)
-                    targetBlock = blockRayHit.get().getLocation().createSnapshot();
-
-                Vector3d targetVector;
-                if (targetBlock == null) { // the player is looking at nothing, shoot in that general direction
-                    targetVector = player.getHeadRotation();
-                } else { // shoot directly at the block the player is looking at (IE: with convergence)
-                    targetVector = targetBlock.getLocation().get().getPosition().sub(tnt.getLocation().getPosition());
-                    targetVector = targetVector.normalize();
-                }
-
-                //leave the original Y (or vertical axis) trajectory as it was
-                if (targetVector.getX() - tntVelocity.getX() > 0.7) {
-                    tntVelocity = tntVelocity.add(0.7, 0, 0);
-                } else if (targetVector.getX() - tntVelocity.getX() < -0.7) {
-                    tntVelocity = tntVelocity.sub(0.7, 0, 0);
-                } else {
-                    tntVelocity = new Vector3d(targetVector.getX(), tntVelocity.getY(), tntVelocity.getZ());
-                }
-                if (targetVector.getZ() - tntVelocity.getZ() > 0.7) {
-                    tntVelocity = tntVelocity.add(0, 0, 0.7);
-                } else if (targetVector.getZ() - tntVelocity.getZ() < -0.7) {
-                    tntVelocity = tntVelocity.sub(0, 0, 0.7);
-                } else {
-                    tntVelocity = new Vector3d(tntVelocity.getX(), tntVelocity.getY(), targetVector.getZ());
-                }
-                tntVelocity = tntVelocity.mul(speed); // put the original speed back in, but now along a different trajectory
-                tntVelocity = new Vector3d(tntVelocity.getX(), tnt.getVelocity().getY(), tntVelocity.getZ()); // you leave the original Y (or vertical axis) trajectory as it was
-                tnt.setVelocity(tntVelocity);
-            }
-        }
-
-        // then, removed any exploded TNT from tracking
-        TNTTracking.keySet().removeIf(tnt -> tnt.getFuseData().ticksRemaining().get() <= 0);
-
-        // now check to see if any has abruptly changed velocity, and should explode
-
-        HashSet<PrimedTNT> deadTNT = new HashSet<>();
-
-        TNTTracking.forEach((tnt, oldVelocity) -> {
-            double velocity = tnt.getVelocity().lengthSquared();
-            if (velocity < oldVelocity / 10.0) {
-                tnt.detonate();
-                deadTNT.add(tnt);
-            } else {
-                // update the tracking with the new velocity so gradual
-                // changes do not make TNT explode
-                TNTTracking.put(tnt, velocity);
-            }
-        });
-
-        deadTNT.forEach(TNTTracking::remove);
-
-        lastTNTContactCheck = System.currentTimeMillis();
     }
 
     private void processDetection() {
@@ -898,9 +694,7 @@ public class AsyncManager implements Runnable {
         processCruise();
         detectSinking();
         processSinking();
-        processTracers();
         processFireballs();
-        processTNTContactExplosives();
         processDetection();
         processAlgorithmQueue();
 

@@ -1,11 +1,15 @@
 package io.github.pulverizer.movecraft.craft;
 
+import com.flowpowered.math.vector.Vector3i;
 import io.github.pulverizer.movecraft.Movecraft;
 import io.github.pulverizer.movecraft.config.CraftType;
 import org.spongepowered.api.Sponge;
+import org.spongepowered.api.block.BlockType;
+import org.spongepowered.api.block.BlockTypes;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.scheduler.Task;
 import org.spongepowered.api.text.Text;
+import org.spongepowered.api.world.Location;
 import org.spongepowered.api.world.World;
 
 import java.io.File;
@@ -17,6 +21,8 @@ public class CraftManager implements Iterable<Craft>{
     private static CraftManager ourInstance;
     private final Set<Craft> craftList = ConcurrentHashMap.newKeySet();
     private Set<CraftType> craftTypes;
+    private final HashSet<BlockType> transparent = new HashSet<>();
+
     @Deprecated
     private final ConcurrentMap<Craft, Task> releaseEvents = new ConcurrentHashMap<>();
 
@@ -25,11 +31,46 @@ public class CraftManager implements Iterable<Craft>{
     }
 
     private CraftManager() {
+        transparent.add(BlockTypes.AIR);
+        transparent.add(BlockTypes.GLASS);
+        transparent.add(BlockTypes.GLASS_PANE);
+        transparent.add(BlockTypes.STAINED_GLASS);
+        transparent.add(BlockTypes.STAINED_GLASS_PANE);
+        transparent.add(BlockTypes.IRON_BARS);
+        transparent.add(BlockTypes.REDSTONE_WIRE);
+        transparent.add(BlockTypes.IRON_TRAPDOOR);
+        transparent.add(BlockTypes.TRAPDOOR);
+        transparent.add(BlockTypes.NETHER_BRICK_STAIRS);
+        transparent.add(BlockTypes.LEVER);
+        transparent.add(BlockTypes.STONE_BUTTON);
+        transparent.add(BlockTypes.WOODEN_BUTTON);
+        transparent.add(BlockTypes.ACACIA_STAIRS);
+        transparent.add(BlockTypes.SANDSTONE_STAIRS);
+        transparent.add(BlockTypes.BIRCH_STAIRS);
+        transparent.add(BlockTypes.BRICK_STAIRS);
+        transparent.add(BlockTypes.DARK_OAK_STAIRS);
+        transparent.add(BlockTypes.JUNGLE_STAIRS);
+        transparent.add(BlockTypes.OAK_STAIRS);
+        transparent.add(BlockTypes.PURPUR_STAIRS);
+        transparent.add(BlockTypes.QUARTZ_STAIRS);
+        transparent.add(BlockTypes.RED_SANDSTONE_STAIRS);
+        transparent.add(BlockTypes.SPRUCE_STAIRS);
+        transparent.add(BlockTypes.STONE_BRICK_STAIRS);
+        transparent.add(BlockTypes.STONE_STAIRS);
+        transparent.add(BlockTypes.WALL_SIGN);
+        transparent.add(BlockTypes.STANDING_SIGN);
+
+
         this.craftTypes = loadCraftTypes();
     }
 
     public static CraftManager getInstance() {
         return ourInstance;
+    }
+
+    //TODO: Should not be able to edit the returned variable! FIX NEEDED!
+    public HashSet<BlockType> getTransparentBlocks() {
+        return transparent;
     }
 
     public Set<CraftType> getCraftTypes() {
@@ -170,6 +211,23 @@ public class CraftManager implements Iterable<Craft>{
             }
         }
         return null;
+    }
+
+    public Craft fastNearestCraftToLoc(Location loc) {
+        Craft returnedCraft = null;
+        long closestDistSquared = 1000000000L;
+        Set<Craft> craftsList = CraftManager.getInstance().getCraftsInWorld((World) loc.getExtent());
+        for (Craft craft : craftsList) {
+
+            Vector3i hitBoxMidPoint = craft.getHitBox().getMidPoint();
+            int distSquared = hitBoxMidPoint.distanceSquared(loc.getBlockPosition());
+
+            if (distSquared < closestDistSquared) {
+                closestDistSquared = distSquared;
+                returnedCraft = craft;
+            }
+        }
+        return returnedCraft;
     }
 
     public boolean isEmpty(){
