@@ -41,6 +41,41 @@ public class TNTListener {
     private HashSet<PrimedTNT> tntControlList = new HashSet<>();
     private int tntControlTimer = 0;
 
+    public TNTListener() {
+        Task.builder()
+                .intervalTicks(1)
+                .execute(this::processContactExplosives)
+                .submit(Movecraft.getInstance());
+    }
+
+    private void processContactExplosives() {
+
+        Sponge.getServer().getWorlds().forEach(world -> {
+
+            world.getEntities(entity -> entity instanceof PrimedTNT).forEach(entity -> {
+
+                PrimedTNT primedTNT = (PrimedTNT) entity;
+                //Contact Explosives
+
+                double velocity = primedTNT.getVelocity().lengthSquared();
+
+                if (!TNTTracking.containsKey(primedTNT) && velocity > 0.35) {
+                    TNTTracking.put(primedTNT, velocity);
+
+                } else if (TNTTracking.containsKey(primedTNT)) {
+                    if (velocity < TNTTracking.get(primedTNT) / 10) {
+                        primedTNT.detonate();
+                        TNTTracking.remove(primedTNT);
+                        TNTTracers.remove(primedTNT);
+
+                    } else {
+                        TNTTracking.put(primedTNT, velocity);
+                    }
+                }
+            });
+        });
+    }
+
     @Listener
     public void tntTracking(MoveEntityEvent event, @Getter("getTargetEntity") PrimedTNT primedTNT) {
 
@@ -149,21 +184,6 @@ public class TNTListener {
             }
         }
 
-        //Contact Explosives
-        if (!TNTTracking.containsKey(primedTNT) && velocity > 0.35) {
-            TNTTracking.put(primedTNT, velocity);
-
-        } else if (TNTTracking.containsKey(primedTNT)) {
-            if (velocity < TNTTracking.get(primedTNT) / 10) {
-                primedTNT.detonate();
-                TNTTracking.remove(primedTNT);
-                TNTTracers.remove(primedTNT);
-
-            } else {
-                TNTTracking.put(primedTNT, velocity);
-            }
-        }
-
         //Clean up any exploded TNT from Tracking
         TNTTracking.keySet().removeIf(tnt -> tnt.getFuseData().ticksRemaining().get() <= 0);
         TNTTracers.keySet().removeIf(tnt -> tnt.getFuseData().ticksRemaining().get() <= 0);
@@ -174,10 +194,6 @@ public class TNTListener {
 
         if (!event.getExplosion().getSourceExplosive().isPresent() || !(event.getExplosion().getSourceExplosive().get() instanceof PrimedTNT))
             return;
-
-        //TODO: Debug
-        Movecraft.getInstance().getLogger().info("Listener: " + tntControlTimer);
-        Movecraft.getInstance().getLogger().info("Server: " + Sponge.getServer().getRunningTimeTicks());
 
         if (tntControlTimer < Sponge.getServer().getRunningTimeTicks()) {
             tntControlTimer = Sponge.getServer().getRunningTimeTicks();
@@ -209,7 +225,7 @@ public class TNTListener {
             PrimedTNT tnt = (PrimedTNT) entity;
 
             //TODO: Testing this - scatters were OP if all shells landed together
-            if (tnt.getFuseData().ticksRemaining().get() > eventTNT.getFuseData().ticksRemaining().get() + 1 || tnt.equals(eventTNT))
+            if (tnt.getFuseData().ticksRemaining().get() > eventTNT.getFuseData().ticksRemaining().get() + 1 || tnt.getFuseData().ticksRemaining().get() < eventTNT.getFuseData().ticksRemaining().get() - 1 || tnt.equals(eventTNT))
                 continue;
 
             tnt.remove();
