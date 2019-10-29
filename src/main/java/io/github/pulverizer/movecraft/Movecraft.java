@@ -209,7 +209,7 @@ public class Movecraft {
             error.printStackTrace();
         }
 
-        //TODO: Re-add this good stuff!
+        //TODO: Re-add commands!
 
         /*this.getCommand("movecraft").setExecutor(new MovecraftCommand());
         this.getCommand("release").setExecutor(new ReleaseCommand());
@@ -229,6 +229,7 @@ public class Movecraft {
         Sponge.getEventManager().registerListeners(this, new CrewSign());
         Sponge.getEventManager().registerListeners(this, new CommanderSign());
         Sponge.getEventManager().registerListeners(this, new TNTListener());
+        Sponge.getEventManager().registerListeners(this, new FireballListener());
 
         logger.info("Movecraft Enabled.");
     }

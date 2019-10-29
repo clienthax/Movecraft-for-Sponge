@@ -24,7 +24,6 @@ import org.spongepowered.api.data.type.HandTypes;
 import org.spongepowered.api.effect.sound.SoundTypes;
 import org.spongepowered.api.entity.Entity;
 import org.spongepowered.api.entity.living.player.Player;
-import org.spongepowered.api.entity.projectile.explosive.fireball.SmallFireball;
 import org.spongepowered.api.item.inventory.entity.PlayerInventory;
 import org.spongepowered.api.text.Text;
 import org.spongepowered.api.util.Direction;
@@ -42,12 +41,8 @@ public class AsyncManager implements Runnable {
     private final HashMap<Craft, HashMap<Craft, Long>> recentContactTracking = new HashMap<>();
     private final BlockingQueue<AsyncTask> taskQueue = new LinkedBlockingQueue<>();
     private final HashSet<Craft> clearanceSet = new HashSet<>();
-    private HashMap<SmallFireball, Long> FireballTracking = new HashMap<>();
-    private long lastFireballCheck = 0;
     private long lastFadeCheck = 0;
     private long lastContactCheck = 0;
-
-    public AsyncManager() {}
 
     public static AsyncManager getInstance() {
         return ourInstance;
@@ -473,132 +468,6 @@ public class AsyncManager implements Runnable {
         }
     }
 
-
-    private void processFireballs() {
-        long timeElapsed = System.currentTimeMillis() - lastFireballCheck;
-
-        if (timeElapsed < 150)
-            return;
-
-        for (World world : Sponge.getServer().getWorlds()) {
-
-            if (world == null || world.getPlayers().isEmpty())
-                continue;
-
-            for (Entity entity : world.getEntities(entity -> entity instanceof SmallFireball)) {
-                SmallFireball fireball = (SmallFireball) entity;
-
-                if (!(fireball.getShooter() instanceof Dispenser) || FireballTracking.containsKey(fireball))
-                    continue;
-
-                Craft craft = CraftManager.getInstance().fastNearestCraftToLoc(fireball.getLocation());
-
-                if (craft == null || craft.getAADirector() == null)
-                    continue;
-
-                Player player = Sponge.getServer().getPlayer(craft.getAADirector()).orElse(null);
-
-                if (player == null || !player.getItemInHand(HandTypes.MAIN_HAND).isPresent() || player.getItemInHand(HandTypes.MAIN_HAND).get().getType() != Settings.PilotTool)
-                    continue;
-
-                int distX = craft.getHitBox().getMinX() + craft.getHitBox().getMaxX();
-                distX = distX >> 1;
-                distX = Math.abs(distX - fireball.getLocation().getBlockX());
-                int distY = craft.getHitBox().getMinY() + craft.getHitBox().getMaxY();
-                distY = distY >> 1;
-                distY = Math.abs(distY - fireball.getLocation().getBlockY());
-                int distZ = craft.getHitBox().getMinZ() + craft.getHitBox().getMaxZ();
-                distZ = distZ >> 1;
-                distZ = Math.abs(distZ - fireball.getLocation().getBlockZ());
-                boolean inRange = (distX < 50) && (distY < 50) && (distZ < 50);
-
-                if (inRange) {
-                    Vector3d fireballVelocity = fireball.getVelocity();
-                    double speed = fireballVelocity.length(); // store the speed to add it back in later, since all the values we will be using are "normalized", IE: have a speed of 1
-                    fireballVelocity = fireballVelocity.normalize(); // you normalize it for comparison with the new direction to see if we are trying to steer too far
-
-                    BlockSnapshot targetBlock = null;
-                    Optional<BlockRayHit<World>> blockRayHit = BlockRay
-                            .from(player)
-                            .distanceLimit((player.getViewDistance() + 1) * 16)
-                            .skipFilter(hit -> CraftManager.getInstance().getTransparentBlocks().contains(hit.getLocation().getBlockType()))
-                            .stopFilter(BlockRay.allFilter())
-                            .build()
-                            .end();
-
-                    if (blockRayHit.isPresent()) {
-                        // Target is Block :)
-                        targetBlock = blockRayHit.get().getLocation().createSnapshot();
-                    }
-
-                    Vector3d targetVector;
-                    if (targetBlock == null) {
-
-                        // the player is looking at nothing, shoot in that general direction
-                        targetVector = player.getHeadRotation();
-
-                    } else {
-
-                        // shoot directly at the block the player is looking at (IE: with convergence)
-                        targetVector = targetBlock.getLocation().get().getPosition().sub(fireball.getLocation().getPosition());
-                        targetVector = targetVector.normalize();
-
-                    }
-
-                    if (targetVector.getX() - fireballVelocity.getX() > 0.5) {
-                        fireballVelocity = fireballVelocity.add(0.5, 0, 0);
-                    } else if (targetVector.getX() - fireballVelocity.getX() < -0.5) {
-                        fireballVelocity = fireballVelocity.sub(0.5, 0, 0);
-                    } else {
-                        fireballVelocity = new Vector3d(targetVector.getX(), fireballVelocity.getY(), fireballVelocity.getZ());
-                    }
-
-                    if (targetVector.getY() - fireballVelocity.getY() > 0.5) {
-                        fireballVelocity = fireballVelocity.add(0, 0.5, 0);
-                    } else if (targetVector.getY() - fireballVelocity.getY() < -0.5) {
-                        fireballVelocity = fireballVelocity.sub(0, 0.5, 0);
-                    } else {
-                        fireballVelocity = new Vector3d(fireballVelocity.getX(), targetVector.getY(), fireballVelocity.getZ());
-                    }
-
-                    if (targetVector.getZ() - fireballVelocity.getZ() > 0.5) {
-                        fireballVelocity = fireballVelocity.add(0, 0, 0.5);
-                    } else if (targetVector.getZ() - fireballVelocity.getZ() < -0.5) {
-                        fireballVelocity = fireballVelocity.sub(0, 0, 0.5);
-                    } else {
-                        fireballVelocity = new Vector3d(fireballVelocity.getX(), fireballVelocity.getY(), targetVector.getZ());
-                    }
-
-                    fireballVelocity = fireballVelocity.mul(speed); // put the original speed back in, but now along a different trajectory
-
-                    fireball.setVelocity(fireballVelocity);
-                    fireball.offer(Keys.ACCELERATION, fireballVelocity);
-                }
-
-                //add fireball to tracking
-                FireballTracking.put(fireball, System.currentTimeMillis());
-            }
-        }
-
-        int timeLimit = 20 * Settings.FireballLifespan * 50;
-        // then, removed any expired fireballs from tracking
-        FireballTracking.keySet().removeIf(fireball -> {
-
-            if (fireball == null)
-                return true;
-
-            if (System.currentTimeMillis() - FireballTracking.get(fireball) > timeLimit) {
-                fireball.remove();
-                return true;
-            }
-
-            return false;
-
-        });
-
-        lastFireballCheck = System.currentTimeMillis();
-    }
-
     private void processDetection() {
         long ticksElapsed = (System.currentTimeMillis() - lastContactCheck) / 50;
         if (ticksElapsed > 21) {
@@ -694,7 +563,6 @@ public class AsyncManager implements Runnable {
         processCruise();
         detectSinking();
         processSinking();
-        processFireballs();
         processDetection();
         processAlgorithmQueue();
 
