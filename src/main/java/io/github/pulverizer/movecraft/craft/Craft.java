@@ -384,6 +384,7 @@ public class Craft {
         return directControl;
     }
 
+    //TODO: Do we actually need these?
     /**
      * Used to calculate the next translation of the craft while in direct control mode.
      * @param newPilotOffset The combined move requests made by the pilot.

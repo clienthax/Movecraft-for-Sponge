@@ -9,7 +9,7 @@ public abstract class AsyncTask {
     protected final Craft craft;
     protected final String type;
 
-    protected AsyncTask(Craft c, String taskType) {
+    public AsyncTask(Craft c, String taskType) {
         craft = c;
         type = taskType;
     }
@@ -34,12 +34,14 @@ public abstract class AsyncTask {
             execute();
             Movecraft.getInstance().getAsyncManager().submitCompletedTask(this);
         } catch (Exception e) {
-            Movecraft.getInstance().getLogger().error("Internal Error - Proccessor thread encountered an error!");
+            Movecraft.getInstance().getLogger().error("Internal Error - Processor thread encountered an error!");
             e.printStackTrace();
         }
     }
 
     protected abstract void execute() throws InterruptedException;
+
+    protected abstract void postProcess();
 
     protected Craft getCraft() {
         return craft;

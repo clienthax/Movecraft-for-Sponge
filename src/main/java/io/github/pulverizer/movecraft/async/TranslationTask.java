@@ -4,11 +4,11 @@ import com.flowpowered.math.vector.Vector3i;
 import com.google.common.collect.ImmutableSet;
 import io.github.pulverizer.movecraft.enums.CraftState;
 import io.github.pulverizer.movecraft.Movecraft;
-import io.github.pulverizer.movecraft.MovecraftLocation;
 import io.github.pulverizer.movecraft.config.Settings;
 import io.github.pulverizer.movecraft.craft.Craft;
 import io.github.pulverizer.movecraft.craft.CraftManager;
 import io.github.pulverizer.movecraft.event.CraftTranslateEvent;
+import io.github.pulverizer.movecraft.mapUpdater.MapUpdateManager;
 import io.github.pulverizer.movecraft.mapUpdater.update.*;
 import io.github.pulverizer.movecraft.utils.HashHitBox;
 import org.spongepowered.api.Sponge;
@@ -195,6 +195,42 @@ public class TranslationTask extends AsyncTask {
             Movecraft.getInstance().getLogger().info("Translation Task Took: " + (endTime - startTime) + "ms");
 
     }
+    
+    @Override
+    public void postProcess() {
+
+        Player pilot = Sponge.getServer().getPlayer(craft.getPilot()).orElse(null);
+        boolean sentMapUpdate = false;
+
+        // Check that the craft hasn't been sneakily unpiloted
+        // if ( p != null ) { cruiseOnPilot crafts don't have player
+        // pilots
+
+        if (failed()) {
+            // The craft translation failed
+            if (pilot != null && craft.getState() != CraftState.SINKING) {
+                pilot.sendMessage(Text.of(getFailMessage()));
+            }
+
+            if (isCollisionExplosion()) {
+                //craft.setHitBox(getNewHitBox());
+                MapUpdateManager.getInstance().scheduleUpdates(getUpdates());
+                sentMapUpdate = true;
+                CraftManager.getInstance().addReleaseTask(craft);
+
+            }
+        } else {
+            // The craft is clear to move, perform the block updates
+            MapUpdateManager.getInstance().scheduleUpdates(getUpdates());
+
+            sentMapUpdate = true;
+        }
+
+        // only mark the craft as having finished updating if you didn't
+        // send any updates to the map updater. Otherwise the map updater
+        // will mark the crafts once it is done with them.
+        craft.setProcessing(sentMapUpdate);
+    }
 
     private boolean checkCraftHeight() {
 
@@ -241,11 +277,11 @@ public class TranslationTask extends AsyncTask {
                 newHitBox.add(newLocation);
                 continue;
             }
-            final BlockType testMaterial = MovecraftLocation.toSponge(craft.getWorld(), newLocation).getBlockType();
+            final BlockType testMaterial = craft.getWorld().getBlockType(newLocation);
 
             if ((testMaterial.equals(BlockTypes.CHEST) || testMaterial.equals(BlockTypes.TRAPPED_CHEST)) && checkChests(testMaterial, newLocation)) {
                 //prevent chests collision
-                fail(String.format("Translation Failed - Craft is obstructed" + " @ %d,%d,%d,%s", newLocation.getX(), newLocation.getY(), newLocation.getZ(), MovecraftLocation.toSponge(craft.getWorld(), newLocation).getBlock().getType().toString()));
+                fail(String.format("Translation Failed - Craft is obstructed" + " @ %d,%d,%d,%s", newLocation.getX(), newLocation.getY(), newLocation.getZ(), craft.getWorld().getBlockType(newLocation).toString()));
                 return true;
             }
 
@@ -258,12 +294,12 @@ public class TranslationTask extends AsyncTask {
 
             boolean ignoreBlock = false;
             // air never obstructs anything (changed 4/18/2017 to prevent drilling machines)
-            if (MovecraftLocation.toSponge(craft.getWorld(), oldLocation).getBlock().getType().equals(BlockTypes.AIR) && blockObstructed) {
+            if (craft.getWorld().getBlockType(oldLocation).equals(BlockTypes.AIR) && blockObstructed) {
                 ignoreBlock = true;
             }
 
             if (blockObstructed && harvestBlocks.contains(testMaterial)) {
-                BlockType tmpType = MovecraftLocation.toSponge(craft.getWorld(), oldLocation).getBlockType();
+                BlockType tmpType = craft.getWorld().getBlockType(oldLocation);
                 if (harvesterBladeBlocks.contains(tmpType)) {
                     blockObstructed = false;
                     harvestedBlocks.add(newLocation);

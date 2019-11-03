@@ -4,10 +4,10 @@ import com.flowpowered.math.vector.Vector3d;
 import com.flowpowered.math.vector.Vector3i;
 import io.github.pulverizer.movecraft.enums.CraftState;
 import io.github.pulverizer.movecraft.Movecraft;
-import io.github.pulverizer.movecraft.MovecraftLocation;
 import io.github.pulverizer.movecraft.enums.Rotation;
 import io.github.pulverizer.movecraft.craft.Craft;
 import io.github.pulverizer.movecraft.event.CraftRotateEvent;
+import io.github.pulverizer.movecraft.mapUpdater.MapUpdateManager;
 import io.github.pulverizer.movecraft.utils.*;
 import io.github.pulverizer.movecraft.utils.HashHitBox;
 import io.github.pulverizer.movecraft.config.Settings;
@@ -88,7 +88,7 @@ public class RotationTask extends AsyncTask {
             Vector3i newLocation = MathUtils.rotateVec(rotation,originalLocation.sub(originPoint)).add(originPoint);
             newHitBox.add(newLocation);
 
-            BlockType oldMaterial = MovecraftLocation.toSponge(world, originalLocation).getBlockType();
+            BlockType oldMaterial = world.getBlockType(originalLocation);
             //prevent chests collision
             if ((oldMaterial.equals(BlockTypes.CHEST) || oldMaterial.equals(BlockTypes.TRAPPED_CHEST)) &&
                     !checkChests(oldMaterial, newLocation)) {
@@ -98,7 +98,7 @@ public class RotationTask extends AsyncTask {
             }
 
 
-            BlockType newMaterial = MovecraftLocation.toSponge(world, newLocation).getBlockType();
+            BlockType newMaterial = world.getBlockType(newLocation);
             if ((newMaterial == BlockTypes.AIR) || (newMaterial == BlockTypes.PISTON_EXTENSION) || craft.getType().getPassthroughBlocks().contains(newMaterial)) {
                 continue;
             }
@@ -260,6 +260,34 @@ public class RotationTask extends AsyncTask {
             Movecraft.getInstance().getLogger().info("Rotation Task Took: " + (endTime - startTime) + "ms");
 
     }
+    
+    @Override
+    public void postProcess() {
+
+        Player pilot = Sponge.getServer().getPlayer(craft.getPilot()).orElse(null);
+
+        // Check that the craft hasn't been sneakily unpiloted
+        if (pilot != null || getIsSubCraft()) {
+
+            if (failed()) {
+
+                // The craft translation failed, don't try to notify them if there is no pilot
+                if (pilot != null) {
+                    pilot.sendMessage(Text.of(getFailMessage()));
+                } else {
+                    Movecraft.getInstance().getLogger().info("NULL Player Rotation Failed: " + getFailMessage());
+                }
+
+                craft.setProcessing(false);
+
+            } else {
+
+                MapUpdateManager.getInstance().scheduleUpdates(getUpdates());
+
+                craft.setHitBox(getNewHitBox());
+            }
+        }
+    }
 
     private static HitBox rotateHitBox(HitBox hitBox, Vector3i originPoint, Rotation rotation){
         MutableHitBox output = new HashHitBox();
@@ -272,7 +300,7 @@ public class RotationTask extends AsyncTask {
         return originPoint;
     }
 
-    public boolean isFailed() {
+    public boolean failed() {
         return failed;
     }
 

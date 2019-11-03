@@ -1,11 +1,10 @@
 package io.github.pulverizer.movecraft.mapUpdater.update;
 
 import com.flowpowered.math.vector.Vector3i;
-import io.github.pulverizer.movecraft.Movecraft;
-import io.github.pulverizer.movecraft.MovecraftLocation;
 import org.spongepowered.api.block.BlockSnapshot;
 import org.spongepowered.api.block.BlockType;
 import org.spongepowered.api.world.BlockChangeFlags;
+import org.spongepowered.api.world.Location;
 import org.spongepowered.api.world.World;
 
 import java.util.Objects;
@@ -19,7 +18,7 @@ public class BlockCreateCommand extends UpdateCommand {
 
     public BlockCreateCommand(World world, Vector3i newBlockLocation, BlockSnapshot block) {
         this.newBlockLocation = newBlockLocation;
-        this.block = block.withLocation(MovecraftLocation.toSponge(world, newBlockLocation));
+        this.block = block.withLocation(new Location<World>(world, newBlockLocation));
         this.world = world;
     }
 
@@ -27,7 +26,7 @@ public class BlockCreateCommand extends UpdateCommand {
 
     public BlockCreateCommand(World world, Vector3i newBlockLocation, BlockType block) {
         this.newBlockLocation = newBlockLocation;
-        this.block = block.getDefaultState().snapshotFor(MovecraftLocation.toSponge(world, newBlockLocation));
+        this.block = block.getDefaultState().snapshotFor(new Location<World>(world, newBlockLocation));
         this.world = world;
     }
 

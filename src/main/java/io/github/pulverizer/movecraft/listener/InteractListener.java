@@ -69,7 +69,7 @@ public final class InteractListener {
                 return;
 
 
-            if (!MathUtils.locationNearHitBox(craft.getHitBox(),player.getLocation(),2))
+            if (!MathUtils.locationNearHitBox(craft.getHitBox(),player.getPosition(),2))
                 return;
 
 

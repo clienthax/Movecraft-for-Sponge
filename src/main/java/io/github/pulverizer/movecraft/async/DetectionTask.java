@@ -4,6 +4,8 @@ import com.flowpowered.math.vector.Vector3i;
 import io.github.pulverizer.movecraft.Movecraft;
 import io.github.pulverizer.movecraft.config.Settings;
 import io.github.pulverizer.movecraft.craft.Craft;
+import io.github.pulverizer.movecraft.craft.CraftManager;
+import io.github.pulverizer.movecraft.event.CraftDetectEvent;
 import io.github.pulverizer.movecraft.sign.CommanderSign;
 import io.github.pulverizer.movecraft.utils.*;
 
@@ -12,6 +14,7 @@ import org.spongepowered.api.block.BlockType;
 import org.spongepowered.api.block.BlockTypes;
 import org.spongepowered.api.block.tileentity.Sign;
 import org.spongepowered.api.data.value.mutable.ListValue;
+import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.text.Text;
 import org.spongepowered.api.world.Location;
 import org.spongepowered.api.world.World;
@@ -59,11 +62,13 @@ public class DetectionTask extends AsyncTask {
             detectSurrounding(blockStack.pop());
         } while (!blockStack.isEmpty());
 
+        Player player = Sponge.getServer().getPlayer(craft.getCommander()).orElse(null);
+
         if (foundCommanderSign) {
 
             HashMap<UUID, Boolean> commanderSignMemberMap = CommanderSign.getMembers(commanderSignUsername, commanderSignID);
 
-            if (commanderSignMemberMap.get(Sponge.getServer().getPlayer(craft.getCommander()).get().getUniqueId()) != null)
+            if (commanderSignMemberMap.get(player.getUniqueId()) != null)
                 foundCommander = true;
 
             commanderSignMemberMap.forEach((uuid, isOwner) -> Movecraft.getInstance().getLogger().info(Sponge.getServer().getPlayer(uuid).get().getName()));
@@ -74,6 +79,11 @@ public class DetectionTask extends AsyncTask {
         }
 
         if (failed()) {
+            if (player != null)
+                player.sendMessage(Text.of(getFailMessage()));
+            else
+                Movecraft.getInstance().getLogger().info("NULL Player Craft Detection failed:" + getFailMessage());
+
             return;
         }
 
@@ -85,6 +95,97 @@ public class DetectionTask extends AsyncTask {
 
         if (Settings.Debug)
             Movecraft.getInstance().getLogger().info("Detection Task Took: " + (endTime - startTime) + "ms");
+
+    }
+
+    @Override
+    public void postProcess() {
+
+        Player player = Sponge.getServer().getPlayer(craft.getCommander()).orElse(null);
+
+        if (!failed()) {
+            Set<Craft> craftsInWorld = CraftManager.getInstance().getCraftsInWorld(craft.getWorld());
+            boolean failed = false;
+            boolean isSubcraft = false;
+            Craft parentCraft = null;
+
+            for (Craft testCraft : craftsInWorld) {
+                if (testCraft.getHitBox().intersects(getHitBox())) {
+                    Movecraft.getInstance().getLogger().info("Test Craft Size: " + testCraft.getHitBox().size());
+
+                    isSubcraft = true;
+                    parentCraft = testCraft;
+                    break;
+                }
+            }
+
+            Movecraft.getInstance().getLogger().info("Subcraft: " + isSubcraft);
+            Movecraft.getInstance().getLogger().info("Hitbox: " + getHitBox().size());
+            if (parentCraft != null)
+                Movecraft.getInstance().getLogger().info("Parent Craft: " + parentCraft.getHitBox().size() + "   Pilot: " + Sponge.getServer().getPlayer(player.getUniqueId()));
+
+            if (player != null && isSubcraft && !parentCraft.isCrewMember(player.getUniqueId())) {
+                // Player is already controlling a craft
+                player.sendMessage(Text.of("Detection Failed! You are not in the crew of this craft."));
+            } else {
+
+                if (isSubcraft) {
+
+                    if (parentCraft.getType() == craft.getType() || parentCraft.getHitBox().size() <= getHitBox().size()) {
+                        player.sendMessage(Text.of("Detection Failed. Craft is already being controlled by another player."));
+                        failed = true;
+
+                    } else {
+
+                        // if this is a different type than the overlapping craft, and is smaller, this must be a child craft, like a fighter on a carrier
+                        if (!parentCraft.isNotProcessing()) {
+                            failed = true;
+                            player.sendMessage(Text.of("Parent Craft is busy."));
+                        }
+                        parentCraft.setHitBox(new HashHitBox(CollectionUtils.filter(parentCraft.getHitBox(), getHitBox())));
+                        parentCraft.setInitialSize(parentCraft.getInitialSize() - getHitBox().size());
+                    }
+                }
+            }
+
+            if (craft.getType().getMustBeSubcraft() && !isSubcraft) {
+                failed = true;
+                if (player != null)
+                    player.sendMessage(Text.of("Craft must be part of another craft!"));
+            }
+            if (!failed) {
+                craft.setInitialSize(getHitBox().size());
+                craft.setHitBox(getHitBox());
+
+                final int waterLine = craft.getWaterLine();
+                if(!craft.getType().blockedByWater() && craft.getHitBox().getMinY() <= waterLine){
+                    for(Vector3i location : craft.getHitBox().boundingHitBox()){
+                        if(location.getY() <= waterLine){
+                            craft.getPhasedBlocks().add(BlockTypes.WATER.getDefaultState().snapshotFor(new Location<World>(craft.getWorld(), location)));
+                        }
+                    }
+                }
+
+                if (craft.getHitBox() != null) {
+
+                    if (player != null) {
+                        player.sendMessage(Text.of("Successfully piloted " + craft.getType().getName() + " Size: " + craft.getHitBox().size()));
+                        Movecraft.getInstance().getLogger().info("New Craft Detected! Pilot: " + player.getName() + " CraftType: " + craft.getType().getName() + " Size: " + craft.getHitBox().size() + " Location: " + craft.getHitBox().getMidPoint().toString());
+                    } else {
+                        Movecraft.getInstance().getLogger().info("New Craft Detected! Pilot: " + "NULL PLAYER" + " CraftType: " + craft.getType().getName() + " Size: " + craft.getHitBox().size() + " Location: " + craft.getHitBox().getMidPoint().toString());
+                    }
+                    CraftManager.getInstance().addCraft(craft);
+                } else {
+                    Movecraft.getInstance().getLogger().info("Detection Failed - NULL Hitbox!");
+                }
+            }
+        }
+        if(craft.getHitBox() != null){
+            CraftDetectEvent event = new CraftDetectEvent(craft);
+            Sponge.getEventManager().post(event);
+        }
+
+        craft.setProcessing(false);
     }
 
     private void detectBlock(Vector3i workingLocation) {

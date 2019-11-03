@@ -79,11 +79,11 @@ public final class CraftSign {
             Craft oldCraft = CraftManager.getInstance().getCraftByPlayer(player.getUniqueId());
 
             if (oldCraft == null) {
-                final Craft craft = new Craft(type, player.getUniqueId(), loc);
+                new Craft(type, player.getUniqueId(), loc);
             } else {
                 if (oldCraft.isNotProcessing()) {
                     CraftManager.getInstance().removeCraft(oldCraft);
-                    final Craft craft = new Craft(type, player.getUniqueId(), loc);
+                    new Craft(type, player.getUniqueId(), loc);
                 }
             }
         }

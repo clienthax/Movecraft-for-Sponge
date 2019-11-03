@@ -1,7 +1,7 @@
 package io.github.pulverizer.movecraft.utils;
 
+import com.flowpowered.math.vector.Vector3d;
 import com.flowpowered.math.vector.Vector3i;
-import io.github.pulverizer.movecraft.MovecraftLocation;
 import io.github.pulverizer.movecraft.enums.Rotation;
 import io.github.pulverizer.movecraft.craft.Craft;
 import org.spongepowered.api.world.Location;
@@ -26,7 +26,7 @@ public class MathUtils {
      * @param distance
      * @return True if <code>location</code> is less or equal to 3 blocks from <code>craft</code>
      */
-    public static boolean locationNearHitBox(final HashHitBox hitBox, final Location location, double distance) {
+    public static boolean locationNearHitBox(final HashHitBox hitBox, final Vector3d location, double distance) {
         return !hitBox.isEmpty() &&
                 location.getX() >= hitBox.getMinX() - distance &&
                 location.getZ() >= hitBox.getMinZ() - distance &&
@@ -43,9 +43,9 @@ public class MathUtils {
      * @return True if <code>location</code> is less or equal to 3 blocks from <code>craft</code>
      */
 
-    public static boolean locIsNearCraftFast(final Craft craft, final Vector3i location) {
+    public static boolean locIsNearCraftFast(final Craft craft, final Vector3d location) {
         // optimized to be as fast as possible, it checks the easy ones first, then the more computationally intensive later
-        return locationNearHitBox(craft.getHitBox(), MovecraftLocation.toSponge(craft.getWorld(), location), 3);
+        return locationNearHitBox(craft.getHitBox(), location, 3);
     }
 
     /**

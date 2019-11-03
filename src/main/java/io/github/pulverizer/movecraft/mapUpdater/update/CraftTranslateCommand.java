@@ -3,7 +3,6 @@ package io.github.pulverizer.movecraft.mapUpdater.update;
 import com.flowpowered.math.vector.Vector3i;
 import io.github.pulverizer.movecraft.enums.CraftState;
 import io.github.pulverizer.movecraft.Movecraft;
-import io.github.pulverizer.movecraft.MovecraftLocation;
 import io.github.pulverizer.movecraft.WorldHandler;
 import io.github.pulverizer.movecraft.config.Settings;
 import io.github.pulverizer.movecraft.craft.Craft;
@@ -20,6 +19,8 @@ import org.spongepowered.api.block.BlockSnapshot;
 import org.spongepowered.api.block.BlockType;
 import org.spongepowered.api.block.BlockTypes;
 import org.spongepowered.api.world.BlockChangeFlags;
+import org.spongepowered.api.world.Location;
+import org.spongepowered.api.world.World;
 
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -62,7 +63,7 @@ public class CraftTranslateCommand extends UpdateCommand {
             Movecraft.getInstance().getWorldHandler().translateCraft(craft,displacement, newHitBox);
             //trigger sign event
             for(Vector3i location : craft.getHitBox()){
-                BlockSnapshot block = MovecraftLocation.toSponge(craft.getWorld(), location).createSnapshot();
+                BlockSnapshot block = craft.getWorld().createSnapshot(location);
                 if(block.getState().getType() == BlockTypes.WALL_SIGN || block.getState().getType() == BlockTypes.STANDING_SIGN){
                     Sponge.getEventManager().post(new SignTranslateEvent(block.getPosition(), craft));
                 }
@@ -74,7 +75,7 @@ public class CraftTranslateCommand extends UpdateCommand {
             }
             final HitBox to = CollectionUtils.filter(craft.getHitBox(), originalLocations);
             for (Vector3i location : to) {
-                BlockSnapshot material = MovecraftLocation.toSponge(craft.getWorld(), location).createSnapshot();
+                BlockSnapshot material = craft.getWorld().createSnapshot(location);
                 if (passthroughBlocks.contains(material.getState().getType())) {
                     craft.getPhasedBlocks().add(material);
                 }
@@ -133,11 +134,10 @@ public class CraftTranslateCommand extends UpdateCommand {
 
             final WorldHandler handler = Movecraft.getInstance().getWorldHandler();
             for (Vector3i location : CollectionUtils.filter(invertedHitBox, exterior)) {
-                BlockSnapshot material = MovecraftLocation.toSponge(craft.getWorld(), location).createSnapshot();
-                if (!passthroughBlocks.contains(material.getState().getType())) {
-                    continue;
+                BlockSnapshot material = craft.getWorld().createSnapshot(location);
+                if (passthroughBlocks.contains(material.getState().getType())) {
+                    craft.getPhasedBlocks().add(material);
                 }
-                craft.getPhasedBlocks().add(material);
             }
             //add the craft
             handler.translateCraft(craft, displacement, newHitBox);
@@ -166,10 +166,10 @@ public class CraftTranslateCommand extends UpdateCommand {
             }
 
             for (Vector3i location : interior) {
-                final BlockSnapshot material = MovecraftLocation.toSponge(craft.getWorld(), location).createSnapshot();
+                final BlockSnapshot material = craft.getWorld().createSnapshot(location);
                 if (passthroughBlocks.contains(material.getState().getType())) {
                     craft.getPhasedBlocks().add(material);
-                    craft.getWorld().restoreSnapshot(location, BlockTypes.AIR.getDefaultState().snapshotFor(MovecraftLocation.toSponge(craft.getWorld(), location)), true, BlockChangeFlags.NONE);
+                    craft.getWorld().restoreSnapshot(location, BlockTypes.AIR.getDefaultState().snapshotFor(new Location<World>(craft.getWorld(), location)), true, BlockChangeFlags.NONE);
 
                 }
             }

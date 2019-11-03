@@ -15,6 +15,8 @@ import org.spongepowered.api.block.BlockSnapshot;
 import org.spongepowered.api.block.BlockType;
 import org.spongepowered.api.block.BlockTypes;
 import org.spongepowered.api.world.BlockChangeFlags;
+import org.spongepowered.api.world.Location;
+import org.spongepowered.api.world.World;
 
 import java.util.*;
 
@@ -60,7 +62,7 @@ public class CraftRotateCommand extends UpdateCommand {
             final HitBox to = CollectionUtils.filter(craft.getHitBox(), originalLocations);
 
             for (Vector3i location : to) {
-                BlockSnapshot material = MovecraftLocation.toSponge(craft.getWorld(), location).createSnapshot();
+                BlockSnapshot material = craft.getWorld().createSnapshot(location);
                 if (passthroughBlocks.contains(material.getState().getType())) {
                     craft.getPhasedBlocks().add(material);
                 }
@@ -116,11 +118,11 @@ public class CraftRotateCommand extends UpdateCommand {
 
             final WorldHandler handler = Movecraft.getInstance().getWorldHandler();
             for (Vector3i location : CollectionUtils.filter(invertedHitBox, exterior)) {
-                BlockSnapshot material = MovecraftLocation.toSponge(craft.getWorld(), location).createSnapshot();
-                if (!passthroughBlocks.contains(material.getState().getType())) {
+                BlockSnapshot block = craft.getWorld().createSnapshot(location);
+                if (!passthroughBlocks.contains(block.getState().getType())) {
                     continue;
                 }
-                craft.getPhasedBlocks().add(material);
+                craft.getPhasedBlocks().add(block);
             }
 
             //add the craft
@@ -128,21 +130,21 @@ public class CraftRotateCommand extends UpdateCommand {
             handler.rotateCraft(craft, originLocation, rotation);
             //trigger sign event
             for (Vector3i location : craft.getHitBox()) {
-                BlockSnapshot block = MovecraftLocation.toSponge(craft.getWorld(), location).createSnapshot();
-                if (block.getState().getType() == BlockTypes.WALL_SIGN || block.getState().getType() == BlockTypes.STANDING_SIGN) {
-                    Sponge.getEventManager().post(new SignTranslateEvent(block.getPosition(), craft));
+                BlockType blockType = craft.getWorld().getBlockType(location);
+                if (blockType == BlockTypes.WALL_SIGN || blockType == BlockTypes.STANDING_SIGN) {
+                    Sponge.getEventManager().post(new SignTranslateEvent(location, craft));
                 }
             }
 
             //place confirmed blocks if they have been un-phased
             craft.getPhasedBlocks().forEach(block -> {
-                if (exterior.contains((Vector3i) block.getPosition())) {
+                if (exterior.contains(block.getPosition())) {
 
                     craft.getWorld().restoreSnapshot(block, true, BlockChangeFlags.NONE);
                     craft.getPhasedBlocks().remove(block);
                 }
 
-                if (originalLocations.contains((Vector3i) block.getPosition()) && !craft.getHitBox().inBounds((Vector3i) block.getPosition())) {
+                if (originalLocations.contains(block.getPosition()) && !craft.getHitBox().inBounds(block.getPosition())) {
 
                     craft.getWorld().restoreSnapshot(block, true, BlockChangeFlags.NONE);
                     craft.getPhasedBlocks().remove(block);
@@ -150,10 +152,10 @@ public class CraftRotateCommand extends UpdateCommand {
             });
 
             for (Vector3i location : interior) {
-                final BlockSnapshot material = MovecraftLocation.toSponge(craft.getWorld(), location).createSnapshot();
+                final BlockSnapshot material = craft.getWorld().createSnapshot(location);
                 if (passthroughBlocks.contains(material.getState().getType())) {
                     craft.getPhasedBlocks().add(material);
-                    craft.getWorld().restoreSnapshot(location, BlockTypes.AIR.getDefaultState().snapshotFor(MovecraftLocation.toSponge(craft.getWorld(), location)), true, BlockChangeFlags.NONE);
+                    craft.getWorld().restoreSnapshot(location, BlockTypes.AIR.getDefaultState().snapshotFor(new Location<World>(craft.getWorld(), location)), true, BlockChangeFlags.NONE);
 
                 }
             }
@@ -163,9 +165,9 @@ public class CraftRotateCommand extends UpdateCommand {
             Movecraft.getInstance().getWorldHandler().rotateCraft(craft, originLocation, rotation);
             //trigger sign event
             for (Vector3i location : craft.getHitBox()) {
-                BlockSnapshot block = MovecraftLocation.toSponge(craft.getWorld(), location).createSnapshot();
-                if (block.getState().getType() == BlockTypes.WALL_SIGN || block.getState().getType() == BlockTypes.STANDING_SIGN) {
-                    Sponge.getEventManager().post(new SignTranslateEvent(block.getPosition(), craft));
+                BlockType blockType = craft.getWorld().getBlockType(location);
+                if (blockType == BlockTypes.WALL_SIGN || blockType == BlockTypes.STANDING_SIGN) {
+                    Sponge.getEventManager().post(new SignTranslateEvent(location, craft));
                 }
             }
         }
