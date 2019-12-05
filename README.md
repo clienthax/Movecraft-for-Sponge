@@ -7,5 +7,5 @@ The aim of this project is to rectify this problem by porting Movecraft to the S
 Some additional features are being added as a part of this process.
 </pre>
 
-#### Discord
+### Discord
 https://discord.gg/5Wj8yxy
