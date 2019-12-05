@@ -27,7 +27,8 @@ public final class SpeedSign {
 
             if (lines.get(0).toPlain().equalsIgnoreCase("Speed:")) {
                 lines.set(1, Text.of("0 m/s"));
-                lines.set(2, Text.of("0ms"));
+                lines.set(2, Text.of(""));
+                lines.set(3, Text.of("0ms"));
                 sign.offer(lines);
             }
         }
@@ -37,8 +38,8 @@ public final class SpeedSign {
 
         ListValue<Text> lines = sign.lines();
 
-        lines.set(1, Text.of(String.format("%.2f",craft.getSpeed()) + "m/s"));
-        lines.set(2, Text.of(String.format("%.2f",craft.getMeanMoveTime()) + "ms"));
+        lines.set(1, Text.of(String.format("%.2f", craft.getSpeed()), " m/s"));
+        lines.set(3, Text.of(String.format("%.2f", craft.getMeanMoveTime()), "ms"));
         sign.offer(lines);
     }
 }

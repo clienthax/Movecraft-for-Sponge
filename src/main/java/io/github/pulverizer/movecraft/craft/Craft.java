@@ -491,7 +491,7 @@ public class Craft {
                             double fuelItemValue = getType().getFuelItems().get(fuelItem);
 
                             int oldValue = (int) Math.ceil((movePoints - burningFuel) / fuelItemValue);
-                            int newValue = inventory.query(QueryOperationTypes.ITEM_TYPE.of(ItemTypes.COAL_BLOCK)).poll(oldValue).get().getQuantity();
+                            int newValue = inventory.query(QueryOperationTypes.ITEM_TYPE.of(fuelItem)).poll(oldValue).get().getQuantity();
 
                             burningFuel += newValue * fuelItemValue;
                         }
@@ -637,7 +637,7 @@ public class Craft {
     }
 
     public void addMoveTime(float moveTime){
-        meanMoveTime = (meanMoveTime*numberOfMoves + moveTime)/(++numberOfMoves);
+        meanMoveTime = (meanMoveTime * numberOfMoves + moveTime)/(++numberOfMoves);
     }
 
     public float getMeanMoveTime() {
@@ -709,7 +709,7 @@ public class Craft {
             return type.getCruiseTickCooldown() + (int) chestPenalty;
 
         //TODO: modify skip blocks by an equal proportion to this, than add another modifier based on dynamic speed factor
-        return Math.max((int)(type.getCruiseTickCooldown() * meanMoveTime * 20/type.getDynamicLagSpeedFactor() + chestPenalty), 1);
+        return Math.max((int)(type.getCruiseTickCooldown() * meanMoveTime / 1000 * 20 / type.getDynamicLagSpeedFactor() + chestPenalty), 1);
     }
 
 

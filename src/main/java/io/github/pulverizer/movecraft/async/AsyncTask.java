@@ -32,7 +32,7 @@ public abstract class AsyncTask {
     private void task() {
         try {
             execute();
-            Movecraft.getInstance().getAsyncManager().submitCompletedTask(this);
+            AsyncManager.getInstance().submitCompletedTask(this);
         } catch (Exception e) {
             Movecraft.getInstance().getLogger().error("Internal Error - Processor thread encountered an error!");
             e.printStackTrace();

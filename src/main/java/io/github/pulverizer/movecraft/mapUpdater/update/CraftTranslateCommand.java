@@ -1,5 +1,6 @@
 package io.github.pulverizer.movecraft.mapUpdater.update;
 
+import co.aikar.timings.Timings;
 import com.flowpowered.math.vector.Vector3i;
 import io.github.pulverizer.movecraft.enums.CraftState;
 import io.github.pulverizer.movecraft.Movecraft;
@@ -21,6 +22,7 @@ import org.spongepowered.api.block.BlockTypes;
 import org.spongepowered.api.world.BlockChangeFlags;
 import org.spongepowered.api.world.Location;
 import org.spongepowered.api.world.World;
+import org.spongepowered.api.world.extent.worker.BlockVolumeWorker;
 
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -32,22 +34,27 @@ public class CraftTranslateCommand extends UpdateCommand {
     private final Craft craft;
     private final Vector3i displacement;
     private final HashHitBox newHitBox;
+    private final World world;
 
     public CraftTranslateCommand(Craft craft, Vector3i displacement, HashHitBox newHitBox){
         this.craft = craft;
         this.displacement = displacement;
         this.newHitBox = newHitBox;
+        this.world = craft.getWorld();
     }
 
     @Override
     public void doUpdate() {
+        long time = System.currentTimeMillis();
+        //long timeTaken = 0;
+
         final Logger logger = Movecraft.getInstance().getLogger();
         if(craft.getHitBox().isEmpty()){
             logger.warn("Attempted to move craft with empty HashHitBox!");
             CraftManager.getInstance().removeCraft(craft);
             return;
         }
-        long time = System.nanoTime();
+
         final Set<BlockType> passthroughBlocks = new HashSet<>(craft.getType().getPassthroughBlocks());
         if(craft.getState() == CraftState.SINKING){
             passthroughBlocks.add(BlockTypes.WATER);
@@ -58,21 +65,36 @@ public class CraftTranslateCommand extends UpdateCommand {
             passthroughBlocks.add(BlockTypes.TALLGRASS);
             passthroughBlocks.add(BlockTypes.DOUBLE_PLANT);
         }
+
         if(passthroughBlocks.isEmpty()){
+
+            //timeTaken = System.currentTimeMillis() - time;
+            //logger.info("Marker 1A: " + timeTaken + " ms");
+
             //add the craft
             Movecraft.getInstance().getWorldHandler().translateCraft(craft,displacement, newHitBox);
+
+            //timeTaken = System.currentTimeMillis() - time;
+            //logger.info("Marker 2A: " + timeTaken + " ms");
+
             //trigger sign event
-            for(Vector3i location : craft.getHitBox()){
-                BlockSnapshot block = craft.getWorld().createSnapshot(location);
-                if(block.getState().getType() == BlockTypes.WALL_SIGN || block.getState().getType() == BlockTypes.STANDING_SIGN){
-                    Sponge.getEventManager().post(new SignTranslateEvent(block.getPosition(), craft));
+            for (Vector3i location : craft.getHitBox()) {
+                if (world.getBlockType(location) == BlockTypes.WALL_SIGN || world.getBlockType(location) == BlockTypes.STANDING_SIGN) {
+                    Sponge.getEventManager().post(new SignTranslateEvent(location, craft));
                 }
             }
+
+
         } else {
+
+            //timeTaken = System.currentTimeMillis() - time;
+            //logger.info("Marker 1B: " + timeTaken + " ms");
+
             MutableHitBox originalLocations = new HashHitBox();
             for (Vector3i vector3i : craft.getHitBox()) {
                 originalLocations.add((vector3i).sub(displacement));
             }
+
             final HitBox to = CollectionUtils.filter(craft.getHitBox(), originalLocations);
             for (Vector3i location : to) {
                 BlockSnapshot material = craft.getWorld().createSnapshot(location);
@@ -80,6 +102,9 @@ public class CraftTranslateCommand extends UpdateCommand {
                     craft.getPhasedBlocks().add(material);
                 }
             }
+
+            //timeTaken = System.currentTimeMillis() - time;
+            //logger.info("Marker 2B: " + timeTaken + " ms");
 
             //place phased blocks
             //The subtraction of the set of coordinates in the HitBox cube and the HitBox itself
@@ -103,11 +128,16 @@ public class CraftTranslateCommand extends UpdateCommand {
                     new SolidHitBox(new Vector3i(maxX, maxY, maxZ), new Vector3i(minX, maxY, maxZ)),
                     new SolidHitBox(new Vector3i(maxX, maxY, maxZ), new Vector3i(maxX, minY, maxZ)),
                     new SolidHitBox(new Vector3i(maxX, maxY, maxZ), new Vector3i(maxX, maxY, minZ))};
+
             //Valid exterior starts as the 6 surface planes of the HitBox with the locations that lie in the HitBox removed
             final Set<Vector3i> validExterior = new HashSet<>();
             for (HitBox hitBox : surfaces) {
                 validExterior.addAll(CollectionUtils.filter(hitBox, craft.getHitBox()).asSet());
             }
+
+            //timeTaken = System.currentTimeMillis() - time;
+            //logger.info("Marker 3B: " + timeTaken + " ms");
+
             //Check to see which locations in the from set are actually outside of the craft
             for (Vector3i location :validExterior ) {
                 if (craft.getHitBox().contains(location) || exterior.contains(location)) {
@@ -130,6 +160,10 @@ public class CraftTranslateCommand extends UpdateCommand {
                 }
                 exterior.addAll(visited);
             }
+
+            //timeTaken = System.currentTimeMillis() - time;
+            //logger.info("Marker 4B: " + timeTaken + " ms");
+
             interior.addAll(CollectionUtils.filter(invertedHitBox, exterior));
 
             final WorldHandler handler = Movecraft.getInstance().getWorldHandler();
@@ -139,8 +173,13 @@ public class CraftTranslateCommand extends UpdateCommand {
                     craft.getPhasedBlocks().add(material);
                 }
             }
+
+            //timeTaken = System.currentTimeMillis() - time;
+            //logger.info("Marker 5B: " + timeTaken + " ms");
+
             //add the craft
             handler.translateCraft(craft, displacement, newHitBox);
+
             //trigger sign event
             for (Vector3i location : craft.getHitBox()) {
                 BlockSnapshot block = craft.getWorld().createSnapshot(location);
@@ -148,6 +187,9 @@ public class CraftTranslateCommand extends UpdateCommand {
                     Sponge.getEventManager().post(new SignTranslateEvent(block.getPosition(), craft));
                 }
             }
+
+            //timeTaken = System.currentTimeMillis() - time;
+            //logger.info("Marker 6B: " + timeTaken + " ms");
 
             //place confirmed blocks if they have been un-phased
             for (BlockSnapshot block : craft.getPhasedBlocks()) {
@@ -165,6 +207,9 @@ public class CraftTranslateCommand extends UpdateCommand {
                 }
             }
 
+            //timeTaken = System.currentTimeMillis() - time;
+            //logger.info("Marker 7B: " + timeTaken + " ms");
+
             for (Vector3i location : interior) {
                 final BlockSnapshot material = craft.getWorld().createSnapshot(location);
                 if (passthroughBlocks.contains(material.getState().getType())) {
@@ -173,13 +218,18 @@ public class CraftTranslateCommand extends UpdateCommand {
 
                 }
             }
+
+            //timeTaken = System.currentTimeMillis() - time;
+            //logger.info("Marker 8B: " + timeTaken + " ms");
         }
+
         if (!craft.isNotProcessing())
             craft.setProcessing(false);
-        time = System.nanoTime() - time;
+
         if(Settings.Debug)
-            logger.info("Total time: " + (time / 1e9) + " seconds. Moving with cooldown of " + craft.getTickCooldown() + ". Speed of: " + String.format("%.2f", craft.getSpeed()));
-        craft.addMoveTime(time/1e9f);
+            time = System.currentTimeMillis() - time;
+            logger.info("Total time: " + time + " ms. Moving with cooldown of " + craft.getTickCooldown() + ". Speed of: " + String.format("%.2f", craft.getSpeed()));
+        craft.addMoveTime(time);
     }
 
     public Craft getCraft(){

@@ -1,8 +1,19 @@
 [
     {
         "modid": "movecraft",
-        "name": "movecraft",
+        "name": "Movecraft for Sponge",
         "version": "0.1.0",
-        "description": "Movecraft for Sponge"
+        "description": "Allows players to create moving things out of blocks. Airships, Defensive Turrets, Submarines, Etc.",
+        "url": "https://github.com/Pulverizer/Movecraft-for-Sponge",
+        "authorList": [
+            "BernardisGood",
+            "https://github.com/Pulverizer/Movecraft-for-Sponge/graphs/contributors"
+        ],
+        "dependencies": [
+            "spongeapi@7.2.0-SNAPSHOT"
+        ],
+        "requiredMods": [
+            "spongeapi@7.2.0-SNAPSHOT"
+        ]
     }
 ]

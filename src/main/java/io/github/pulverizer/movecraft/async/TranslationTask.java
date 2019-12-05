@@ -167,6 +167,7 @@ public class TranslationTask extends AsyncTask {
                                     Movecraft.getInstance().getLogger().info("Submitting Entity Update: " + entity.getType().getName());
                                     if (entity instanceof Item)
                                         Movecraft.getInstance().getLogger().info("Item Type: " + ((Item) entity).getItemType().getName());
+
                                 }
                             }
                         }

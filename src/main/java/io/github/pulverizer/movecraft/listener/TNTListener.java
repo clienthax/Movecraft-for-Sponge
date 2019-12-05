@@ -22,6 +22,7 @@ import org.spongepowered.api.event.entity.MoveEntityEvent;
 import org.spongepowered.api.event.filter.Getter;
 import org.spongepowered.api.event.world.ExplosionEvent;
 import org.spongepowered.api.scheduler.Task;
+import org.spongepowered.api.util.AABB;
 import org.spongepowered.api.util.Direction;
 import org.spongepowered.api.util.blockray.BlockRay;
 import org.spongepowered.api.util.blockray.BlockRayHit;
@@ -211,7 +212,6 @@ public class TNTListener {
 
         int tntFound = 1;
 
-        //TODO: Seems to only be finding the first 8 TNT Entities when using World#getIntersectingEntities(AABB)?
         Collection<Entity> entities = event.getTargetWorld().getNearbyEntities(tntLoc.getPosition(), 3);
 
         if (Settings.Debug)
@@ -224,7 +224,6 @@ public class TNTListener {
 
             PrimedTNT tnt = (PrimedTNT) entity;
 
-            //TODO: Testing this - scatters were OP if all shells landed together
             if (tnt.getFuseData().ticksRemaining().get() > eventTNT.getFuseData().ticksRemaining().get() + 1 || tnt.getFuseData().ticksRemaining().get() < eventTNT.getFuseData().ticksRemaining().get() - 1 || tnt.equals(eventTNT))
                 continue;
 

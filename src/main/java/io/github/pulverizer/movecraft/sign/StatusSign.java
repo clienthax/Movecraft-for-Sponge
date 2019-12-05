@@ -1,10 +1,12 @@
 package io.github.pulverizer.movecraft.sign;
 
 import com.flowpowered.math.vector.Vector3i;
+import io.github.pulverizer.movecraft.Movecraft;
 import io.github.pulverizer.movecraft.craft.Craft;
 import io.github.pulverizer.movecraft.event.CraftDetectEvent;
 import io.github.pulverizer.movecraft.event.SignTranslateEvent;
 import io.github.pulverizer.movecraft.utils.HashHitBox;
+import org.slf4j.Logger;
 import org.spongepowered.api.block.BlockSnapshot;
 import org.spongepowered.api.block.BlockType;
 import org.spongepowered.api.block.BlockTypes;
@@ -16,23 +18,25 @@ import org.spongepowered.api.text.format.TextColor;
 import org.spongepowered.api.text.format.TextColors;
 import org.spongepowered.api.world.World;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 public final class StatusSign {
 
-    public static void onCraftDetect(CraftDetectEvent event, World world, HashHitBox hitBox){
+    public static void onCraftDetect(CraftDetectEvent event, World world, HashHitBox hitBox) {
 
-        for(Vector3i location: hitBox){
+        for (Vector3i location : hitBox) {
 
-            if(world.getBlockType(location) != BlockTypes.WALL_SIGN && world.getBlockType(location) != BlockTypes.STANDING_SIGN || !world.getTileEntity(location).isPresent())
+            if (world.getBlockType(location) != BlockTypes.WALL_SIGN && world.getBlockType(location) != BlockTypes.STANDING_SIGN || !world.getTileEntity(location).isPresent())
                 continue;
 
             Sign sign = (Sign) world.getTileEntity(location).get();
             ListValue<Text> lines = sign.lines();
 
             if (lines.get(0).toPlain().equalsIgnoreCase("Status:")) {
+                lines.set(0, Text.of("Status:"));
                 lines.set(1, Text.of(""));
                 lines.set(2, Text.of(""));
                 lines.set(3, Text.of(""));
@@ -46,11 +50,13 @@ public final class StatusSign {
         ListValue<Text> lines = sign.lines();
 
         double fuel = craft.checkFuelStored() + craft.getBurningFuel();
-        int totalBlocks = craft.getHitBox().size();
+        double totalBlocks = craft.getSize();
         Map<BlockType, Integer> foundBlocks = new HashMap<>();
 
-        for (Vector3i loc : craft.getHitBox()) {
-            BlockType blockType = craft.getWorld().getBlockType(loc);
+        World world = craft.getWorld();
+
+        for (Vector3i location : craft.getHitBox()) {
+            BlockType blockType = world.getBlockType(location);
 
             if (foundBlocks.containsKey(blockType)) {
                 foundBlocks.merge(blockType, 1, Integer::sum);
@@ -59,74 +65,132 @@ public final class StatusSign {
             }
         }
 
-        int signLine = 1;
-        int signColumn = 0;
+        //Fly Blocks
+        if (!craft.getType().getFlyBlocks().isEmpty()) {
 
-        for(Map.Entry<List<BlockType>, List<Double>> flyBlockMapEntry : craft.getType().getFlyBlocks().entrySet()) {
+            BlockType flyBlock = BlockTypes.AIR;
+            Double percentFB = 0d;
+            Double minimumFB = 0d;
 
-            Double minimum = flyBlockMapEntry.getValue().get(0);
+            for (Map.Entry<List<BlockType>, List<Double>> flyBlockMapEntry : craft.getType().getFlyBlocks().entrySet()) {
 
-            if (minimum > 0) {
-                int amount = 0;
+                Double minimum = flyBlockMapEntry.getValue().get(0);
 
-                for (BlockType blockType : flyBlockMapEntry.getKey()) {
-                    if (foundBlocks.containsKey(blockType))
-                        amount += foundBlocks.get(blockType);
-                }
+                if (minimum > 0) {
+                    int amount = 0;
 
-                if (amount <= 0)
-                    continue;
+                    for (BlockType blockType : flyBlockMapEntry.getKey()) {
+                        if (foundBlocks.containsKey(blockType))
+                            amount += foundBlocks.get(blockType);
+                    }
 
-                Double percentPresent = (double) (amount * 100 / totalBlocks);
-                String signText = "";
+                    if (amount <= 0)
+                        continue;
 
-                if (percentPresent > minimum * 1.05) {
-                    signText += TextColors.GREEN;
-                } else if (percentPresent > minimum * 1.025) {
-                    signText += TextColors.YELLOW;
-                } else {
-                    signText += TextColors.RED;
-                }
+                    Double percentPresent = amount * 100 / totalBlocks;
 
-                //TODO: Change to Fly and Move Blocks
-                String[] strings = flyBlockMapEntry.getKey().get(0).getName().split(":");
-                signText += strings[strings.length - 1].substring(0, 1).toUpperCase();
-
-                signText += ": ";
-                signText += percentPresent.intValue();
-                signText += "/";
-                signText += minimum.intValue();
-                signText += "  ";
-
-                if(signColumn == 0) {
-                    lines.set(signLine,Text.of(signText));
-                    sign.offer(lines);
-                    signColumn++;
-                } else if(signLine < 3) {
-                    String existingLine = lines.get(signLine).toPlain();
-                    existingLine+= signText;
-                    lines.set(signLine, Text.of(existingLine));
-                    sign.offer(lines);
-                    signLine++;
-                    signColumn=0;
+                    if (percentFB == 0 || percentPresent - minimum < percentFB - minimumFB) {
+                        flyBlock = flyBlockMapEntry.getKey().get(0);
+                        percentFB = percentPresent;
+                        minimumFB = minimum;
+                    }
                 }
             }
+
+            TextColor lineColor;
+
+            if (percentFB > minimumFB * 1.05) {
+                lineColor = TextColors.GREEN;
+            } else if (percentFB > minimumFB * 1.025) {
+                lineColor = TextColors.YELLOW;
+            } else {
+                lineColor = TextColors.RED;
+            }
+
+            String[] strings = flyBlock.getName().split(":");
+            char name = strings[strings.length - 1].toUpperCase().charAt(0);
+
+            if (percentFB > 10) {
+                lines.set(1, Text.of(lineColor, name, ": ", percentFB.intValue(), "/", minimumFB.intValue()));
+
+            } else {
+                percentFB = (double) ((int) (percentFB * 10)) / 10;
+                minimumFB = (double) ((int) (minimumFB * 10)) / 10;
+
+                lines.set(2, Text.of(lineColor, name, ": ", percentFB, "/", minimumFB));
+            }
         }
-        String fuelText="";
-        int fuelRange = (int) Math.floor((fuel*(1+craft.getType().getCruiseSkipBlocks()))/craft.getType().getFuelBurnRate());
+
+        //Move Blocks
+        if (!craft.getType().getMoveBlocks().isEmpty()) {
+            BlockType moveBlock = BlockTypes.AIR;
+            Double percentMB = 0d;
+            Double minimumMB = 0d;
+
+            for (Map.Entry<List<BlockType>, List<Double>> moveBlockMapEntry : craft.getType().getMoveBlocks().entrySet()) {
+
+                Double minimum = moveBlockMapEntry.getValue().get(0);
+
+                if (minimum > 0) {
+                    double amount = 0;
+
+                    for (BlockType blockType : moveBlockMapEntry.getKey()) {
+                        if (foundBlocks.containsKey(blockType))
+                            amount += foundBlocks.get(blockType);
+                    }
+
+                    if (amount <= 0)
+                        continue;
+
+                    Double percentPresent = amount * 100 / totalBlocks;
+
+                    if (percentMB == 0 || percentPresent - minimum < percentMB - minimumMB) {
+                        moveBlock = moveBlockMapEntry.getKey().get(0);
+                        percentMB = percentPresent;
+                        minimumMB = minimum;
+                    }
+                }
+            }
+
+            TextColor lineColor;
+
+            if (percentMB > minimumMB * 1.05) {
+                lineColor = TextColors.GREEN;
+            } else if (percentMB > minimumMB * 1.025) {
+                lineColor = TextColors.YELLOW;
+            } else {
+                lineColor = TextColors.RED;
+            }
+
+            String[] strings = moveBlock.getName().split(":");
+            char name = strings[strings.length - 1].toUpperCase().charAt(0);
+
+            if (percentMB > 10) {
+                lines.set(2, Text.of(lineColor, name, ": ", percentMB.intValue(), "/", minimumMB.intValue()));
+
+            } else {
+                percentMB = (double) ((int) (percentMB * 10)) / 10;
+                minimumMB = (double) ((int) (minimumMB * 10)) / 10;
+
+                lines.set(2, Text.of(lineColor, name, ": ", percentMB, "/", minimumMB));
+            }
+        }
+
+        int fuelRange = (int) Math.floor((fuel * (1 + craft.getType().getCruiseSkipBlocks())) / craft.getType().getFuelBurnRate());
         TextColor fuelColor;
 
-        if(fuelRange>1000) {
+        //TODO: Add to config per craft
+        if(fuelRange > 10000) {
             fuelColor = TextColors.GREEN;
-        } else if(fuelRange>100) {
+        } else if(fuelRange > 2500) {
             fuelColor = TextColors.YELLOW;
         } else {
             fuelColor = TextColors.RED;
         }
 
-        fuelText+="Fuel range:";
-        fuelText+=fuelRange;
-        lines.set(signLine, Text.of("Fuel range: " + fuelRange).toBuilder().color(fuelColor).build());
+        fuelRange = Math.min(fuelRange, 999999999);
+
+        lines.set(3, Text.of(fuelColor, "Fuel: ", fuelRange, "m"));
         sign.offer(lines);
     }
 }

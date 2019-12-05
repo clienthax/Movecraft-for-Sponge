@@ -277,12 +277,4 @@ public class Movecraft {
         return worldHandler;
     }
 
-    /**
-     * Fetches the AsyncManager instance that the Plugin is using.
-     * @return AsyncManager instance.
-     */
-    public AsyncManager getAsyncManager(){
-        return asyncManager;
-    }
-
 }
