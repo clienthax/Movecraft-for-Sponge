@@ -9,11 +9,3 @@ description = 'Movecraft for Sponge'
 dependencies {
     compile 'org.spongepowered:spongeapi:7.1.0'
 }
-
-task endBuildTask(type: Copy) {
-    from "build/libs"
-    //into "C:/Games/MultiMC/instances/Sponge 1.12/.minecraft/mods/plugins"
-    into "C:/Users/berna/Downloads/Sponge Server 2768/mods/plugins"
-}
-
-build.finalizedBy(endBuildTask)
