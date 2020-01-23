@@ -7,7 +7,6 @@ import io.github.pulverizer.movecraft.craft.Craft;
 import io.github.pulverizer.movecraft.enums.Rotation;
 import io.github.pulverizer.movecraft.utils.HashHitBox;
 import org.spongepowered.api.block.BlockSnapshot;
-import org.spongepowered.api.block.BlockTypes;
 import org.spongepowered.api.data.key.Keys;
 import org.spongepowered.api.entity.Entity;
 import org.spongepowered.api.util.Direction;
@@ -59,10 +58,10 @@ public class WorldHandler {
         //*      Step one: Convert to Positions     *
         //*******************************************
 
-        HashSet<Vector3i> oldLocations = new HashSet<>();
-        HashMap<Vector3i, BlockSnapshot> blocks = new HashMap<>();
+        HashSet<Vector3i> oldLocations = new HashSet<>(craft.getHitBox().size(), 1);
+        HashMap<Vector3i, BlockSnapshot> blocks = new HashMap<>(craft.getHitBox().size(), 1);
         Rotation counterRotation = rotation == Rotation.CLOCKWISE ? Rotation.ANTICLOCKWISE : Rotation.CLOCKWISE;
-        LinkedHashMap<Vector3i, HashMap<Integer, Integer>> updates = new LinkedHashMap<>();
+        LinkedHashMap<Vector3i, HashMap<Integer, Integer>> updates = new LinkedHashMap<>(craft.getHitBox().size(), 1);
 
         //get blocks and updates from old locations
         for(Vector3i newPosition : craft.getHitBox()) {
@@ -76,7 +75,8 @@ public class WorldHandler {
 
             updates.put(newPosition, blockUpdates);
 
-            nativeWorld.getScheduledUpdates(oldPosition).forEach(sbu -> nativeWorld.removeScheduledUpdate(oldPosition, sbu));
+            nativeWorld.getScheduledUpdates(oldPosition)
+                    .forEach(sbu -> nativeWorld.removeScheduledUpdate(oldPosition, sbu));
         }
 
         //create the new blocks
@@ -84,8 +84,7 @@ public class WorldHandler {
             Vector3i location = entry.getKey();
             final BlockSnapshot blockSnapshot = entry.getValue();
             nativeWorld.restoreSnapshot(rotateBlock(rotation, blockSnapshot).withLocation(new Location<World>(nativeWorld, location)), true, BlockChangeFlags.NONE);
-            final HashMap<Integer, Integer> blockUpdates = updates.get(location);
-            blockUpdates.forEach((key, value) -> nativeWorld.addScheduledUpdate(location, key, value));
+            updates.get(location).forEach((key, value) -> nativeWorld.addScheduledUpdate(location, key, value));
             // Prune the replaced location from old locations
             oldLocations.remove(location);
         }
@@ -107,9 +106,9 @@ public class WorldHandler {
         //A craftTranslateCommand should only occur if the craft is moving to a valid position
 
         //get the old blocks
-        HashSet<Vector3i> oldLocations = new HashSet<>();
-        HashMap<Vector3i, BlockSnapshot> blocks = new HashMap<>();
-        LinkedHashMap<Vector3i, HashMap<Integer, Integer>> updates = new LinkedHashMap<>();
+        HashSet<Vector3i> oldLocations = new HashSet<>(craft.getHitBox().size(), 1);
+        HashMap<Vector3i, BlockSnapshot> blocks = new HashMap<>(craft.getHitBox().size(), 1);
+        LinkedHashMap<Vector3i, HashMap<Integer, Integer>> updates = new LinkedHashMap<>(craft.getHitBox().size(), 1);
 
         for(Vector3i blockPosition : craft.getHitBox()) {
             oldLocations.add(blockPosition);
@@ -122,9 +121,8 @@ public class WorldHandler {
 
             updates.put(blockPosition.add(translateBlockVector), blockUpdates);
 
-            nativeWorld.getScheduledUpdates(blockPosition).forEach(sbu -> {
-                nativeWorld.removeScheduledUpdate(blockPosition, sbu);
-            });
+            nativeWorld.getScheduledUpdates(blockPosition)
+                    .forEach(sbu -> nativeWorld.removeScheduledUpdate(blockPosition, sbu));
         }
 
         //create the new blocks
@@ -132,8 +130,7 @@ public class WorldHandler {
             Vector3i location = entry.getKey();
             final BlockSnapshot blockSnapshot = entry.getValue();
             blockSnapshot.withLocation(new Location<>(nativeWorld, location)).restore(true, BlockChangeFlags.NONE);
-            final HashMap<Integer, Integer> blockUpdates = updates.get(location);
-            blockUpdates.forEach((key, value) -> nativeWorld.addScheduledUpdate(location, key, value));
+            updates.get(location).forEach((key, value) -> nativeWorld.addScheduledUpdate(location, key, value));
             // Prune the replaced location from old locations
             oldLocations.remove(location);
         }
