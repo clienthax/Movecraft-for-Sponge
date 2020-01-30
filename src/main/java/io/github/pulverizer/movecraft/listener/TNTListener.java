@@ -239,7 +239,6 @@ public class TNTListener {
         if (Settings.Debug)
             Movecraft.getInstance().getLogger().info("BOOM: " + tntFound);
 
-        //TODO: Waiting on Explosion Settings PR on SpongeCommon
         Explosion explosion = Explosion.builder()
                 .from(event.getExplosion())
                 .radius(tntFound)

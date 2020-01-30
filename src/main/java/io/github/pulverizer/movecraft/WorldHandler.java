@@ -58,10 +58,10 @@ public class WorldHandler {
         //*      Step one: Convert to Positions     *
         //*******************************************
 
-        HashSet<Vector3i> oldLocations = new HashSet<>(craft.getHitBox().size(), 1);
-        HashMap<Vector3i, BlockSnapshot> blocks = new HashMap<>(craft.getHitBox().size(), 1);
+        HashSet<Vector3i> oldLocations = new HashSet<>();
+        HashMap<Vector3i, BlockSnapshot> blocks = new HashMap<>();
         Rotation counterRotation = rotation == Rotation.CLOCKWISE ? Rotation.ANTICLOCKWISE : Rotation.CLOCKWISE;
-        LinkedHashMap<Vector3i, HashMap<Integer, Integer>> updates = new LinkedHashMap<>(craft.getHitBox().size(), 1);
+        LinkedHashMap<Vector3i, HashMap<Integer, Integer>> updates = new LinkedHashMap<>();
 
         //get blocks and updates from old locations
         for(Vector3i newPosition : craft.getHitBox()) {
@@ -106,9 +106,9 @@ public class WorldHandler {
         //A craftTranslateCommand should only occur if the craft is moving to a valid position
 
         //get the old blocks
-        HashSet<Vector3i> oldLocations = new HashSet<>(craft.getHitBox().size(), 1);
-        HashMap<Vector3i, BlockSnapshot> blocks = new HashMap<>(craft.getHitBox().size(), 1);
-        LinkedHashMap<Vector3i, HashMap<Integer, Integer>> updates = new LinkedHashMap<>(craft.getHitBox().size(), 1);
+        HashSet<Vector3i> oldLocations = new HashSet<>();
+        HashMap<Vector3i, BlockSnapshot> blocks = new HashMap<>();
+        LinkedHashMap<Vector3i, HashMap<Integer, Integer>> updates = new LinkedHashMap<>();
 
         for(Vector3i blockPosition : craft.getHitBox()) {
             oldLocations.add(blockPosition);

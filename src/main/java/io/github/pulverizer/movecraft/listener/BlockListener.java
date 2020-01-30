@@ -1,5 +1,6 @@
 package io.github.pulverizer.movecraft.listener;
 
+import com.flowpowered.math.vector.Vector3i;
 import io.github.pulverizer.movecraft.Movecraft;
 import io.github.pulverizer.movecraft.config.Settings;
 import io.github.pulverizer.movecraft.craft.Craft;
@@ -94,19 +95,29 @@ public class BlockListener {
         }
     }
 
-    // prevent pistons on cruising crafts
-    /*@Listener(order = FIRST)
-    public void onPistonEvent(BlockPistonExtendEvent event) {
-        Block block = event.getBlock();
-        CraftManager.getInstance().getCraftsInWorld(block.getWorld());
-        for (Craft tcraft : CraftManager.getInstance().getCraftsInWorld(block.getWorld())) {
-            Vector3i mloc = new Vector3i(block.getX(), block.getY(), block.getZ());
-            if (MathUtils.locIsNearCraftFast(tcraft, mloc) && tcraft.getCruising() && !tcraft.isNotProcessing()) {
+    //TODO: Test this
+/*
+    // prevent pistons from moving on processing crafts
+    // else if - piston extends - add locations to hitbox
+    // else if - piston retracts - remove locations from hitbox
+    @Listener(order = FIRST)
+    public void onPistonEvent(ChangeBlockEvent.Post event) {
+        BlockSnapshot block = event.getContext().get(EventContextKeys.PISTON_EXTEND);
+
+        if (block.getState().getType() != BlockTypes.PISTON && block.getState().getType() != BlockTypes.STICKY_PISTON)
+        CraftManager.getInstance().getCraftsInWorld(block.getLocation().get().getExtent());
+        for (Craft craft : CraftManager.getInstance().getCraftsInWorld(block.getLocation().get().getExtent())) {
+            Vector3i loc = block.getLocation().get().getBlockPosition();
+            if (craft.getHitBox().contains(loc) && !craft.isNotProcessing()) {
                 event.setCancelled(true);
                 return;
             }
         }
-    }*/
+    }
+*/
+    //TODO: Reimplement these listeners
+
+    // Should not need this due to blocks still ticking?
 
     /*@Listener(order = LAST)
     public void onBlockIgnite(BlockIgniteEvent event) {

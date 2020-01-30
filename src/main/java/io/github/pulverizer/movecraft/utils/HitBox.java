@@ -64,7 +64,7 @@ public interface HitBox extends Iterable<Vector3i>{
             return false;
         }
         return x >= this.getMinX() && x <= this.getMaxX() &&
-                y >= this.getMinY() && y <= this.getMaxY()&&
+                y >= this.getMinY() && y <= this.getMaxY() &&
                 z >= this.getMinZ() && z <= this.getMaxZ();
     }
 
