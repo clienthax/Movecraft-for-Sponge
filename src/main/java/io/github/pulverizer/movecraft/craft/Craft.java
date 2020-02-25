@@ -664,7 +664,10 @@ public class Craft {
         if(state == CraftState.SINKING)
             return type.getSinkRateTicks();
 
-        double chestPenalty = blockMap.get(BlockTypes.CHEST).size() + blockMap.get(BlockTypes.TRAPPED_CHEST).size();
+        double chestPenalty = 0;
+
+        chestPenalty += (blockMap.containsKey(BlockTypes.CHEST) ? blockMap.get(BlockTypes.CHEST).size() : 0)
+                + (blockMap.containsKey(BlockTypes.TRAPPED_CHEST) ? blockMap.get(BlockTypes.TRAPPED_CHEST).size() : 0);
 
         chestPenalty *= type.getChestPenalty();
 

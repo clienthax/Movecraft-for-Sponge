@@ -38,8 +38,8 @@ import java.util.Map;
 @Plugin(
         id = "movecraft",
         name = "Movecraft for Sponge",
-        description = "Allows players to create moving things out of blocks. Airships, Defensive Turrets, Submarines, Etc.",
-        version = "0.1.0",
+        description = "Allows players to create moving things out of blocks. Airships, Turrets, Submarines, Etc.",
+        version = "0.2.1",
         url = "https://github.com/Pulverizer/Movecraft-for-Sponge",
         authors = {"BernardisGood", "https://github.com/Pulverizer/Movecraft-for-Sponge/graphs/contributors"})
 

@@ -3,7 +3,6 @@ plugins {
 }
 
 group = 'io.github.pulverizer.movecraft'
-version = '0.1.0'
 description = 'Movecraft for Sponge'
 
 repositories {

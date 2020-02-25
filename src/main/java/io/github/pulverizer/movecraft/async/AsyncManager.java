@@ -188,7 +188,7 @@ public class AsyncManager implements Runnable {
                 int count = 0;
 
                 for (BlockType blockType : blockTypes) {
-                    count += blockMap.get(blockType).size();
+                        count += blockMap.containsKey(blockType) ? blockMap.get(blockType).size() : 0;
                 }
 
                 foundFlyBlocks.put(blockTypes, count);
@@ -198,15 +198,18 @@ public class AsyncManager implements Runnable {
                 int count = 0;
 
                 for (BlockType blockType : blockTypes) {
-                    count += blockMap.get(blockType).size();
+                    count += blockMap.containsKey(blockType) ? blockMap.get(blockType).size() : 0;
                 }
 
                 foundMoveBlocks.put(blockTypes, count);
             });
 
-            totalNonAirBlocks = craft.getHitBox().size() - blockMap.get(BlockTypes.AIR).size();
+            totalNonAirBlocks = craft.getHitBox().size() - (blockMap.containsKey(BlockTypes.AIR) ? blockMap.get(BlockTypes.AIR).size() : 0);
 
-            totalNonAirWaterBlocks = craft.getHitBox().size() - (blockMap.get(BlockTypes.AIR).size() + blockMap.get(BlockTypes.FLOWING_WATER).size() + blockMap.get(BlockTypes.WATER).size());
+            totalNonAirWaterBlocks = craft.getHitBox().size() - (
+                    (blockMap.containsKey(BlockTypes.AIR) ? blockMap.get(BlockTypes.AIR).size() : 0)
+                    + (blockMap.containsKey(BlockTypes.AIR) ? blockMap.get(BlockTypes.FLOWING_WATER).size() : 0)
+                    + (blockMap.containsKey(BlockTypes.AIR) ? blockMap.get(BlockTypes.WATER).size() : 0));
 
             // now see if any of the resulting percentages
             // are below the threshold specified in
