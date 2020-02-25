@@ -2,65 +2,73 @@ package io.github.pulverizer.movecraft.utils;
 
 import com.flowpowered.math.vector.Vector3i;
 import io.github.pulverizer.movecraft.exception.EmptyHitBoxException;
+import org.spongepowered.api.block.BlockType;
+import org.spongepowered.api.world.World;
 
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Set;
+import java.util.*;
 
-public interface HitBox extends Iterable<Vector3i>{
+public interface HitBox extends Iterable<Vector3i> {
 
-    public int getMinX();
-    public int getMinY();
-    public int getMinZ();
-    public int getMaxX();
-    public int getMaxY();
-    public int getMaxZ();
+    int getMinX();
 
-    default public int getXLength(){
-        if(this.isEmpty()){
+    int getMinY();
+
+    int getMinZ();
+
+    int getMaxX();
+
+    int getMaxY();
+
+    int getMaxZ();
+
+    default int getXLength() {
+        if (this.isEmpty()) {
             return 0;
         }
-        return Math.abs(this.getMaxX()-this.getMinX());
-    }
-    default public int getYLength(){
-        if(this.isEmpty()){
-            return 0;
-        }
-        return Math.abs(this.getMaxY()-this.getMinY());
-    }
-    default public int getZLength(){
-        if(this.isEmpty()){
-            return 0;
-        }
-        return Math.abs(this.getMaxZ()-this.getMinZ());
+        return Math.abs(this.getMaxX() - this.getMinX());
     }
 
-    default public boolean isEmpty(){
+    default int getYLength() {
+        if (this.isEmpty()) {
+            return 0;
+        }
+        return Math.abs(this.getMaxY() - this.getMinY());
+    }
+
+    default int getZLength() {
+        if (this.isEmpty()) {
+            return 0;
+        }
+        return Math.abs(this.getMaxZ() - this.getMinZ());
+    }
+
+    default boolean isEmpty() {
         return this.size() == 0;
     }
-    public int size();
 
-    default public Vector3i getMidPoint(){
-        if(this.isEmpty()){
+    int size();
+
+    default Vector3i getMidPoint() {
+        if (this.isEmpty()) {
             throw new EmptyHitBoxException();
         }
-        return new Vector3i((this.getMinX()+this.getMaxX())/2, (this.getMinY()+this.getMinY())/2,(this.getMinZ()+this.getMaxZ())/2);
+        // divide by 2 using bit shift
+        return new Vector3i((this.getMinX() + this.getMaxX()) >> 1, (this.getMinY() + this.getMaxY()) >> 1, (this.getMinZ() + this.getMaxZ()) >> 1);
     }
 
     @Override
-    public Iterator<Vector3i> iterator();
+    Iterator<Vector3i> iterator();
 
-    public boolean contains(Vector3i location);
+    boolean contains(Vector3i location);
 
-    default boolean contains(int x, int y, int z){
-        return this.contains(new Vector3i(x,y,z));
+    default boolean contains(int x, int y, int z) {
+        return this.contains(new Vector3i(x, y, z));
     }
 
     boolean containsAll(Collection<? extends Vector3i> collection);
 
-    default boolean inBounds(double x, double y, double z){
-        if(this.isEmpty()){
+    default boolean inBounds(double x, double y, double z) {
+        if (this.isEmpty()) {
             return false;
         }
         return x >= this.getMinX() && x <= this.getMaxX() &&
@@ -68,18 +76,18 @@ public interface HitBox extends Iterable<Vector3i>{
                 z >= this.getMinZ() && z <= this.getMaxZ();
     }
 
-    default boolean inBounds(Vector3i location){
-        return this.inBounds(location.getX(),location.getY(),location.getZ());
+    default boolean inBounds(Vector3i location) {
+        return this.inBounds(location.getX(), location.getY(), location.getZ());
     }
 
-    default SolidHitBox boundingHitBox(){
-        return new SolidHitBox(new Vector3i(this.getMinX(),this.getMinY(),this.getMinZ()),
-                new Vector3i(this.getMaxX(),this.getMaxY(),this.getMaxZ()));
+    default SolidHitBox boundingHitBox() {
+        return new SolidHitBox(new Vector3i(this.getMinX(), this.getMinY(), this.getMinZ()),
+                new Vector3i(this.getMaxX(), this.getMaxY(), this.getMaxZ()));
     }
 
-    default Set<Vector3i> asSet(){
+    default Set<Vector3i> asSet() {
         Set<Vector3i> output = new HashSet<>();
-        for(Vector3i location : this){
+        for (Vector3i location : this) {
             output.add(location);
         }
         return output;

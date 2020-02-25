@@ -1,10 +1,8 @@
 io.github.pulverizer.movecraft
 io.github.pulverizer.movecraft.async
-io.github.pulverizer.movecraft.async.detection
-io.github.pulverizer.movecraft.async.rotation
-io.github.pulverizer.movecraft.async.translation
 io.github.pulverizer.movecraft.config
 io.github.pulverizer.movecraft.craft
+io.github.pulverizer.movecraft.enums
 io.github.pulverizer.movecraft.event
 io.github.pulverizer.movecraft.exception
 io.github.pulverizer.movecraft.listener

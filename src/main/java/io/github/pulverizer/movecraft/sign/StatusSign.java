@@ -18,10 +18,7 @@ import org.spongepowered.api.text.format.TextColor;
 import org.spongepowered.api.text.format.TextColors;
 import org.spongepowered.api.world.World;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public final class StatusSign {
 
@@ -51,19 +48,11 @@ public final class StatusSign {
 
         double fuel = craft.checkFuelStored() + craft.getBurningFuel();
         double totalBlocks = craft.getSize();
+
+        Map<BlockType, Set<Vector3i>> blockMap = craft.getHitBox().map(craft.getWorld());
         Map<BlockType, Integer> foundBlocks = new HashMap<>();
 
-        World world = craft.getWorld();
-
-        for (Vector3i location : craft.getHitBox()) {
-            BlockType blockType = world.getBlockType(location);
-
-            if (foundBlocks.containsKey(blockType)) {
-                foundBlocks.merge(blockType, 1, Integer::sum);
-            } else {
-                foundBlocks.put(blockType, 1);
-            }
-        }
+        blockMap.forEach((blockType, locations) -> foundBlocks.put(blockType, locations.size()));
 
         //Fly Blocks
         if (!craft.getType().getFlyBlocks().isEmpty()) {

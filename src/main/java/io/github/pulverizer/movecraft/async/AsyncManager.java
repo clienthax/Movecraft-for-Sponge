@@ -19,9 +19,7 @@ import org.spongepowered.api.util.Direction;
 import org.spongepowered.api.world.Location;
 import org.spongepowered.api.world.World;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -182,15 +180,15 @@ public class AsyncManager implements Runnable {
             int totalNonAirWaterBlocks = 0;
             HashMap<List<BlockType>, Integer> foundFlyBlocks = new HashMap<>();
             HashMap<List<BlockType>, Integer> foundMoveBlocks = new HashMap<>();
-            // go through each block in the blocklist, and
-            // if its in the FlyBlocks, total up the number
-            // of them
+            // go through each block in the blocklist, and if its in the FlyBlocks, total up the number of them
+
+            Map<BlockType, Set<Vector3i>> blockMap = craft.getHitBox().map(craft.getWorld());
 
             craft.getType().getFlyBlocks().keySet().forEach(blockTypes -> {
                 int count = 0;
 
                 for (BlockType blockType : blockTypes) {
-                    count += craft.findBlockType(blockType).size();
+                    count += blockMap.get(blockType).size();
                 }
 
                 foundFlyBlocks.put(blockTypes, count);
@@ -200,15 +198,15 @@ public class AsyncManager implements Runnable {
                 int count = 0;
 
                 for (BlockType blockType : blockTypes) {
-                    count += craft.findBlockType(blockType).size();
+                    count += blockMap.get(blockType).size();
                 }
 
                 foundMoveBlocks.put(blockTypes, count);
             });
 
-            totalNonAirBlocks = craft.getHitBox().size() - craft.findBlockType(BlockTypes.AIR).size();
+            totalNonAirBlocks = craft.getHitBox().size() - blockMap.get(BlockTypes.AIR).size();
 
-            totalNonAirWaterBlocks = craft.getHitBox().size() - (craft.findBlockType(BlockTypes.AIR).size() + craft.findBlockType(BlockTypes.FLOWING_WATER).size() + craft.findBlockType(BlockTypes.WATER).size());
+            totalNonAirWaterBlocks = craft.getHitBox().size() - (blockMap.get(BlockTypes.AIR).size() + blockMap.get(BlockTypes.FLOWING_WATER).size() + blockMap.get(BlockTypes.WATER).size());
 
             // now see if any of the resulting percentages
             // are below the threshold specified in

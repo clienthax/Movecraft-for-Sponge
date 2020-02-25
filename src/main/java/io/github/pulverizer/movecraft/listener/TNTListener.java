@@ -250,6 +250,7 @@ public class TNTListener {
         event.setExplosion(explosion);
     }
 
+    /*
     //TODO: Waiting on PR
     @Listener (order = LAST)
     public void changeBlockResistance(ExplosionEvent.BlockExplosionResistance event) {
@@ -272,6 +273,7 @@ public class TNTListener {
             }
         }
     }
+    */
 
     @Listener
     public void explodeEvent(ExplosionEvent.Detonate event) {

@@ -2,6 +2,7 @@ package io.github.pulverizer.movecraft.craft;
 
 import com.flowpowered.math.vector.Vector3d;
 import com.flowpowered.math.vector.Vector3i;
+import com.sun.javafx.collections.MappingChange;
 import io.github.pulverizer.movecraft.enums.CraftState;
 import io.github.pulverizer.movecraft.enums.Rotation;
 import io.github.pulverizer.movecraft.async.AsyncTask;
@@ -18,7 +19,6 @@ import org.spongepowered.api.block.BlockType;
 import org.spongepowered.api.block.BlockTypes;
 import org.spongepowered.api.block.tileentity.carrier.TileEntityCarrier;
 import org.spongepowered.api.item.ItemType;
-import org.spongepowered.api.item.ItemTypes;
 import org.spongepowered.api.item.inventory.Inventory;
 import org.spongepowered.api.item.inventory.query.QueryOperationTypes;
 import org.spongepowered.api.text.Text;
@@ -40,7 +40,7 @@ public class Craft {
 
     //State
     private AtomicBoolean processing = new AtomicBoolean();
-    private HashHitBox currentHitbox;
+    private HashHitBox hitBox;
     private CraftState state;
     private Long lastCheckTime = (long) 0;
     private World world;
@@ -78,7 +78,7 @@ public class Craft {
      */
     public Craft(CraftType type, UUID player, Location<World> startLocation) {
         this.type = type;
-        setWorld(startLocation.getExtent());
+        world = startLocation.getExtent();
         setLastMoveTick(Sponge.getServer().getRunningTimeTicks() - 10000);
         this.originalPilotTime = System.currentTimeMillis();
         setCommander(player);
@@ -174,7 +174,7 @@ public class Craft {
      * @param newHitbox The craft's new hitbox.
      */
     public void setHitBox(HashHitBox newHitbox) {
-        currentHitbox = newHitbox;
+        hitBox = newHitbox;
     }
 
     /**
@@ -182,7 +182,7 @@ public class Craft {
      * @return The craft's current hitbox.
      */
     public HashHitBox getHitBox() {
-        return currentHitbox;
+        return hitBox;
     }
 
     /**
@@ -190,24 +190,12 @@ public class Craft {
      * @return The craft's current size.
      */
     public int getSize() {
-        return currentHitbox.size();
-    }
-
-    //TODO: Cross-dimensional crafts anyone?
-    /**
-     * <pre>
-     *     Changes the world the craft is registered as being in.
-     *     Do NOT call this method until the craft has been translated.
-     * </pre>
-     * @param world The world the craft has been moved to.
-     */
-    public void setWorld(World world) {
-        this.world = world;
+        return hitBox.size();
     }
 
     /**
-     * Fetches the world the craft is currently registered as being in.
-     * @return The world the craft is currently registered as being in.
+     * Fetches the world the craft is in.
+     * @return The world the craft is in.
      */
     public World getWorld() {
         return world;
@@ -474,9 +462,10 @@ public class Craft {
         if (burningFuel < movePoints) {
 
             HashSet<Vector3i> furnaceBlocks = new HashSet<>();
+            Map<BlockType, Set<Vector3i>> blockMap = hitBox.map(world);
 
             //Find all the furnace blocks
-            getType().getFurnaceBlocks().forEach(blockType -> furnaceBlocks.addAll(findBlockType(blockType)));
+            getType().getFurnaceBlocks().forEach(blockType -> furnaceBlocks.addAll(blockMap.get(blockType)));
 
             //Find and burn fuel
             for (Vector3i furnaceLocation : furnaceBlocks) {
@@ -523,9 +512,10 @@ public class Craft {
 
         int fuelStored = 0;
         HashSet<Vector3i> furnaceBlocks = new HashSet<>();
+        Map<BlockType, Set<Vector3i>> blockMap = hitBox.map(world);
 
         //Find all the furnace blocks
-        getType().getFurnaceBlocks().forEach(blockType -> furnaceBlocks.addAll(findBlockType(blockType)));
+        getType().getFurnaceBlocks().forEach(blockType -> furnaceBlocks.addAll(blockMap.get(blockType)));
 
         //Find and count the fuel
         for (Vector3i furnaceLocation : furnaceBlocks) {
@@ -556,31 +546,15 @@ public class Craft {
     }
 
     /**
-     * Finds the blocks of a specific BlockType within a craft and returns their locations.
-     * @param blockType The BlockType to find.
-     * @return The locations of the matching blocks.
-     */
-    public HashSet<Vector3i> findBlockType(BlockType blockType) {
-        HashSet<Vector3i> foundBlocks = new HashSet<>();
-        getHitBox().forEach(location -> {
-            if (world.getBlockType(location) == blockType)
-                foundBlocks.add(location);
-        });
-
-        return foundBlocks;
-    }
-
-    /**
      * Fetches the UUID of the player currently commanding the craft.
-     * @return The UUID of the player currently commanding the craft.
+     * @return UUID of the player currently commanding the craft.
      */
     public UUID getCommander() {
         return commander;
     }
 
     /**
-     * Fetches the UUID of the player currently commanding the craft.
-     * @return The UUID of the player currently commanding the craft.
+     * Sets the player as the craft's Commander.
      */
     public void setCommander(UUID player) {
         if (!crewList.contains(player))
@@ -591,7 +565,7 @@ public class Craft {
 
     /**
      * Sets the player as the craft's Next-In-Command.
-     * @param player The player to be set as the Next-In-Command. Use null to remove but not replace the existing cannon director.
+     * @param player The player to be set as the Next-In-Command. Use null to remove but not replace the existing Next-In-Command.
      * @return FALSE - If you are attempting to set a player as the Next-In-Command but the player is not a member of the crew.
      */
     public boolean setNextInCommand(UUID player) {
@@ -685,11 +659,12 @@ public class Craft {
     }
 
     public int getTickCooldown() {
+        Map<BlockType, Set<Vector3i>> blockMap = hitBox.map(world);
 
         if(state == CraftState.SINKING)
             return type.getSinkRateTicks();
 
-        double chestPenalty = findBlockType(BlockTypes.CHEST).size() + findBlockType(BlockTypes.TRAPPED_CHEST).size();
+        double chestPenalty = blockMap.get(BlockTypes.CHEST).size() + blockMap.get(BlockTypes.TRAPPED_CHEST).size();
 
         chestPenalty *= type.getChestPenalty();
 
@@ -700,9 +675,9 @@ public class Craft {
             return type.getTickCooldown() + (int) chestPenalty;
 
         if(type.getDynamicFlyBlockSpeedFactor() != 0){
-            double count = findBlockType(type.getDynamicFlyBlock()).size();
+            double count = blockMap.get(type.getDynamicFlyBlock()).size();
 
-            return Math.max((int) (20 / (type.getCruiseTickCooldown() * (1  + type.getDynamicFlyBlockSpeedFactor() * (count / currentHitbox.size() - 0.5)))), 1);
+            return Math.max((int) (20 / (type.getCruiseTickCooldown() * (1  + type.getDynamicFlyBlockSpeedFactor() * (count / hitBox.size() - 0.5)))), 1);
         }
 
         if(type.getDynamicLagSpeedFactor() == 0)
@@ -717,41 +692,41 @@ public class Craft {
         //TODO: Remove this temporary system in favor of passthrough blocks. How tho???
         // Find the waterline from the surrounding terrain or from the static level in the craft type
         int waterLine = 0;
-        if (currentHitbox.isEmpty())
+        if (hitBox.isEmpty())
             return waterLine;
 
         // figure out the water level by examining blocks next to the outer boundaries of the craft
-        for (int posY = currentHitbox.getMaxY() + 1; posY >= currentHitbox.getMinY() - 1; posY--) {
+        for (int posY = hitBox.getMaxY() + 1; posY >= hitBox.getMinY() - 1; posY--) {
             int numWater = 0;
             int numAir = 0;
             int posX;
             int posZ;
-            posZ = currentHitbox.getMinZ() - 1;
-            for (posX = currentHitbox.getMinX() - 1; posX <= currentHitbox.getMaxX() + 1; posX++) {
+            posZ = hitBox.getMinZ() - 1;
+            for (posX = hitBox.getMinX() - 1; posX <= hitBox.getMaxX() + 1; posX++) {
                 BlockType typeID = world.getBlock(posX, posY, posZ).getType();
                 if (typeID == BlockTypes.WATER)
                     numWater++;
                 if (typeID == BlockTypes.AIR)
                     numAir++;
             }
-            posZ = currentHitbox.getMaxZ() + 1;
-            for (posX = currentHitbox.getMinX() - 1; posX <= currentHitbox.getMaxX() + 1; posX++) {
+            posZ = hitBox.getMaxZ() + 1;
+            for (posX = hitBox.getMinX() - 1; posX <= hitBox.getMaxX() + 1; posX++) {
                 BlockType typeID = world.getBlock(posX, posY, posZ).getType();
                 if (typeID == BlockTypes.WATER)
                     numWater++;
                 if (typeID == BlockTypes.AIR)
                     numAir++;
             }
-            posX = currentHitbox.getMinX() - 1;
-            for (posZ = currentHitbox.getMinZ(); posZ <= currentHitbox.getMaxZ(); posZ++) {
+            posX = hitBox.getMinX() - 1;
+            for (posZ = hitBox.getMinZ(); posZ <= hitBox.getMaxZ(); posZ++) {
                 BlockType typeID = world.getBlock(posX, posY, posZ).getType();
                 if (typeID == BlockTypes.WATER)
                     numWater++;
                 if (typeID == BlockTypes.AIR)
                     numAir++;
             }
-            posX = currentHitbox.getMaxX() + 1;
-            for (posZ = currentHitbox.getMinZ(); posZ <= currentHitbox.getMaxZ(); posZ++) {
+            posX = hitBox.getMaxX() + 1;
+            for (posZ = hitBox.getMinZ(); posZ <= hitBox.getMaxZ(); posZ++) {
                 BlockType typeID = world.getBlock(posX, posY, posZ).getType();
                 if (typeID == BlockTypes.WATER)
                     numWater++;
