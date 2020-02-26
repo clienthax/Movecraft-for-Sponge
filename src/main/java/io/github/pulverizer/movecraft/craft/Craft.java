@@ -465,7 +465,11 @@ public class Craft {
             Map<BlockType, Set<Vector3i>> blockMap = hitBox.map(world);
 
             //Find all the furnace blocks
-            getType().getFurnaceBlocks().forEach(blockType -> furnaceBlocks.addAll(blockMap.get(blockType)));
+            getType().getFurnaceBlocks().forEach(blockType -> {
+                if (blockMap.containsKey(blockType)) {
+                    furnaceBlocks.addAll(blockMap.get(blockType));
+                }
+            });
 
             //Find and burn fuel
             for (Vector3i furnaceLocation : furnaceBlocks) {
@@ -515,7 +519,11 @@ public class Craft {
         Map<BlockType, Set<Vector3i>> blockMap = hitBox.map(world);
 
         //Find all the furnace blocks
-        getType().getFurnaceBlocks().forEach(blockType -> furnaceBlocks.addAll(blockMap.get(blockType)));
+        getType().getFurnaceBlocks().forEach(blockType -> {
+            if (blockMap.containsKey(blockType)) {
+                furnaceBlocks.addAll(blockMap.get(blockType));
+            }
+        });
 
         //Find and count the fuel
         for (Vector3i furnaceLocation : furnaceBlocks) {
