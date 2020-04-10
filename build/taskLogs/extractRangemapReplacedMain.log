@@ -1,0 +1,208 @@
+Symbol range map extraction starting
+Processing 67 files
+startProcessing "io/github/pulverizer/movecraft/Movecraft.java" md5: 0cad8e104d5ac57a7a2b710d95f6920f
+endProcessing "io/github/pulverizer/movecraft/Movecraft.java"
+
+startProcessing "io/github/pulverizer/movecraft/NextTickProvider.java" md5: c2ca8a4c610751f1d18d4d4a0491f7f1
+endProcessing "io/github/pulverizer/movecraft/NextTickProvider.java"
+
+startProcessing "io/github/pulverizer/movecraft/WorldHandler.java" md5: 2f37d0a470d5a09e26f513e04f1a5000
+endProcessing "io/github/pulverizer/movecraft/WorldHandler.java"
+
+startProcessing "io/github/pulverizer/movecraft/async/AsyncManager.java" md5: 50201a856e8dbb4d3f421556fdb0f7a0
+endProcessing "io/github/pulverizer/movecraft/async/AsyncManager.java"
+
+startProcessing "io/github/pulverizer/movecraft/async/AsyncTask.java" md5: d572b5659bdae2823a67e2d8690ab79f
+endProcessing "io/github/pulverizer/movecraft/async/AsyncTask.java"
+
+startProcessing "io/github/pulverizer/movecraft/async/DetectionTask.java" md5: 9338a6d1d4860352b244dbdfe79b9636
+endProcessing "io/github/pulverizer/movecraft/async/DetectionTask.java"
+
+startProcessing "io/github/pulverizer/movecraft/async/RotationTask.java" md5: e46adf1b99e7216e45ea17030693c05c
+endProcessing "io/github/pulverizer/movecraft/async/RotationTask.java"
+
+startProcessing "io/github/pulverizer/movecraft/async/TranslationTask.java" md5: ac69a457ea38e3e509aa78e3f907a79c
+endProcessing "io/github/pulverizer/movecraft/async/TranslationTask.java"
+
+startProcessing "io/github/pulverizer/movecraft/config/ConfigManager.java" md5: 1a8a81bb5cff0894a4493162313125e5
+endProcessing "io/github/pulverizer/movecraft/config/ConfigManager.java"
+
+startProcessing "io/github/pulverizer/movecraft/config/CraftType.java" md5: e6404cf01ca6326d6f334525523c5264
+endProcessing "io/github/pulverizer/movecraft/config/CraftType.java"
+
+startProcessing "io/github/pulverizer/movecraft/config/Settings.java" md5: 251fda90db9d54d04d8b46380446d5ad
+endProcessing "io/github/pulverizer/movecraft/config/Settings.java"
+
+startProcessing "io/github/pulverizer/movecraft/craft/Craft.java" md5: 374f8c0e0d0c1e854d97170f7597d458
+    Compile Error! Pb(390) The import com.sun.javafx cannot be resolved
+endProcessing "io/github/pulverizer/movecraft/craft/Craft.java"
+
+startProcessing "io/github/pulverizer/movecraft/craft/CraftManager.java" md5: 40b8ff4380c604feae709e263befbe77
+endProcessing "io/github/pulverizer/movecraft/craft/CraftManager.java"
+
+startProcessing "io/github/pulverizer/movecraft/enums/CraftState.java" md5: 5b905a6b921a8056bd42d5fa12d6511a
+endProcessing "io/github/pulverizer/movecraft/enums/CraftState.java"
+
+startProcessing "io/github/pulverizer/movecraft/enums/Rotation.java" md5: 117fedbaad5a4fa73e2e26c3c2f6afe1
+endProcessing "io/github/pulverizer/movecraft/enums/Rotation.java"
+
+startProcessing "io/github/pulverizer/movecraft/event/CraftCollisionEvent.java" md5: 74be0a5a8f26377a7887bb69a221d030
+endProcessing "io/github/pulverizer/movecraft/event/CraftCollisionEvent.java"
+
+startProcessing "io/github/pulverizer/movecraft/event/CraftDetectEvent.java" md5: 753cd0fcc5593298b0cfbc2767d6f5c5
+endProcessing "io/github/pulverizer/movecraft/event/CraftDetectEvent.java"
+
+startProcessing "io/github/pulverizer/movecraft/event/CraftEvent.java" md5: c8003c860d5921512e34a74828976a96
+endProcessing "io/github/pulverizer/movecraft/event/CraftEvent.java"
+
+startProcessing "io/github/pulverizer/movecraft/event/CraftPilotEvent.java" md5: 2eeb16ba7aa1d480d6f2951221d32453
+    Compile Error! Pb(1102) At least one of the problems in category 'unused' is not analysed due to a compiler option being ignored
+endProcessing "io/github/pulverizer/movecraft/event/CraftPilotEvent.java"
+
+startProcessing "io/github/pulverizer/movecraft/event/CraftReleaseEvent.java" md5: 6ebbb28612e8955c03a7ac2d0ce61a58
+    Compile Error! Pb(1102) At least one of the problems in category 'unused' is not analysed due to a compiler option being ignored
+endProcessing "io/github/pulverizer/movecraft/event/CraftReleaseEvent.java"
+
+startProcessing "io/github/pulverizer/movecraft/event/CraftRotateEvent.java" md5: b16b4a92c992dfef88a7fc8ebebc67a8
+    Compile Error! Pb(1102) At least one of the problems in category 'unused' is not analysed due to a compiler option being ignored
+endProcessing "io/github/pulverizer/movecraft/event/CraftRotateEvent.java"
+
+startProcessing "io/github/pulverizer/movecraft/event/CraftSinkEvent.java" md5: 31efcbb20f4deb47fa737cbe9d475b86
+endProcessing "io/github/pulverizer/movecraft/event/CraftSinkEvent.java"
+
+startProcessing "io/github/pulverizer/movecraft/event/CraftTranslateEvent.java" md5: 97ea3c1094f3ec80b3618aad9efc2d5f
+    Compile Error! Pb(1102) At least one of the problems in category 'unused' is not analysed due to a compiler option being ignored
+endProcessing "io/github/pulverizer/movecraft/event/CraftTranslateEvent.java"
+
+startProcessing "io/github/pulverizer/movecraft/event/SignTranslateEvent.java" md5: 8d10ecf0f2e9f4debfd44679948bfaa2
+endProcessing "io/github/pulverizer/movecraft/event/SignTranslateEvent.java"
+
+startProcessing "io/github/pulverizer/movecraft/exception/EmptyHitBoxException.java" md5: ce790940dbc3e689348997c2022e1eca
+endProcessing "io/github/pulverizer/movecraft/exception/EmptyHitBoxException.java"
+
+startProcessing "io/github/pulverizer/movecraft/listener/BlockListener.java" md5: b23dd7f753ec2e61193e20b80582106f
+endProcessing "io/github/pulverizer/movecraft/listener/BlockListener.java"
+
+startProcessing "io/github/pulverizer/movecraft/listener/FireballListener.java" md5: 7d25b113e47b95da6f41db899f292f34
+endProcessing "io/github/pulverizer/movecraft/listener/FireballListener.java"
+
+startProcessing "io/github/pulverizer/movecraft/listener/InteractListener.java" md5: e7c385c2889d33809c65abed5c0ff441
+endProcessing "io/github/pulverizer/movecraft/listener/InteractListener.java"
+
+startProcessing "io/github/pulverizer/movecraft/listener/PlayerListener.java" md5: 0308628144a6db4a4496c82fd7a6103e
+endProcessing "io/github/pulverizer/movecraft/listener/PlayerListener.java"
+
+startProcessing "io/github/pulverizer/movecraft/listener/SignListener.java" md5: fdd9dc12dba264459b9d0d2fa6609ea6
+endProcessing "io/github/pulverizer/movecraft/listener/SignListener.java"
+
+startProcessing "io/github/pulverizer/movecraft/listener/TNTListener.java" md5: 3ebbb9bf3a5945526abea443ead0adcd
+endProcessing "io/github/pulverizer/movecraft/listener/TNTListener.java"
+
+startProcessing "io/github/pulverizer/movecraft/mapUpdater/MapUpdateManager.java" md5: e59f04a23343ee2bb5505f4eac55ca35
+endProcessing "io/github/pulverizer/movecraft/mapUpdater/MapUpdateManager.java"
+
+startProcessing "io/github/pulverizer/movecraft/mapUpdater/update/BlockCreateCommand.java" md5: fe4e04aea1634d67a3cfae87c8d0e1c0
+endProcessing "io/github/pulverizer/movecraft/mapUpdater/update/BlockCreateCommand.java"
+
+startProcessing "io/github/pulverizer/movecraft/mapUpdater/update/CraftRotateCommand.java" md5: 067e2ea6bcae85e692687e267fa2aa32
+endProcessing "io/github/pulverizer/movecraft/mapUpdater/update/CraftRotateCommand.java"
+
+startProcessing "io/github/pulverizer/movecraft/mapUpdater/update/CraftTranslateCommand.java" md5: 2a2ccda61d7c575ce970e0e452121d27
+endProcessing "io/github/pulverizer/movecraft/mapUpdater/update/CraftTranslateCommand.java"
+
+startProcessing "io/github/pulverizer/movecraft/mapUpdater/update/EntityUpdateCommand.java" md5: 130ccf665f1301e63b32be7610d0e753
+endProcessing "io/github/pulverizer/movecraft/mapUpdater/update/EntityUpdateCommand.java"
+
+startProcessing "io/github/pulverizer/movecraft/mapUpdater/update/ExplosionUpdateCommand.java" md5: 8aa158e7c60e2d20a367ef956f253b57
+endProcessing "io/github/pulverizer/movecraft/mapUpdater/update/ExplosionUpdateCommand.java"
+
+startProcessing "io/github/pulverizer/movecraft/mapUpdater/update/ItemDropUpdateCommand.java" md5: 54c5a57a7bd940cb9a52085ea9e76bcf
+endProcessing "io/github/pulverizer/movecraft/mapUpdater/update/ItemDropUpdateCommand.java"
+
+startProcessing "io/github/pulverizer/movecraft/mapUpdater/update/ParticleUpdateCommand.java" md5: 92d77d4af6743d0a28c1c8063ef9f37a
+endProcessing "io/github/pulverizer/movecraft/mapUpdater/update/ParticleUpdateCommand.java"
+
+startProcessing "io/github/pulverizer/movecraft/mapUpdater/update/UpdateCommand.java" md5: 691a5fa0b372c255c2adfaff9b6d49c5
+endProcessing "io/github/pulverizer/movecraft/mapUpdater/update/UpdateCommand.java"
+
+startProcessing "io/github/pulverizer/movecraft/sign/AntiAircraftDirectorSign.java" md5: 5075bc65767da9d325ac701648b3ddbf
+endProcessing "io/github/pulverizer/movecraft/sign/AntiAircraftDirectorSign.java"
+
+startProcessing "io/github/pulverizer/movecraft/sign/AscendSign.java" md5: 1aa6db324aba852cd1dfd454a62f1154
+endProcessing "io/github/pulverizer/movecraft/sign/AscendSign.java"
+
+startProcessing "io/github/pulverizer/movecraft/sign/CannonDirectorSign.java" md5: bc22ddf73209e5243415b953045fe608
+endProcessing "io/github/pulverizer/movecraft/sign/CannonDirectorSign.java"
+
+startProcessing "io/github/pulverizer/movecraft/sign/CommanderSign.java" md5: 0d1b18c40040470d5c5fc2d18434436f
+endProcessing "io/github/pulverizer/movecraft/sign/CommanderSign.java"
+
+startProcessing "io/github/pulverizer/movecraft/sign/ContactsSign.java" md5: e4f300068b0fa050e7990fb1ab6f97b9
+endProcessing "io/github/pulverizer/movecraft/sign/ContactsSign.java"
+
+startProcessing "io/github/pulverizer/movecraft/sign/CraftSign.java" md5: 2933563452b8a41c45ae0b5d6e3c3fbc
+endProcessing "io/github/pulverizer/movecraft/sign/CraftSign.java"
+
+startProcessing "io/github/pulverizer/movecraft/sign/CrewSign.java" md5: 9a2174f50e3aad64ad804545c5c90e1c
+endProcessing "io/github/pulverizer/movecraft/sign/CrewSign.java"
+
+startProcessing "io/github/pulverizer/movecraft/sign/CruiseSign.java" md5: d41879384b116cdae67d5ce0437250f6
+endProcessing "io/github/pulverizer/movecraft/sign/CruiseSign.java"
+
+startProcessing "io/github/pulverizer/movecraft/sign/DescendSign.java" md5: bdcd0807dcec6f249fd3935f91649a86
+endProcessing "io/github/pulverizer/movecraft/sign/DescendSign.java"
+
+startProcessing "io/github/pulverizer/movecraft/sign/HelmSign.java" md5: f807416f93516f026977de3e512bb21c
+endProcessing "io/github/pulverizer/movecraft/sign/HelmSign.java"
+
+startProcessing "io/github/pulverizer/movecraft/sign/MoveSign.java" md5: 4e166d9ce680aeab3f1fcc1333a3d485
+endProcessing "io/github/pulverizer/movecraft/sign/MoveSign.java"
+
+startProcessing "io/github/pulverizer/movecraft/sign/PilotSign.java" md5: 9761bd2a04aaa167355e28e344cd78b1
+endProcessing "io/github/pulverizer/movecraft/sign/PilotSign.java"
+
+startProcessing "io/github/pulverizer/movecraft/sign/RelativeMoveSign.java" md5: d0f065fce8bbedad2dc1ae643d94e6b7
+endProcessing "io/github/pulverizer/movecraft/sign/RelativeMoveSign.java"
+
+startProcessing "io/github/pulverizer/movecraft/sign/ReleaseSign.java" md5: 3f5e12f2aa2ad851ebf62deafdcdbdc0
+endProcessing "io/github/pulverizer/movecraft/sign/ReleaseSign.java"
+
+startProcessing "io/github/pulverizer/movecraft/sign/RemoteSign.java" md5: 5f96c46bc66c5998ab84086d37395c51
+endProcessing "io/github/pulverizer/movecraft/sign/RemoteSign.java"
+
+startProcessing "io/github/pulverizer/movecraft/sign/SpeedSign.java" md5: 7552a046e8849258f5275b89fcce374a
+endProcessing "io/github/pulverizer/movecraft/sign/SpeedSign.java"
+
+startProcessing "io/github/pulverizer/movecraft/sign/StatusSign.java" md5: 195abfd6c11470c65639e9349f2caadd
+endProcessing "io/github/pulverizer/movecraft/sign/StatusSign.java"
+
+startProcessing "io/github/pulverizer/movecraft/sign/SubcraftRotateSign.java" md5: d6961af806c6702fcdc03c5d2d7b52a3
+endProcessing "io/github/pulverizer/movecraft/sign/SubcraftRotateSign.java"
+
+startProcessing "io/github/pulverizer/movecraft/sign/TeleportSign.java" md5: 8d23f02ba11464fe186371c9ac74713b
+endProcessing "io/github/pulverizer/movecraft/sign/TeleportSign.java"
+
+startProcessing "io/github/pulverizer/movecraft/utils/BoundingBoxUtils.java" md5: 31f4c320f5f19cdee672c7d13fceb1bd
+endProcessing "io/github/pulverizer/movecraft/utils/BoundingBoxUtils.java"
+
+startProcessing "io/github/pulverizer/movecraft/utils/ChatUtils.java" md5: 4e2830ae742e328bf1884808d9da551b
+endProcessing "io/github/pulverizer/movecraft/utils/ChatUtils.java"
+
+startProcessing "io/github/pulverizer/movecraft/utils/CollectionUtils.java" md5: f7474ec0e1387f933f051594c88b24ee
+endProcessing "io/github/pulverizer/movecraft/utils/CollectionUtils.java"
+
+startProcessing "io/github/pulverizer/movecraft/utils/HashHitBox.java" md5: 2c4ec638c89e177fd9c3b87edaae78c9
+endProcessing "io/github/pulverizer/movecraft/utils/HashHitBox.java"
+
+startProcessing "io/github/pulverizer/movecraft/utils/HitBox.java" md5: 25a720afa74d33c249c95e1ae36dc962
+endProcessing "io/github/pulverizer/movecraft/utils/HitBox.java"
+
+startProcessing "io/github/pulverizer/movecraft/utils/MathUtils.java" md5: 1ce6c08fc8b6a76dca35a774be86eff8
+endProcessing "io/github/pulverizer/movecraft/utils/MathUtils.java"
+
+startProcessing "io/github/pulverizer/movecraft/utils/MutableHitBox.java" md5: 0aa8ccb2db1ae3cb2379253b836974a2
+endProcessing "io/github/pulverizer/movecraft/utils/MutableHitBox.java"
+
+startProcessing "io/github/pulverizer/movecraft/utils/SolidHitBox.java" md5: af935010a714613b7e211f02d46b950d
+endProcessing "io/github/pulverizer/movecraft/utils/SolidHitBox.java"
+

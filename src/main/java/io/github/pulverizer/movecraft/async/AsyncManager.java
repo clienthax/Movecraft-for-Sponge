@@ -151,7 +151,6 @@ public class AsyncManager implements Runnable {
                 dy = craft.getType().getCruiseOnPilotVertMove();
             }
             craft.translate(Rotation.NONE, new Vector3i(dx, dy, dz), false);
-            craft.setLastMoveVector(new Vector3i(dx, dy, dz));
             if (craft.getLastMoveTick() != -1) {
                 craft.setLastMoveTick(Sponge.getServer().getRunningTimeTicks());
             } else {
@@ -208,8 +207,8 @@ public class AsyncManager implements Runnable {
 
             totalNonAirWaterBlocks = craft.getHitBox().size() - (
                     (blockMap.containsKey(BlockTypes.AIR) ? blockMap.get(BlockTypes.AIR).size() : 0)
-                    + (blockMap.containsKey(BlockTypes.AIR) ? blockMap.get(BlockTypes.FLOWING_WATER).size() : 0)
-                    + (blockMap.containsKey(BlockTypes.AIR) ? blockMap.get(BlockTypes.WATER).size() : 0));
+                    + (blockMap.containsKey(BlockTypes.FLOWING_WATER) ? blockMap.get(BlockTypes.FLOWING_WATER).size() : 0)
+                    + (blockMap.containsKey(BlockTypes.WATER) ? blockMap.get(BlockTypes.WATER).size() : 0));
 
             // now see if any of the resulting percentages
             // are below the threshold specified in
@@ -240,7 +239,7 @@ public class AsyncManager implements Runnable {
                 if (percent < disablePercent && craft.getState() != CraftState.DISABLED && craft.isNotProcessing()) {
                     craft.setState(CraftState.DISABLED);
                     if (craft.getPilot() != null) {
-                        Location loc = Sponge.getServer().getPlayer(craft.getPilot()).get().getLocation();
+                        Location<World> loc = Sponge.getServer().getPlayer(craft.getPilot()).get().getLocation();
                         craft.getWorld().playSound(SoundTypes.ENTITY_IRONGOLEM_DEATH, loc.getPosition(),  5.0f, 5.0f);
                     }
                 }
@@ -269,10 +268,7 @@ public class AsyncManager implements Runnable {
             // know and release the craft. Otherwise
             // update the time for the next check
             if (isSinking && craft.isNotProcessing()) {
-                Player notifyP = Sponge.getServer().getPlayer(craft.getPilot()).orElse(null);
-                if (notifyP != null) {
-                    notifyP.sendMessage(Text.of("Craft is sinking!"));
-                }
+                Sponge.getServer().getPlayer(craft.getPilot()).ifPresent(notifyP -> notifyP.sendMessage(Text.of("Craft is sinking!")));
                 craft.setState(CraftState.SINKING);
                 CraftManager.getInstance().removePlayerFromCraft(craft);
             } else {

@@ -1,6 +1,5 @@
 package io.github.pulverizer.movecraft.mapUpdater.update;
 
-import co.aikar.timings.Timings;
 import com.flowpowered.math.vector.Vector3i;
 import io.github.pulverizer.movecraft.enums.CraftState;
 import io.github.pulverizer.movecraft.Movecraft;
@@ -22,7 +21,6 @@ import org.spongepowered.api.block.BlockTypes;
 import org.spongepowered.api.world.BlockChangeFlags;
 import org.spongepowered.api.world.Location;
 import org.spongepowered.api.world.World;
-import org.spongepowered.api.world.extent.worker.BlockVolumeWorker;
 
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -35,12 +33,47 @@ public class CraftTranslateCommand extends UpdateCommand {
     private final Vector3i displacement;
     private final HashHitBox newHitBox;
     private final World world;
+    private final Vector3i min;
+    private final Vector3i max;
+
 
     public CraftTranslateCommand(Craft craft, Vector3i displacement, HashHitBox newHitBox){
         this.craft = craft;
         this.displacement = displacement;
         this.newHitBox = newHitBox;
         this.world = craft.getWorld();
+
+        // Calculate min
+        int minX = craft.getHitBox().getMinX();
+        int minY = craft.getHitBox().getMinY();
+        int minZ = craft.getHitBox().getMinZ();
+
+        if (displacement.getX() < 0) {
+            minX += displacement.getX();
+        }
+        if (displacement.getY() < 0) {
+            minY += displacement.getY();
+        }
+        if (displacement.getZ() < 0) {
+            minZ += displacement.getZ();
+        }
+        this.min = new Vector3i(minX, minY, minZ);
+
+        // Calculate max
+        int maxX = craft.getHitBox().getMaxX();
+        int maxY = craft.getHitBox().getMaxY();
+        int maxZ = craft.getHitBox().getMaxZ();
+
+        if (displacement.getX() > 0) {
+            maxX += displacement.getX();
+        }
+        if (displacement.getY() > 0) {
+            maxY += displacement.getY();
+        }
+        if (displacement.getZ() > 0) {
+            maxZ += displacement.getZ();
+        }
+        this.max = new Vector3i(maxX, maxY, maxZ);
     }
 
     @Override
@@ -72,7 +105,12 @@ public class CraftTranslateCommand extends UpdateCommand {
             //logger.info("Marker 1A: " + timeTaken + " ms");
 
             //add the craft
-            Movecraft.getInstance().getWorldHandler().translateCraft(craft,displacement, newHitBox);
+            //OLD Movecraft.getInstance().getWorldHandler().translateCraft(craft, min, max, displacement);
+            Movecraft.getInstance().getWorldHandler().translateCraft(craft, displacement);
+
+            // update the craft hitbox
+            craft.setHitBox(newHitBox);
+            craft.setLastMoveVector(displacement);
 
             //timeTaken = System.currentTimeMillis() - time;
             //logger.info("Marker 2A: " + timeTaken + " ms");
@@ -178,7 +216,12 @@ public class CraftTranslateCommand extends UpdateCommand {
             //logger.info("Marker 5B: " + timeTaken + " ms");
 
             //add the craft
-            handler.translateCraft(craft, displacement, newHitBox);
+            //OLD handler.translateCraft(craft, min, max, displacement, newHitBox);
+            handler.translateCraft(craft, displacement);
+
+            // update the craft hitbox
+            craft.setHitBox(newHitBox);
+            craft.setLastMoveVector(displacement);
 
             //trigger sign event
             for (Vector3i location : craft.getHitBox()) {
@@ -214,7 +257,7 @@ public class CraftTranslateCommand extends UpdateCommand {
                 final BlockSnapshot material = craft.getWorld().createSnapshot(location);
                 if (passthroughBlocks.contains(material.getState().getType())) {
                     craft.getPhasedBlocks().add(material);
-                    craft.getWorld().restoreSnapshot(location, BlockTypes.AIR.getDefaultState().snapshotFor(new Location<World>(craft.getWorld(), location)), true, BlockChangeFlags.NONE);
+                    craft.getWorld().restoreSnapshot(location, BlockTypes.AIR.getDefaultState().snapshotFor(new Location<>(craft.getWorld(), location)), true, BlockChangeFlags.NONE);
 
                 }
             }
