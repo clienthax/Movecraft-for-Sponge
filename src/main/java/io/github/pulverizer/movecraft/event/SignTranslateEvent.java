@@ -2,7 +2,6 @@ package io.github.pulverizer.movecraft.event;
 
 import com.flowpowered.math.vector.Vector3i;
 import io.github.pulverizer.movecraft.craft.Craft;
-import org.spongepowered.api.block.BlockSnapshot;
 import org.spongepowered.api.event.cause.Cause;
 import org.spongepowered.api.event.cause.EventContext;
 import org.spongepowered.api.world.World;

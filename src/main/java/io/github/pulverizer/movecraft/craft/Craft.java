@@ -2,8 +2,6 @@ package io.github.pulverizer.movecraft.craft;
 
 import com.flowpowered.math.vector.Vector3d;
 import com.flowpowered.math.vector.Vector3i;
-import com.sun.javafx.collections.MappingChange;
-import io.github.pulverizer.movecraft.Movecraft;
 import io.github.pulverizer.movecraft.enums.CraftState;
 import io.github.pulverizer.movecraft.enums.Rotation;
 import io.github.pulverizer.movecraft.async.AsyncTask;
@@ -40,7 +38,7 @@ public class Craft {
 
 
     //State
-    private AtomicBoolean processing = new AtomicBoolean();
+    private final AtomicBoolean processing = new AtomicBoolean();
     private int processingStartTime = 0;
     private HashHitBox hitBox;
     private CraftState state;
@@ -54,7 +52,7 @@ public class Craft {
     private UUID pilot;
     private UUID AADirector;
     private UUID cannonDirector;
-    private HashSet<UUID> crewList = new HashSet<>();
+    private final HashSet<UUID> crewList = new HashSet<>();
 
 
     //Direct Control

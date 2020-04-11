@@ -11,9 +11,9 @@ import org.spongepowered.api.world.World;
 import java.util.Random;
 
 public class ParticleUpdateCommand extends UpdateCommand {
-    private Location<World> location;
-    private int smokeStrength;
-    private Random rand = new Random();
+    private final Location<World> location;
+    private final int smokeStrength;
+    private final Random rand = new Random();
 
     public ParticleUpdateCommand(Location<World> location, int smokeStrength) {
         this.location = location;

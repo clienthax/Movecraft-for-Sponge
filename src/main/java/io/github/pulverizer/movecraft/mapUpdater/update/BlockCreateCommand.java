@@ -18,7 +18,7 @@ public class BlockCreateCommand extends UpdateCommand {
 
     public BlockCreateCommand(World world, Vector3i newBlockLocation, BlockSnapshot block) {
         this.newBlockLocation = newBlockLocation;
-        this.block = block.withLocation(new Location<World>(world, newBlockLocation));
+        this.block = block.withLocation(new Location<>(world, newBlockLocation));
         this.world = world;
     }
 
@@ -26,7 +26,7 @@ public class BlockCreateCommand extends UpdateCommand {
 
     public BlockCreateCommand(World world, Vector3i newBlockLocation, BlockType block) {
         this.newBlockLocation = newBlockLocation;
-        this.block = block.getDefaultState().snapshotFor(new Location<World>(world, newBlockLocation));
+        this.block = block.getDefaultState().snapshotFor(new Location<>(world, newBlockLocation));
         this.world = world;
     }
 

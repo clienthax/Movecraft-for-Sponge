@@ -16,7 +16,6 @@ import org.spongepowered.api.block.BlockType;
 import org.spongepowered.api.block.BlockTypes;
 import org.spongepowered.api.world.BlockChangeFlags;
 import org.spongepowered.api.world.Location;
-import org.spongepowered.api.world.World;
 
 import java.util.*;
 
@@ -54,6 +53,9 @@ public class CraftRotateCommand extends UpdateCommand {
             passthroughBlocks.add(BlockTypes.TALLGRASS);
             passthroughBlocks.add(BlockTypes.DOUBLE_PLANT);
         }
+
+        final WorldHandler handler = Movecraft.getInstance().getWorldHandler();
+
         if (!passthroughBlocks.isEmpty()) {
             MutableHitBox originalLocations = new HashHitBox();
             final Rotation counterRotation = rotation == Rotation.CLOCKWISE ? Rotation.ANTICLOCKWISE : Rotation.CLOCKWISE;
@@ -118,7 +120,6 @@ public class CraftRotateCommand extends UpdateCommand {
             }
             interior.addAll(CollectionUtils.filter(invertedHitBox, exterior));
 
-            final WorldHandler handler = Movecraft.getInstance().getWorldHandler();
             for (Vector3i location : CollectionUtils.filter(invertedHitBox, exterior)) {
                 BlockSnapshot block = craft.getWorld().createSnapshot(location);
                 if (!passthroughBlocks.contains(block.getState().getType())) {
@@ -157,14 +158,13 @@ public class CraftRotateCommand extends UpdateCommand {
                 final BlockSnapshot material = craft.getWorld().createSnapshot(location);
                 if (passthroughBlocks.contains(material.getState().getType())) {
                     craft.getPhasedBlocks().add(material);
-                    craft.getWorld().restoreSnapshot(location, BlockTypes.AIR.getDefaultState().snapshotFor(new Location<World>(craft.getWorld(), location)), true, BlockChangeFlags.NONE);
+                    craft.getWorld().restoreSnapshot(location, BlockTypes.AIR.getDefaultState().snapshotFor(new Location<>(craft.getWorld(), location)), true, BlockChangeFlags.NONE);
 
                 }
             }
         }else{
             //add the craft
-
-            Movecraft.getInstance().getWorldHandler().rotateCraft(craft, originLocation, rotation);
+            handler.rotateCraft(craft, originLocation, rotation);
             //trigger sign event
             for (Vector3i location : craft.getHitBox()) {
                 BlockType blockType = craft.getWorld().getBlockType(location);

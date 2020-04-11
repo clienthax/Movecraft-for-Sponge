@@ -11,10 +11,8 @@ import org.spongepowered.api.block.BlockTypes;
 import org.spongepowered.api.block.tileentity.Sign;
 import org.spongepowered.api.data.type.HandTypes;
 import org.spongepowered.api.entity.living.player.Player;
-import org.spongepowered.api.event.Listener;
 import org.spongepowered.api.event.SpongeEventFactory;
 import org.spongepowered.api.event.block.InteractBlockEvent;
-import org.spongepowered.api.event.filter.type.Include;
 import org.spongepowered.api.text.Text;
 import org.spongepowered.api.util.Tristate;
 import org.spongepowered.api.world.World;
@@ -75,7 +73,7 @@ public final class RemoteSign {
             }
             return;
         }
-        LinkedList<Vector3i> foundLocations = new LinkedList<Vector3i>();
+        LinkedList<Vector3i> foundLocations = new LinkedList<>();
         for (Vector3i tloc : foundCraft.getHitBox()) {
             BlockSnapshot targetBlock = blockWorld.createSnapshot(tloc.getX(), tloc.getY(), tloc.getZ());
             if (!targetBlock.getState().getType().equals(BlockTypes.STANDING_SIGN) && !targetBlock.getState().getType().equals(BlockTypes.WALL_SIGN)) {

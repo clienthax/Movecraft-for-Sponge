@@ -5,7 +5,6 @@ import org.spongepowered.api.item.ItemType;
 import org.spongepowered.api.item.ItemTypes;
 
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 
 public class Settings {

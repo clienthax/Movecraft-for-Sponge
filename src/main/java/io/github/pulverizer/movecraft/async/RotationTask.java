@@ -9,7 +9,6 @@ import io.github.pulverizer.movecraft.craft.Craft;
 import io.github.pulverizer.movecraft.event.CraftRotateEvent;
 import io.github.pulverizer.movecraft.mapUpdater.MapUpdateManager;
 import io.github.pulverizer.movecraft.utils.*;
-import io.github.pulverizer.movecraft.utils.HashHitBox;
 import io.github.pulverizer.movecraft.config.Settings;
 import io.github.pulverizer.movecraft.craft.CraftManager;
 import io.github.pulverizer.movecraft.mapUpdater.update.CraftRotateCommand;
@@ -40,7 +39,7 @@ public class RotationTask extends AsyncTask {
     private final boolean isSubCraft;
     private boolean failed = false;
     private String failMessage;
-    private Set<UpdateCommand> updates = new HashSet<>();
+    private final Set<UpdateCommand> updates = new HashSet<>();
 
     private final HashHitBox oldHitBox;
     private final HashHitBox newHitBox;
@@ -143,7 +142,7 @@ public class RotationTask extends AsyncTask {
                     .execute(() -> {
                         for(Entity entity : craft.getWorld().getIntersectingEntities(new AABB(oldHitBox.getMinX() - 0.5, oldHitBox.getMinY() - 0.5, oldHitBox.getMinZ() - 0.5, oldHitBox.getMaxX() + 1.5, oldHitBox.getMaxY() + 1.5, oldHitBox.getMaxZ()+1.5))){
 
-                            if (entity.getType() == EntityTypes.PLAYER || entity.getType() == EntityTypes.PRIMED_TNT || entity.getType() == EntityTypes.ITEM || !craft.getType().getOnlyMovePlayers()) {
+                            if (entity.getType() == EntityTypes.PLAYER || entity.getType() == EntityTypes.PRIMED_TNT || entity.getType() == EntityTypes.ITEM || !craft.getType().onlyMovePlayers()) {
 
                                 Location<World> adjustedPLoc = entity.getLocation().sub(tOP);
 
@@ -274,6 +273,7 @@ public class RotationTask extends AsyncTask {
                 // The craft translation failed, don't try to notify them if there is no pilot
                 if (pilot != null) {
                     pilot.sendMessage(Text.of(getFailMessage()));
+                    craft.setProcessing(false);
                 } else {
                     Movecraft.getInstance().getLogger().info("NULL Player Rotation Failed: " + getFailMessage());
                 }

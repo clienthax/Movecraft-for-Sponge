@@ -755,7 +755,7 @@ final public class CraftType {
         return passthroughBlocks;
     }
 
-    public boolean getOnlyMovePlayers() {
+    public boolean onlyMovePlayers() {
         return onlyMovePlayers;
     }
 

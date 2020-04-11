@@ -1,9 +1,7 @@
 package io.github.pulverizer.movecraft.sign;
 
 import com.flowpowered.math.vector.Vector3i;
-import io.github.pulverizer.movecraft.enums.Rotation;
 import io.github.pulverizer.movecraft.craft.CraftManager;
-import org.spongepowered.api.Sponge;
 import org.spongepowered.api.block.BlockSnapshot;
 import org.spongepowered.api.block.tileentity.Sign;
 import org.spongepowered.api.data.value.mutable.ListValue;

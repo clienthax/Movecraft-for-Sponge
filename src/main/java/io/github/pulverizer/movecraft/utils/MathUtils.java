@@ -5,6 +5,7 @@ import com.flowpowered.math.vector.Vector3i;
 import io.github.pulverizer.movecraft.enums.Rotation;
 import io.github.pulverizer.movecraft.craft.Craft;
 import org.spongepowered.api.world.Location;
+import org.spongepowered.api.world.World;
 
 public class MathUtils {
 
@@ -15,16 +16,16 @@ public class MathUtils {
      * @return True if the player is within the given bounding box
      */
 
-    public static boolean locationInHitbox(final HashHitBox hitBox, final Location location) {
+    public static boolean locationInHitbox(final HashHitBox hitBox, final Location<World> location) {
         return hitBox.inBounds(location.getX(),location.getY(),location.getZ());
     }
 
     /**
-     * Checks if a given <code>Location</code> is within some distance, <code>distance</code>, from a given <code>HitBox</code>
+     * Checks if a given {@code location} is within some distance, {@code distance}, from a given {@link HashHitBox}
      * @param hitBox the hitbox to check
      * @param location the location to check
      * @param distance
-     * @return True if <code>location</code> is less or equal to 3 blocks from <code>craft</code>
+     * @return True if the {@code location} is within the {@code distance} from the {@link HashHitBox}
      */
     public static boolean locationNearHitBox(final HashHitBox hitBox, final Vector3d location, double distance) {
         return !hitBox.isEmpty() &&
@@ -64,25 +65,10 @@ public class MathUtils {
             theta = -1 * 0.5 * Math.PI;
         }
 
-        int x = (int) Math.round((vector3i.getX() * Math.cos(theta)) + (vector3i.getZ() * (-1 * Math.sin(theta))));
-        int z = (int) Math.round((vector3i.getX() * Math.sin(theta)) + (vector3i.getZ() * Math.cos(theta)));
+        int newX = (int) Math.round((vector3i.getX() * Math.cos(theta)) + (vector3i.getZ() * (-1 * Math.sin(theta))));
+        int newZ = (int) Math.round((vector3i.getX() * Math.sin(theta)) + (vector3i.getZ() * Math.cos(theta)));
 
-        return new Vector3i(x, vector3i.getY(), z);
-    }
-
-    @Deprecated
-    public static double[] rotateVec(Rotation rotation, double x, double z) {
-        double theta;
-        if (rotation == Rotation.CLOCKWISE) {
-            theta = 0.5 * Math.PI;
-        } else {
-            theta = -1 * 0.5 * Math.PI;
-        }
-
-        double newX = Math.round((x * Math.cos(theta)) + (z * (-1 * Math.sin(theta))));
-        double newZ = Math.round((x * Math.sin(theta)) + (z * Math.cos(theta)));
-
-        return new double[]{newX, newZ};
+        return new Vector3i(newX, vector3i.getY(), newZ);
     }
 
     @Deprecated
@@ -103,13 +89,5 @@ public class MathUtils {
         }
 
         return new double[]{newX, newZ};
-    }
-
-    @Deprecated
-    public static int positiveMod(int mod, int divisor) {
-        if (mod < 0) {
-            mod += divisor;
-        }
-        return mod;
     }
 }

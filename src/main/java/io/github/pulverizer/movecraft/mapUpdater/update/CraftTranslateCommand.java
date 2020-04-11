@@ -33,8 +33,6 @@ public class CraftTranslateCommand extends UpdateCommand {
     private final Vector3i displacement;
     private final HashHitBox newHitBox;
     private final World world;
-    private final Vector3i min;
-    private final Vector3i max;
 
 
     public CraftTranslateCommand(Craft craft, Vector3i displacement, HashHitBox newHitBox){
@@ -42,38 +40,6 @@ public class CraftTranslateCommand extends UpdateCommand {
         this.displacement = displacement;
         this.newHitBox = newHitBox;
         this.world = craft.getWorld();
-
-        // Calculate min
-        int minX = craft.getHitBox().getMinX();
-        int minY = craft.getHitBox().getMinY();
-        int minZ = craft.getHitBox().getMinZ();
-
-        if (displacement.getX() < 0) {
-            minX += displacement.getX();
-        }
-        if (displacement.getY() < 0) {
-            minY += displacement.getY();
-        }
-        if (displacement.getZ() < 0) {
-            minZ += displacement.getZ();
-        }
-        this.min = new Vector3i(minX, minY, minZ);
-
-        // Calculate max
-        int maxX = craft.getHitBox().getMaxX();
-        int maxY = craft.getHitBox().getMaxY();
-        int maxZ = craft.getHitBox().getMaxZ();
-
-        if (displacement.getX() > 0) {
-            maxX += displacement.getX();
-        }
-        if (displacement.getY() > 0) {
-            maxY += displacement.getY();
-        }
-        if (displacement.getZ() > 0) {
-            maxZ += displacement.getZ();
-        }
-        this.max = new Vector3i(maxX, maxY, maxZ);
     }
 
     @Override
@@ -99,6 +65,8 @@ public class CraftTranslateCommand extends UpdateCommand {
             passthroughBlocks.add(BlockTypes.DOUBLE_PLANT);
         }
 
+        WorldHandler handler = Movecraft.getInstance().getWorldHandler();
+
         if(passthroughBlocks.isEmpty()){
 
             //timeTaken = System.currentTimeMillis() - time;
@@ -106,7 +74,7 @@ public class CraftTranslateCommand extends UpdateCommand {
 
             //add the craft
             //OLD Movecraft.getInstance().getWorldHandler().translateCraft(craft, min, max, displacement);
-            Movecraft.getInstance().getWorldHandler().translateCraft(craft, displacement);
+            handler.translateCraft(craft, displacement);
 
             // update the craft hitbox
             craft.setHitBox(newHitBox);
@@ -204,7 +172,6 @@ public class CraftTranslateCommand extends UpdateCommand {
 
             interior.addAll(CollectionUtils.filter(invertedHitBox, exterior));
 
-            final WorldHandler handler = Movecraft.getInstance().getWorldHandler();
             for (Vector3i location : CollectionUtils.filter(invertedHitBox, exterior)) {
                 BlockSnapshot material = craft.getWorld().createSnapshot(location);
                 if (passthroughBlocks.contains(material.getState().getType())) {

@@ -6,7 +6,6 @@ import io.github.pulverizer.movecraft.config.Settings;
 import io.github.pulverizer.movecraft.craft.Craft;
 import io.github.pulverizer.movecraft.craft.CraftManager;
 import io.github.pulverizer.movecraft.enums.CraftState;
-import io.github.pulverizer.movecraft.enums.Rotation;
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.block.BlockType;
 import org.spongepowered.api.block.BlockTypes;
@@ -399,10 +398,9 @@ public class AsyncManager implements Runnable {
         // Cleanup crafts that are bugged and have not moved in the past 60 seconds, but have no crew or are still processing.
         for (Craft craft : CraftManager.getInstance()) {
 
-            //TODO - RE-ADD AFTER TESTING
-            //if (craft.getCrewList().isEmpty() && craft.getLastMoveTick() < Sponge.getServer().getRunningTimeTicks() - 1200) {
-            //    CraftManager.getInstance().forceRemoveCraft(craft);
-            //}
+            if (craft.getCrewList().isEmpty() && craft.getLastMoveTick() < Sponge.getServer().getRunningTimeTicks() - 1200) {
+                CraftManager.getInstance().forceRemoveCraft(craft);
+            }
 
             // Stop crafts from moving if they have taken too long to process.
             if (!craft.isNotProcessing() && craft.getState() == CraftState.CRUISING && craft.getProcessingStartTime() < Sponge.getServer().getRunningTimeTicks() - 1200) {

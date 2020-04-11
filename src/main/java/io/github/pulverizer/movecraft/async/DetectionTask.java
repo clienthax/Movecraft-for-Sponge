@@ -161,7 +161,7 @@ public class DetectionTask extends AsyncTask {
                 if(!craft.getType().blockedByWater() && craft.getHitBox().getMinY() <= waterLine){
                     for(Vector3i location : craft.getHitBox().boundingHitBox()){
                         if(location.getY() <= waterLine){
-                            craft.getPhasedBlocks().add(BlockTypes.WATER.getDefaultState().snapshotFor(new Location<World>(craft.getWorld(), location)));
+                            craft.getPhasedBlocks().add(BlockTypes.WATER.getDefaultState().snapshotFor(new Location<>(craft.getWorld(), location)));
                         }
                     }
                 }

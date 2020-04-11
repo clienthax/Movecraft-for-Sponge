@@ -16,7 +16,7 @@ public class ExplosionUpdateCommand extends UpdateCommand {
         if(explosionStrength < 0){
             throw new IllegalArgumentException("Explosion strength cannot be negative");
         }
-        this.explosionLocation = new Location<World>(world, location);
+        this.explosionLocation = new Location<>(world, location);
         this.explosionStrength = explosionStrength;
     }
 

@@ -1,7 +1,6 @@
 package io.github.pulverizer.movecraft.listener;
 
 import com.flowpowered.math.vector.Vector3d;
-import io.github.pulverizer.movecraft.Movecraft;
 import io.github.pulverizer.movecraft.config.Settings;
 import io.github.pulverizer.movecraft.craft.Craft;
 import io.github.pulverizer.movecraft.craft.CraftManager;
@@ -10,7 +9,6 @@ import org.spongepowered.api.block.BlockSnapshot;
 import org.spongepowered.api.block.tileentity.carrier.Dispenser;
 import org.spongepowered.api.data.key.Keys;
 import org.spongepowered.api.data.type.HandTypes;
-import org.spongepowered.api.entity.Entity;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.entity.projectile.explosive.fireball.SmallFireball;
 import org.spongepowered.api.event.Listener;

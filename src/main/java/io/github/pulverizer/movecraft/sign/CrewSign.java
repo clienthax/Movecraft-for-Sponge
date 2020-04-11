@@ -3,30 +3,17 @@ package io.github.pulverizer.movecraft.sign;
 import com.flowpowered.math.vector.Vector3d;
 import com.flowpowered.math.vector.Vector3i;
 import io.github.pulverizer.movecraft.Movecraft;
-import io.github.pulverizer.movecraft.enums.CraftState;
-import io.github.pulverizer.movecraft.craft.Craft;
-import io.github.pulverizer.movecraft.craft.CraftManager;
-import io.github.pulverizer.movecraft.event.CraftDetectEvent;
-import io.github.pulverizer.movecraft.event.SignTranslateEvent;
 import io.github.pulverizer.movecraft.config.Settings;
-import io.github.pulverizer.movecraft.utils.HashHitBox;
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.block.BlockSnapshot;
 import org.spongepowered.api.block.BlockTypes;
 import org.spongepowered.api.block.tileentity.Sign;
 import org.spongepowered.api.data.Transaction;
-import org.spongepowered.api.data.key.Key;
-import org.spongepowered.api.data.key.Keys;
-import org.spongepowered.api.data.manipulator.immutable.tileentity.ImmutableSignData;
-import org.spongepowered.api.data.value.immutable.ImmutableListValue;
 import org.spongepowered.api.data.value.mutable.ListValue;
-import org.spongepowered.api.data.value.mutable.MapValue;
 import org.spongepowered.api.entity.Transform;
 import org.spongepowered.api.entity.living.player.Player;
-import org.spongepowered.api.entity.living.player.User;
 import org.spongepowered.api.event.Listener;
 import org.spongepowered.api.event.block.ChangeBlockEvent;
-import org.spongepowered.api.event.block.InteractBlockEvent;
 import org.spongepowered.api.event.block.tileentity.ChangeSignEvent;
 import org.spongepowered.api.event.entity.living.humanoid.player.RespawnPlayerEvent;
 import org.spongepowered.api.text.Text;
@@ -237,7 +224,7 @@ public class CrewSign {
         if (respawnLocation != null) {
 
 
-            Location<World> finalLocation = Sponge.getGame().getTeleportHelper().getSafeLocation(new Location<World>(world, respawnLocation)).orElse(new Location<World>(world, respawnLocation));
+            Location<World> finalLocation = Sponge.getGame().getTeleportHelper().getSafeLocation(new Location<>(world, respawnLocation)).orElse(new Location<>(world, respawnLocation));
 
             player.sendMessage(Text.of("Respawning at crew bed!"));
             Transform<World> respawnTransform = event.getToTransform();

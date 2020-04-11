@@ -43,14 +43,10 @@ import java.util.Map;
         url = "https://github.com/Pulverizer/Movecraft-for-Sponge",
         authors = {"BernardisGood", "https://github.com/Pulverizer/Movecraft-for-Sponge/graphs/contributors"})
 
-/**
- * Main Class. The magic starts here!
- */
 public class Movecraft {
 
     private static Movecraft instance;
     private WorldHandler worldHandler;
-    private AsyncManager asyncManager;
 
     private ConfigurationLoader<ConfigurationNode> mainConfigLoader;
     private ConfigurationNode mainConfigNode;
@@ -187,7 +183,7 @@ public class Movecraft {
         }
 
         try {
-            Settings.DisableShadowBlocks = new HashSet<BlockType>(mainConfigNode.getNode("DisableShadowBlocks").getList(TypeToken.of(BlockType.class)));  //REMOVE FOR PUBLIC VERSION
+            Settings.DisableShadowBlocks = new HashSet<>(mainConfigNode.getNode("DisableShadowBlocks").getList(TypeToken.of(BlockType.class)));  //REMOVE FOR PUBLIC VERSION
         } catch (ObjectMappingException e) {
             e.printStackTrace();
 
@@ -258,13 +254,14 @@ public class Movecraft {
         }
 
         // Startup procedure
-        asyncManager = AsyncManager.getInstance();
+        AsyncManager asyncManager = AsyncManager.getInstance();
+        MapUpdateManager mapUpdateManager = MapUpdateManager.getInstance();
         Task.builder()
                 .execute(asyncManager)
                 .intervalTicks(1)
                 .submit(this);
         Task.builder()
-                .execute(MapUpdateManager.getInstance())
+                .execute(mapUpdateManager)
                 .intervalTicks(1)
                 .submit(this);
     }

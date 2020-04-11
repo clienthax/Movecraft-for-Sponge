@@ -2,8 +2,6 @@ package io.github.pulverizer.movecraft.utils;
 
 import com.flowpowered.math.vector.Vector3i;
 import io.github.pulverizer.movecraft.exception.EmptyHitBoxException;
-import org.spongepowered.api.block.BlockType;
-import org.spongepowered.api.world.World;
 
 import java.util.*;
 

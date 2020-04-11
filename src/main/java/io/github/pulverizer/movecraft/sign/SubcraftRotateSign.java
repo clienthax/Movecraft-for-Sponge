@@ -7,20 +7,14 @@ import io.github.pulverizer.movecraft.craft.Craft;
 import io.github.pulverizer.movecraft.craft.CraftManager;
 import io.github.pulverizer.movecraft.config.CraftType;
 import org.spongepowered.api.block.BlockSnapshot;
-import org.spongepowered.api.block.BlockTypes;
 import org.spongepowered.api.block.tileentity.Sign;
 import org.spongepowered.api.data.value.mutable.ListValue;
 import org.spongepowered.api.entity.living.player.Player;
-import org.spongepowered.api.event.Listener;
 import org.spongepowered.api.event.block.InteractBlockEvent;
-import org.spongepowered.api.event.filter.cause.Root;
-import org.spongepowered.api.event.filter.type.Include;
 import org.spongepowered.api.scheduler.Task;
 import org.spongepowered.api.text.Text;
 import org.spongepowered.api.world.Location;
 import org.spongepowered.api.world.World;
-
-import java.util.*;
 
 public final class SubcraftRotateSign {
     private static final String HEADER = "Subcraft Rotate";
@@ -91,9 +85,7 @@ public final class SubcraftRotateSign {
                     subCraft.rotate(startPoint, rotation, true);
                     Task.builder()
                             .delayTicks(3)
-                            .execute(() -> {
-                                CraftManager.getInstance().removeCraft(subCraft);
-                            })
+                            .execute(() -> CraftManager.getInstance().removeCraft(subCraft))
                             .submit(Movecraft.getInstance()); })
                 .submit(Movecraft.getInstance());
 

@@ -1,7 +1,7 @@
 package io.github.pulverizer.movecraft.listener;
 
 import com.flowpowered.math.vector.Vector3i;
-import io.github.pulverizer.movecraft.enums.Rotation;
+import io.github.pulverizer.movecraft.Movecraft;
 import io.github.pulverizer.movecraft.utils.MathUtils;
 import io.github.pulverizer.movecraft.craft.Craft;
 import io.github.pulverizer.movecraft.config.Settings;
@@ -19,9 +19,6 @@ import org.spongepowered.api.event.filter.type.Include;
 import org.spongepowered.api.event.item.inventory.InteractItemEvent;
 import org.spongepowered.api.text.Text;
 import org.spongepowered.api.world.BlockChangeFlags;
-
-import java.util.HashMap;
-import java.util.Map;
 
 public final class InteractListener {
 
@@ -43,8 +40,9 @@ public final class InteractListener {
     @Include({InteractItemEvent.Primary.class, InteractItemEvent.Secondary.MainHand.class})
     public void onPlayerInteractStick(InteractItemEvent event, @Root Player player) {
 
-        if (!player.getItemInHand(HandTypes.MAIN_HAND).isPresent() || player.getItemInHand(HandTypes.MAIN_HAND).get().getType() != Settings.PilotTool)
+        if (!player.getItemInHand(HandTypes.MAIN_HAND).isPresent() || !player.getItemInHand(HandTypes.MAIN_HAND).get().getType().equals(Settings.PilotTool)) {
             return;
+        }
 
         Craft craft = CraftManager.getInstance().getCraftByPlayer(player.getUniqueId());
         // if not in command of craft, don't process pilot tool clicks
@@ -54,13 +52,12 @@ public final class InteractListener {
         }
 
         if (event instanceof InteractItemEvent.Secondary) {
-
             event.setCancelled(true);
 
             long ticksElapsed = Sponge.getServer().getRunningTimeTicks() - craft.getLastMoveTick();
 
-            // if the craft should go slower underwater, make time
-            // pass more slowly there
+            // if the craft should go slower underwater, make time pass more slowly there
+            //TODO - Use something other than sea level
             if (craft.getType().getHalfSpeedUnderwater() && craft.getHitBox().getMinY() < craft.getWorld().getSeaLevel())
                 ticksElapsed = ticksElapsed >> 1;
 

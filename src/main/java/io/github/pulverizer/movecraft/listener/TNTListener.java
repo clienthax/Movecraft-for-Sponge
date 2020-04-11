@@ -39,7 +39,7 @@ public class TNTListener {
 
     private final HashMap<PrimedTNT, Double> TNTTracking = new HashMap<>();
     private final HashMap<PrimedTNT, Integer> TNTTracers = new HashMap<>();
-    private HashSet<PrimedTNT> tntControlList = new HashSet<>();
+    private final HashSet<PrimedTNT> tntControlList = new HashSet<>();
     private int tntControlTimer = 0;
 
     public TNTListener() {
@@ -51,30 +51,28 @@ public class TNTListener {
 
     private void processContactExplosives() {
 
-        Sponge.getServer().getWorlds().forEach(world -> {
+        Sponge.getServer().getWorlds().forEach(world ->
+                world.getEntities(entity -> entity instanceof PrimedTNT).forEach(entity -> {
 
-            world.getEntities(entity -> entity instanceof PrimedTNT).forEach(entity -> {
+                    PrimedTNT primedTNT = (PrimedTNT) entity;
+                    //Contact Explosives
 
-                PrimedTNT primedTNT = (PrimedTNT) entity;
-                //Contact Explosives
+                    double velocity = primedTNT.getVelocity().lengthSquared();
 
-                double velocity = primedTNT.getVelocity().lengthSquared();
-
-                if (!TNTTracking.containsKey(primedTNT) && velocity > 0.35) {
-                    TNTTracking.put(primedTNT, velocity);
-
-                } else if (TNTTracking.containsKey(primedTNT)) {
-                    if (velocity < TNTTracking.get(primedTNT) / 10) {
-                        primedTNT.detonate();
-                        TNTTracking.remove(primedTNT);
-                        TNTTracers.remove(primedTNT);
-
-                    } else {
+                    if (!TNTTracking.containsKey(primedTNT) && velocity > 0.35) {
                         TNTTracking.put(primedTNT, velocity);
+
+                    } else if (TNTTracking.containsKey(primedTNT)) {
+                        if (velocity < TNTTracking.get(primedTNT) / 10) {
+                            primedTNT.detonate();
+                            TNTTracking.remove(primedTNT);
+                            TNTTracers.remove(primedTNT);
+
+                        } else {
+                            TNTTracking.put(primedTNT, velocity);
+                        }
                     }
-                }
-            });
-        });
+                }));
     }
 
     @Listener
@@ -366,7 +364,7 @@ public class TNTListener {
 
             // is the TNT within the view distance (rendered world) of the player, yet further than 60 blocks?
             if (player.getPosition().distance(explosionLocation.getPosition()) < renderDistance) {
-                final Location location = explosionLocation;
+                final Location<World> location = explosionLocation;
                 final Player finalisedPlayer = player;
 
                 // make a glowstone to look like the explosion, place it a little later so it isn't right in the middle of the volley

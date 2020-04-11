@@ -35,11 +35,12 @@ public class TranslationTask extends AsyncTask {
     private static final ImmutableSet<BlockType> FALL_THROUGH_BLOCKS = ImmutableSet.of(BlockTypes.AIR, BlockTypes.FLOWING_WATER, BlockTypes.FLOWING_LAVA, BlockTypes.TALLGRASS, BlockTypes.YELLOW_FLOWER, BlockTypes.RED_FLOWER, BlockTypes.BROWN_MUSHROOM, BlockTypes.RED_MUSHROOM, BlockTypes.TORCH, BlockTypes.FIRE, BlockTypes.REDSTONE_WIRE, BlockTypes.WHEAT, BlockTypes.STANDING_SIGN, BlockTypes.LADDER, BlockTypes.WALL_SIGN, BlockTypes.LEVER, BlockTypes.LIGHT_WEIGHTED_PRESSURE_PLATE, BlockTypes.HEAVY_WEIGHTED_PRESSURE_PLATE, BlockTypes.STONE_PRESSURE_PLATE, BlockTypes.WOODEN_PRESSURE_PLATE, BlockTypes.UNLIT_REDSTONE_TORCH, BlockTypes.REDSTONE_TORCH, BlockTypes.STONE_BUTTON, BlockTypes.SNOW_LAYER, BlockTypes.REEDS, BlockTypes.FENCE, BlockTypes.ACACIA_FENCE, BlockTypes.BIRCH_FENCE, BlockTypes.DARK_OAK_FENCE, BlockTypes.JUNGLE_FENCE, BlockTypes.NETHER_BRICK_FENCE, BlockTypes.SPRUCE_FENCE, BlockTypes.UNPOWERED_REPEATER, BlockTypes.POWERED_REPEATER, BlockTypes.WATERLILY, BlockTypes.CARROTS, BlockTypes.POTATOES, BlockTypes.WOODEN_BUTTON, BlockTypes.CARPET);
 
     private Vector3i moveVector;
-    private HashHitBox newHitBox, oldHitBox;
+    private HashHitBox newHitBox;
+    private final HashHitBox oldHitBox;
     private boolean failed;
     private boolean collisionExplosion = false;
     private String failMessage;
-    private Collection<UpdateCommand> updates = new HashSet<>();
+    private final Collection<UpdateCommand> updates = new HashSet<>();
     private World world;
 
     private final List<BlockType> harvestBlocks = craft.getType().getHarvestBlocks();
@@ -159,7 +160,7 @@ public class TranslationTask extends AsyncTask {
                     .execute(() -> {
                         for(Entity entity : craft.getWorld().getIntersectingEntities(new AABB(oldHitBox.getMinX() - 0.5, oldHitBox.getMinY() - 0.5, oldHitBox.getMinZ() - 0.5, oldHitBox.getMaxX() + 1.5, oldHitBox.getMaxY() + 1.5, oldHitBox.getMaxZ()+1.5))){
 
-                            if (entity.getType() == EntityTypes.PLAYER || entity.getType() == EntityTypes.PRIMED_TNT || entity.getType() == EntityTypes.ITEM || !craft.getType().getOnlyMovePlayers()) {
+                            if (entity.getType() == EntityTypes.PLAYER || entity.getType() == EntityTypes.PRIMED_TNT || entity.getType() == EntityTypes.ITEM || !craft.getType().onlyMovePlayers()) {
                                 EntityUpdateCommand eUp = new EntityUpdateCommand(entity, entity.getLocation().getPosition().add(moveVector.getX(), moveVector.getY(), moveVector.getZ()), 0);
                                 updates.add(eUp);
 
@@ -216,15 +217,15 @@ public class TranslationTask extends AsyncTask {
             if (isCollisionExplosion()) {
                 //craft.setHitBox(getNewHitBox());
                 MapUpdateManager.getInstance().scheduleUpdates(getUpdates());
-                sentMapUpdate = true;
                 CraftManager.getInstance().addReleaseTask(craft);
 
             }
+
+            craft.setProcessing(false);
+
         } else {
             // The craft is clear to move, perform the block updates
             MapUpdateManager.getInstance().scheduleUpdates(getUpdates());
-
-            sentMapUpdate = true;
         }
     }
 
@@ -324,7 +325,7 @@ public class TranslationTask extends AsyncTask {
         Player craftPilot = Sponge.getServer().getPlayer(craft.getPilot()).orElse(null);
         if (craftPilot != null) {
             craftPilot.sendMessage(Text.of(failMessage));
-            Location location = craftPilot.getLocation();
+            Location<World> location = craftPilot.getLocation();
             if (craft.getState() != CraftState.DISABLED) {
                 craft.getWorld().playSound(SoundTypes.BLOCK_ANVIL_LAND, location.getPosition(), 1.0f, 0.25f);
                 //craft.setCurTickCooldown(craft.getType().getCruiseTickCooldown());

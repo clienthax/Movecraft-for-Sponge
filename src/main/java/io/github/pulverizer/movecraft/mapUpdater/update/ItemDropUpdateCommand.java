@@ -25,7 +25,7 @@ public class ItemDropUpdateCommand extends UpdateCommand {
         return itemStack;
     }
 
-    public Location getLocation() {
+    public Location<World> getLocation() {
         return location;
     }
 

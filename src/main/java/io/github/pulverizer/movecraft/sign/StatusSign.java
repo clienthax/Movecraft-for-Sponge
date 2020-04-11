@@ -1,18 +1,13 @@
 package io.github.pulverizer.movecraft.sign;
 
 import com.flowpowered.math.vector.Vector3i;
-import io.github.pulverizer.movecraft.Movecraft;
 import io.github.pulverizer.movecraft.craft.Craft;
 import io.github.pulverizer.movecraft.event.CraftDetectEvent;
-import io.github.pulverizer.movecraft.event.SignTranslateEvent;
 import io.github.pulverizer.movecraft.utils.HashHitBox;
-import org.slf4j.Logger;
-import org.spongepowered.api.block.BlockSnapshot;
 import org.spongepowered.api.block.BlockType;
 import org.spongepowered.api.block.BlockTypes;
 import org.spongepowered.api.block.tileentity.Sign;
 import org.spongepowered.api.data.value.mutable.ListValue;
-import org.spongepowered.api.event.Listener;
 import org.spongepowered.api.text.Text;
 import org.spongepowered.api.text.format.TextColor;
 import org.spongepowered.api.text.format.TextColors;
@@ -58,8 +53,8 @@ public final class StatusSign {
         if (!craft.getType().getFlyBlocks().isEmpty()) {
 
             BlockType flyBlock = BlockTypes.AIR;
-            Double percentFB = 0d;
-            Double minimumFB = 0d;
+            double percentFB = 0d;
+            double minimumFB = 0d;
 
             for (Map.Entry<List<BlockType>, List<Double>> flyBlockMapEntry : craft.getType().getFlyBlocks().entrySet()) {
 
@@ -100,7 +95,7 @@ public final class StatusSign {
             char name = strings[strings.length - 1].toUpperCase().charAt(0);
 
             if (percentFB > 10) {
-                lines.set(1, Text.of(lineColor, name, ": ", percentFB.intValue(), "/", minimumFB.intValue()));
+                lines.set(1, Text.of(lineColor, name, ": ", (int) percentFB, "/", (int) minimumFB));
 
             } else {
                 percentFB = (double) ((int) (percentFB * 10)) / 10;
@@ -113,8 +108,8 @@ public final class StatusSign {
         //Move Blocks
         if (!craft.getType().getMoveBlocks().isEmpty()) {
             BlockType moveBlock = BlockTypes.AIR;
-            Double percentMB = 0d;
-            Double minimumMB = 0d;
+            double percentMB = 0d;
+            double minimumMB = 0d;
 
             for (Map.Entry<List<BlockType>, List<Double>> moveBlockMapEntry : craft.getType().getMoveBlocks().entrySet()) {
 
@@ -155,7 +150,7 @@ public final class StatusSign {
             char name = strings[strings.length - 1].toUpperCase().charAt(0);
 
             if (percentMB > 10) {
-                lines.set(2, Text.of(lineColor, name, ": ", percentMB.intValue(), "/", minimumMB.intValue()));
+                lines.set(2, Text.of(lineColor, name, ": ", (int) percentMB, "/", (int) minimumMB));
 
             } else {
                 percentMB = (double) ((int) (percentMB * 10)) / 10;

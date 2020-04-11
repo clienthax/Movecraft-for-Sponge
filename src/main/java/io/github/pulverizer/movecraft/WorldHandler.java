@@ -24,8 +24,6 @@ import org.spongepowered.api.world.World;
 
 import java.util.*;
 
-import static net.minecraft.world.chunk.Chunk.NULL_BLOCK_STORAGE;
-
 //import org.bukkit.Location;
 //import org.bukkit.Material;
 //import org.bukkit.craftbukkit.v1_12_R1.CraftWorld;
@@ -43,8 +41,7 @@ public class WorldHandler {
         ROTATION[Rotation.ANTICLOCKWISE.ordinal()] = net.minecraft.util.Rotation.COUNTERCLOCKWISE_90;
     }
 
-    private final NextTickProvider tickProvider = new NextTickProvider();
-    private final HashMap<WorldServer, List<TileEntity>> bMap = new HashMap<>();
+    private static final NextTickProvider tickProvider = new NextTickProvider();
 
     public WorldHandler() {
     }
@@ -241,20 +238,15 @@ public class WorldHandler {
         //Optimized version of WorldServer#removeTileEntity();
         tile.invalidate();
         worldServer.addedTileEntityList.remove(tile);
+        worldServer.loadedTileEntityList.remove(tile);
 
         if (!worldServer.processingLoadedTiles) {
-            worldServer.loadedTileEntityList.remove(tile);
             worldServer.tickableTileEntities.remove(tile);
 
             worldServer.getChunk(blockPos).getTileEntityMap().remove(blockPos);
         }
         // END
 
-        if (!bMap.containsKey(worldServer)) {
-            bMap.put(worldServer, worldServer.loadedTileEntityList);
-        }
-
-        bMap.get(world).remove(tile);
         return tile;
     }
 
@@ -277,6 +269,11 @@ public class WorldHandler {
 
         chunkSection.set(position.getX() & 15, position.getY() & 15, position.getZ() & 15, iBlockState);
         worldServer.notifyBlockUpdate(blockPos, iBlockState, iBlockState, 3);
+
+        // Set the chunk to save
+        // Should just need to mark dirty
+        // chunk.setLastSaveTime(worldServer.getTotalWorldTime() - 600L);
+        chunk.markDirty();
     }
 
     public void setBlockFast(Location<World> location, Rotation rotation, BlockState blockState) {

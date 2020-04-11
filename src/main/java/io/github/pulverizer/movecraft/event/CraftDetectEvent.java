@@ -6,7 +6,7 @@ import org.spongepowered.api.event.cause.EventContext;
 
 public class CraftDetectEvent extends CraftEvent {
 
-    private Cause cause;
+    private final Cause cause;
 
     public CraftDetectEvent(Craft craft) {
         super(craft);

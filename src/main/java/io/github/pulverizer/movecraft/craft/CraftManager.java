@@ -213,10 +213,10 @@ public class CraftManager implements Iterable<Craft>{
         return null;
     }
 
-    public Craft fastNearestCraftToLoc(Location loc) {
+    public Craft fastNearestCraftToLoc(Location<World> loc) {
         Craft returnedCraft = null;
         long closestDistSquared = 1000000000L;
-        Set<Craft> craftsList = CraftManager.getInstance().getCraftsInWorld((World) loc.getExtent());
+        Set<Craft> craftsList = CraftManager.getInstance().getCraftsInWorld(loc.getExtent());
         for (Craft craft : craftsList) {
 
             Vector3i hitBoxMidPoint = craft.getHitBox().getMidPoint();

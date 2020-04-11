@@ -10,13 +10,12 @@ import org.apache.commons.lang3.tuple.ImmutablePair;
 import java.util.*;
 
 public class NextTickProvider {
-    private Map<WorldServer, ImmutablePair<TreeSet<NextTickListEntry>, List<NextTickListEntry>>> tickMap = new HashMap<>();
+    private final Map<WorldServer, ImmutablePair<TreeSet<NextTickListEntry>, List<NextTickListEntry>>> tickMap = new HashMap<>();
 
     private boolean isRegistered(WorldServer world){
         return tickMap.containsKey(world);
     }
 
-    @SuppressWarnings("unchecked")
     private void registerWorld(WorldServer world) {
         List<NextTickListEntry> pendingForThisTick = world.pendingTickListEntriesThisTick;
         TreeSet<NextTickListEntry> pendingTickList = world.pendingTickListEntriesTreeSet;

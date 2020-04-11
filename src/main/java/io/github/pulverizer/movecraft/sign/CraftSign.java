@@ -6,7 +6,6 @@ import io.github.pulverizer.movecraft.craft.Craft;
 import io.github.pulverizer.movecraft.config.CraftType;
 import io.github.pulverizer.movecraft.config.Settings;
 import io.github.pulverizer.movecraft.craft.CraftManager;
-import org.spongepowered.api.Sponge;
 import org.spongepowered.api.block.BlockSnapshot;
 import org.spongepowered.api.block.tileentity.Sign;
 import org.spongepowered.api.data.key.Keys;
