@@ -36,23 +36,23 @@ public final class MoveSign {
 
         if (dx > maxMove)
             dx = maxMove;
-        if (dx < 0 - maxMove)
-            dx = 0 - maxMove;
+        if (dx < -maxMove)
+            dx = -maxMove;
         if (dy > maxMove)
             dy = maxMove;
-        if (dy < 0 - maxMove)
-            dy = 0 - maxMove;
+        if (dy < -maxMove)
+            dy = -maxMove;
         if (dz > maxMove)
             dz = maxMove;
-        if (dz < 0 - maxMove)
-            dz = 0 - maxMove;
+        if (dz < -maxMove)
+            dz = -maxMove;
 
         if (!player.hasPermission("movecraft." + CraftManager.getInstance().getCraftByPlayer(player.getUniqueId()).getType().getName() + ".movement.staticmove")) {
             player.sendMessage(Text.of("Insufficient Permissions"));
             return;
         }
         if (CraftManager.getInstance().getCraftByPlayer(player.getUniqueId()).getType().getCanStaticMove()) {
-            CraftManager.getInstance().getCraftByPlayer(player.getUniqueId()).translate(Rotation.NONE, new Vector3i(dx, dy, dz), false);
+            CraftManager.getInstance().getCraftByPlayer(player.getUniqueId()).translate(new Vector3i(dx, dy, dz), false);
             //timeMap.put(player, System.currentTimeMillis());
         }
     }

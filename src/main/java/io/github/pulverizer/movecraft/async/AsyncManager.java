@@ -150,7 +150,7 @@ public class AsyncManager implements Runnable {
             if (craft.getType().getCruiseOnPilot()) {
                 dy = craft.getType().getCruiseOnPilotVertMove();
             }
-            craft.translate(Rotation.NONE, new Vector3i(dx, dy, dz), false);
+            craft.translate(new Vector3i(dx, dy, dz), false);
         }
     }
 
@@ -294,7 +294,7 @@ public class AsyncManager implements Runnable {
                 dx = craft.getLastMoveVector().getX();
                 dz = craft.getLastMoveVector().getZ();
             }
-            craft.translate(Rotation.NONE, new Vector3i(dx, -1, dz), false);
+            craft.translate(new Vector3i(dx, -1, dz), false);
         }
     }
 

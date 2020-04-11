@@ -64,9 +64,9 @@ public final class HelmSign {
         }
 
         if (craft.getType().rotateAtMidpoint()) {
-            craft.translate(rotation, craft.getHitBox().getMidPoint(), false);
+            craft.rotate(craft.getHitBox().getMidPoint(), rotation, false);
         } else {
-            craft.translate(rotation, sign.getLocation().getBlockPosition(), false);
+            craft.rotate(sign.getLocation().getBlockPosition(), rotation, false);
         }
 
         event.setCancelled(true);

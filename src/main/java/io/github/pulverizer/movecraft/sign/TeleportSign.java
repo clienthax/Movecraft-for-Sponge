@@ -45,7 +45,7 @@ public final class TeleportSign {
             int dx = tX - block.getLocation().get().getBlockPosition().getX();
             int dy = tY - block.getLocation().get().getBlockPosition().getY();
             int dz = tZ - block.getLocation().get().getBlockPosition().getZ();
-            craft.translate(Rotation.NONE, new Vector3i(dx, dy, dz), false);
+            craft.translate(new Vector3i(dx, dy, dz), false);
         }
     }
 }

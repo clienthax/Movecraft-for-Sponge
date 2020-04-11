@@ -95,7 +95,7 @@ public final class SubcraftRotateSign {
         Task.builder()
                 .delayTicks(3)
                 .execute(() -> {
-                    subCraft.translate(rotation, startPoint, true);
+                    subCraft.rotate(startPoint, rotation, true);
                     Task.builder()
                             .delayTicks(3)
                             .execute(() -> {

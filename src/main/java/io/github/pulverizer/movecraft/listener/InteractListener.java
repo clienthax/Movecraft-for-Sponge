@@ -84,7 +84,7 @@ public final class InteractListener {
                 if (player.get(Keys.IS_SNEAKING).get())
                     dy = -1;
 
-                craft.translate(Rotation.NONE, new Vector3i(0, dy, 0), false);
+                craft.translate(new Vector3i(0, dy, 0), false);
                 return;
             }
 
@@ -107,7 +107,7 @@ public final class InteractListener {
                 dz = 0;
             }
 
-            craft.translate(Rotation.NONE, new Vector3i(dx, dy, dz), false);
+            craft.translate(new Vector3i(dx, dy, dz), false);
             return;
         }
 

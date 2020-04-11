@@ -322,12 +322,10 @@ public class Craft {
             CraftSinkEvent event = new CraftSinkEvent(this);
             Sponge.getEventManager().post(event);
 
-            if (event.isCancelled()) {
-                return state;
-            } else {
+            if (!event.isCancelled()) {
                 state = CraftState.SINKING;
-                return state;
             }
+            return state;
         }
 
         state = newState;
@@ -629,44 +627,42 @@ public class Craft {
         return meanMoveTime;
     }
 
-    public void translate(Rotation rotation, Vector3i moveVector, boolean isSubCraft) {
+    //TODO - Split back into rotate and translate
+    //TODO - Add code to handle SubCrafts
+    public void translate(Vector3i moveVector, boolean isSubCraft) {
+        // check to see if the craft is trying to move in a direction not permitted by the type
+        if (!this.getType().allowHorizontalMovement() && this.getState() != CraftState.SINKING) {
+            moveVector = new Vector3i(0, moveVector.getY(), 0);
+        }
+        if (!this.getType().allowVerticalMovement() && this.getState() != CraftState.SINKING) {
+            moveVector = new Vector3i(moveVector.getX(), 0, moveVector.getZ());
+        }
+        if (moveVector.length() == 0) {
+            return;
+        }
 
-        if (rotation == Rotation.NONE) {
-
-            // check to see if the craft is trying to move in a direction not permitted by the type
-            if (!this.getType().allowHorizontalMovement() && this.getState() != CraftState.SINKING) {
-                moveVector = new Vector3i(0, moveVector.getY(), 0);
-            }
-            if (!this.getType().allowVerticalMovement() && this.getState() != CraftState.SINKING) {
-                moveVector = new Vector3i(moveVector.getX(), 0, moveVector.getZ());
-            }
-            if (moveVector.length() == 0) {
+        if (!this.getType().allowVerticalTakeoffAndLanding() && moveVector.getY() != 0 && this.getState() != CraftState.SINKING) {
+            if (moveVector.getX() == 0 && moveVector.getZ() == 0) {
                 return;
             }
+        }
 
-            if (!this.getType().allowVerticalTakeoffAndLanding() && moveVector.getY() != 0 && this.getState() != CraftState.SINKING) {
-                if (moveVector.getX() == 0 && moveVector.getZ() == 0) {
-                    return;
-                }
-            }
+        submitTask(new TranslationTask(this, moveVector));
 
-            submitTask(new TranslationTask(this, moveVector));
+    }
 
-        } else if (!isSubCraft) {
-
-            if(getLastRotateTime() + 1e9 > System.nanoTime()){
-                if(getPilot()!= null)
+    public void rotate(Vector3i originPoint, Rotation rotation, boolean isSubCraft) {
+        if (!isSubCraft) {
+            if (getLastRotateTime() + 1e9 > System.nanoTime()) {
+                if (getPilot() != null)
                     Sponge.getServer().getPlayer(getPilot()).ifPresent(player -> player.sendMessage(Text.of("You're turning too quickly!")));
                 return;
             }
+
             setLastRotateTime(System.nanoTime());
-            submitTask(new RotationTask(this, moveVector, rotation, world, isSubCraft));
-
-        } else {
-
-            submitTask(new RotationTask(this, moveVector, rotation, world, isSubCraft));
-
         }
+
+        submitTask(new RotationTask(this, originPoint, rotation, world, isSubCraft));
     }
 
     public int getTickCooldown() {
