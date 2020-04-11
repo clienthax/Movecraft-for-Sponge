@@ -20,6 +20,10 @@ plugins {
     id 'net.minecrell.vanillagradle.server' version '2.2-6'
 }
 
+repositories {
+    mavenLocal()
+}
+
 dependencies {
     compile 'org.spongepowered:spongeapi:7.3.0-SNAPSHOT'
 }

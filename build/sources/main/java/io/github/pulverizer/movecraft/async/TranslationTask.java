@@ -226,11 +226,6 @@ public class TranslationTask extends AsyncTask {
 
             sentMapUpdate = true;
         }
-
-        // only mark the craft as having finished updating if you didn't
-        // send any updates to the map updater. Otherwise the map updater
-        // will mark the crafts once it is done with them.
-        craft.setProcessing(sentMapUpdate);
     }
 
     private boolean checkCraftHeight() {

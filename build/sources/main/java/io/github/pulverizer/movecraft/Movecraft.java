@@ -231,9 +231,6 @@ public class Movecraft {
         Sponge.getEventManager().registerListeners(this, new TNTListener());
         Sponge.getEventManager().registerListeners(this, new FireballListener());
 
-        //TODO REMOVE THIS AFTER TESTING
-        //Sponge.getEventManager().registerListeners(this, new TestListener());
-
         logger.info("Movecraft Enabled.");
     }
 

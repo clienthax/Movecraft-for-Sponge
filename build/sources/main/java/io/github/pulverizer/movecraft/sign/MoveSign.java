@@ -54,7 +54,6 @@ public final class MoveSign {
         if (CraftManager.getInstance().getCraftByPlayer(player.getUniqueId()).getType().getCanStaticMove()) {
             CraftManager.getInstance().getCraftByPlayer(player.getUniqueId()).translate(Rotation.NONE, new Vector3i(dx, dy, dz), false);
             //timeMap.put(player, System.currentTimeMillis());
-            CraftManager.getInstance().getCraftByPlayer(player.getUniqueId()).setLastMoveTick(Sponge.getServer().getRunningTimeTicks());
         }
     }
 }

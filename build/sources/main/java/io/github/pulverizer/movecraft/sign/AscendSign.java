@@ -58,7 +58,6 @@ public class AscendSign {
             sign.offer(lines);
 
             craft.setCruiseDirection(Direction.UP);
-            craft.setLastMoveTick(Sponge.getServer().getRunningTimeTicks());
             craft.setState(CraftState.CRUISING);
 
             return;

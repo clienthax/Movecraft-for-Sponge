@@ -207,11 +207,48 @@ public class WorldHandler {
         WorldServer worldServer = (WorldServer) world;
         BlockPos blockPos = new BlockPos(position.getX(), position.getY(), position.getZ());
 
-        TileEntity tile = worldServer.getTileEntity(blockPos);
-        if (tile == null)
+        TileEntity tile = null;
+
+        // Optimized version of WorldServer#getTileEntity()
+        if (worldServer.processingLoadedTiles) {
+            for (TileEntity tileEntity : worldServer.addedTileEntityList) {
+                if (!tileEntity.isInvalid() && tileEntity.getPos().equals(blockPos)) {
+                    tile = tileEntity;
+                    break;
+                }
+            }
+        }
+
+        if (tile == null) {
+            tile = worldServer.getChunk(blockPos).getTileEntity(blockPos, Chunk.EnumCreateEntityType.IMMEDIATE);
+        }
+
+        if (tile == null) {
+            for (TileEntity tileEntity : worldServer.addedTileEntityList) {
+                if (!tileEntity.isInvalid() && tileEntity.getPos().equals(blockPos)) {
+                    tile = tileEntity;
+                    break;
+                }
+            }
+        }
+        // END
+
+        if (tile == null) {
             return null;
+        }
+
         //cleanup
-        worldServer.removeTileEntity(blockPos);
+        //Optimized version of WorldServer#removeTileEntity();
+        tile.invalidate();
+        worldServer.addedTileEntityList.remove(tile);
+
+        if (!worldServer.processingLoadedTiles) {
+            worldServer.loadedTileEntityList.remove(tile);
+            worldServer.tickableTileEntities.remove(tile);
+
+            worldServer.getChunk(blockPos).getTileEntityMap().remove(blockPos);
+        }
+        // END
 
         if (!bMap.containsKey(worldServer)) {
             bMap.put(worldServer, worldServer.loadedTileEntityList);
@@ -273,6 +310,7 @@ public class WorldHandler {
         // Same as Spigot's invalidateBlockCache()
         tile.blockMetadata = -1;
         tile.blockType = null;
+        // END
 
         // Optimised version of Chunk#addTileEntity(BlockPos, TileEntity)
         tile.setWorld(worldServer);
@@ -280,6 +318,7 @@ public class WorldHandler {
         tile.validate();
 
         chunk.getTileEntityMap().put(blockPos, tile);
+        // END
     }
 
     private class TileHolder {

@@ -102,7 +102,6 @@ public final class RelativeMoveSign {
         }
         if (CraftManager.getInstance().getCraftByPlayer(player.getUniqueId()).getType().getCanStaticMove()) {
             CraftManager.getInstance().getCraftByPlayer(player.getUniqueId()).translate(Rotation.NONE, new Vector3i(dx, dy, dz), false);
-            CraftManager.getInstance().getCraftByPlayer(player.getUniqueId()).setLastMoveTick(Sponge.getServer().getRunningTimeTicks());
         }
     }
 }

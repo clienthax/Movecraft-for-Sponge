@@ -59,7 +59,6 @@ public final class DescendSign {
             sign.offer(lines);
 
             craft.setCruiseDirection(Direction.DOWN);
-            craft.setLastMoveTick(Sponge.getServer().getRunningTimeTicks());
             craft.setState(CraftState.CRUISING);
 
             return;

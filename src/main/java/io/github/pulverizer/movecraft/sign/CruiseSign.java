@@ -77,7 +77,6 @@ public final class CruiseSign {
             sign.offer(lines);
 
             craft.setCruiseDirection(cruiseDirection);
-            craft.setLastMoveTick(Sponge.getServer().getRunningTimeTicks());
             //TODO: Add checks! Shouldn't be able to go from Disabled -> Cruising
             craft.setState(CraftState.CRUISING);
 

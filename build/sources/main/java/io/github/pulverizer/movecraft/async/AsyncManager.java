@@ -84,7 +84,7 @@ public class AsyncManager implements Runnable {
             }
 
             if (ticksElapsed < craft.getTickCooldown()) {
-                return;
+                continue;
             }
 
             int dx = 0;
@@ -97,12 +97,12 @@ public class AsyncManager implements Runnable {
             }
             // descend
             if (craft.getCruiseDirection() == Direction.DOWN) {
-                dy = 0 - 1 - craft.getType().getVertCruiseSkipBlocks();
+                dy = -1 - craft.getType().getVertCruiseSkipBlocks();
                 if (craft.getHitBox().getMinY() <= world.getSeaLevel()) {
                     dy = -1;
                 }
             } else if (dive) {
-                dy = 0 - ((craft.getType().getCruiseSkipBlocks() + 1) >> 1);
+                dy = -((craft.getType().getCruiseSkipBlocks() + 1) >> 1);
                 if (craft.getHitBox().getMinY() <= world.getSeaLevel()) {
                     dy = -1;
                 }
@@ -111,7 +111,7 @@ public class AsyncManager implements Runnable {
             if (craft.getCruiseDirection() == Direction.WEST) {
                 dx = 1 + craft.getType().getCruiseSkipBlocks();
                 if (bankRight) {
-                    dz = (0 - 1 - craft.getType().getCruiseSkipBlocks()) >> 1;
+                    dz = (-1 - craft.getType().getCruiseSkipBlocks()) >> 1;
                 }
                 if (bankLeft) {
                     dz = (1 + craft.getType().getCruiseSkipBlocks()) >> 1;
@@ -119,9 +119,9 @@ public class AsyncManager implements Runnable {
             }
             // ship faces east
             if (craft.getCruiseDirection() == Direction.EAST) {
-                dx = 0 - 1 - craft.getType().getCruiseSkipBlocks();
+                dx = -1 - craft.getType().getCruiseSkipBlocks();
                 if (bankLeft) {
-                    dz = (0 - 1 - craft.getType().getCruiseSkipBlocks()) >> 1;
+                    dz = (-1 - craft.getType().getCruiseSkipBlocks()) >> 1;
                 }
                 if (bankRight) {
                     dz = (1 + craft.getType().getCruiseSkipBlocks()) >> 1;
@@ -131,7 +131,7 @@ public class AsyncManager implements Runnable {
             if (craft.getCruiseDirection() == Direction.NORTH) {
                 dz = 1 + craft.getType().getCruiseSkipBlocks();
                 if (bankRight) {
-                    dx = (0 - 1 - craft.getType().getCruiseSkipBlocks()) >> 1;
+                    dx = (-1 - craft.getType().getCruiseSkipBlocks()) >> 1;
                 }
                 if (bankLeft) {
                     dx = (1 + craft.getType().getCruiseSkipBlocks()) >> 1;
@@ -139,9 +139,9 @@ public class AsyncManager implements Runnable {
             }
             // ship faces south
             if (craft.getCruiseDirection() == Direction.SOUTH) {
-                dz = 0 - 1 - craft.getType().getCruiseSkipBlocks();
+                dz = -1 - craft.getType().getCruiseSkipBlocks();
                 if (bankLeft) {
-                    dx = (0 - 1 - craft.getType().getCruiseSkipBlocks()) >> 1;
+                    dx = (-1 - craft.getType().getCruiseSkipBlocks()) >> 1;
                 }
                 if (bankRight) {
                     dx = (1 + craft.getType().getCruiseSkipBlocks()) >> 1;
@@ -151,11 +151,6 @@ public class AsyncManager implements Runnable {
                 dy = craft.getType().getCruiseOnPilotVertMove();
             }
             craft.translate(Rotation.NONE, new Vector3i(dx, dy, dz), false);
-            if (craft.getLastMoveTick() != -1) {
-                craft.setLastMoveTick(Sponge.getServer().getRunningTimeTicks());
-            } else {
-                craft.setLastMoveTick(Sponge.getServer().getRunningTimeTicks() - 600);
-            }
         }
     }
 
@@ -239,7 +234,7 @@ public class AsyncManager implements Runnable {
                 if (percent < disablePercent && craft.getState() != CraftState.DISABLED && craft.isNotProcessing()) {
                     craft.setState(CraftState.DISABLED);
                     if (craft.getPilot() != null) {
-                        Location loc = Sponge.getServer().getPlayer(craft.getPilot()).get().getLocation();
+                        Location<World> loc = Sponge.getServer().getPlayer(craft.getPilot()).get().getLocation();
                         craft.getWorld().playSound(SoundTypes.ENTITY_IRONGOLEM_DEATH, loc.getPosition(),  5.0f, 5.0f);
                     }
                 }
@@ -268,10 +263,7 @@ public class AsyncManager implements Runnable {
             // know and release the craft. Otherwise
             // update the time for the next check
             if (isSinking && craft.isNotProcessing()) {
-                Player notifyP = Sponge.getServer().getPlayer(craft.getPilot()).orElse(null);
-                if (notifyP != null) {
-                    notifyP.sendMessage(Text.of("Craft is sinking!"));
-                }
+                Sponge.getServer().getPlayer(craft.getPilot()).ifPresent(notifyP -> notifyP.sendMessage(Text.of("Craft is sinking!")));
                 craft.setState(CraftState.SINKING);
                 CraftManager.getInstance().removePlayerFromCraft(craft);
             } else {
@@ -303,7 +295,6 @@ public class AsyncManager implements Runnable {
                 dz = craft.getLastMoveVector().getZ();
             }
             craft.translate(Rotation.NONE, new Vector3i(dx, -1, dz), false);
-            craft.setLastMoveTick(craft.getLastMoveTick() != -1 ? Sponge.getServer().getRunningTimeTicks() : Sponge.getServer().getRunningTimeTicks() - 600);
         }
     }
 
@@ -407,14 +398,14 @@ public class AsyncManager implements Runnable {
 
         // Cleanup crafts that are bugged and have not moved in the past 60 seconds, but have no crew or are still processing.
         for (Craft craft : CraftManager.getInstance()) {
+
             if (craft.getCrewList().isEmpty() && craft.getLastMoveTick() < Sponge.getServer().getRunningTimeTicks() - 1200) {
                 CraftManager.getInstance().forceRemoveCraft(craft);
             }
 
             // Stop crafts from moving if they have taken too long to process.
-            if (!craft.isNotProcessing() && craft.getState() == CraftState.CRUISING && craft.getLastMoveTick() < Sponge.getServer().getRunningTimeTicks() - 100) {
-
-                    craft.setProcessing(false);
+            if (!craft.isNotProcessing() && craft.getState() == CraftState.CRUISING && craft.getProcessingStartTime() < Sponge.getServer().getRunningTimeTicks() - 1200) {
+                craft.setProcessing(false);
             }
         }
     }

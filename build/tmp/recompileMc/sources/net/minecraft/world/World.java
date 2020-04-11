@@ -75,7 +75,7 @@ public abstract class World implements IBlockAccess
      * Tile Entity additions that were deferred because the World was still iterating existing Tile Entities; will be
      * added to the world at the end of the tick.
      */
-    private final List<TileEntity> addedTileEntityList = Lists.<TileEntity>newArrayList();
+    public final List<TileEntity> addedTileEntityList = Lists.<TileEntity>newArrayList();
     /**
      * Tile Entity removals that were deferred because the World was still iterating existing Tile Entities; will be
      * removed from the world at the end of the tick.
@@ -143,7 +143,7 @@ public abstract class World implements IBlockAccess
      * True while the World is ticking {@link #tickableTileEntities}, to prevent CME's if any of those ticks create more
      * tile entities.
      */
-    private boolean processingLoadedTiles;
+    public boolean processingLoadedTiles;
     private final WorldBorder worldBorder;
     /**
      * is a temporary list of blocks and light values used when updating light levels. Holds up to 32x32x32 blocks (the

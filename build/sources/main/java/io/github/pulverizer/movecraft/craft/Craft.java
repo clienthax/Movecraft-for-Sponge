@@ -3,6 +3,7 @@ package io.github.pulverizer.movecraft.craft;
 import com.flowpowered.math.vector.Vector3d;
 import com.flowpowered.math.vector.Vector3i;
 import com.sun.javafx.collections.MappingChange;
+import io.github.pulverizer.movecraft.Movecraft;
 import io.github.pulverizer.movecraft.enums.CraftState;
 import io.github.pulverizer.movecraft.enums.Rotation;
 import io.github.pulverizer.movecraft.async.AsyncTask;
@@ -40,9 +41,10 @@ public class Craft {
 
     //State
     private AtomicBoolean processing = new AtomicBoolean();
+    private int processingStartTime = 0;
     private HashHitBox hitBox;
     private CraftState state;
-    private Long lastCheckTime = (long) 0;
+    private long lastCheckTime = 0L;
     private World world;
 
 
@@ -79,7 +81,7 @@ public class Craft {
     public Craft(CraftType type, UUID player, Location<World> startLocation) {
         this.type = type;
         world = startLocation.getExtent();
-        setLastMoveTick(Sponge.getServer().getRunningTimeTicks() - 10000);
+        setLastMoveTick(Sponge.getServer().getRunningTimeTicks() - 100);
         this.originalPilotTime = System.currentTimeMillis();
         setCommander(player);
         submitTask(new DetectionTask(this, startLocation));
@@ -353,6 +355,7 @@ public class Craft {
      * Sets if the craft is currently processing or not.
      */
     public void setProcessing(boolean processing) {
+        this.processingStartTime = Sponge.getServer().getRunningTimeTicks();
         this.processing.set(processing);
     }
 
@@ -632,10 +635,10 @@ public class Craft {
 
             // check to see if the craft is trying to move in a direction not permitted by the type
             if (!this.getType().allowHorizontalMovement() && this.getState() != CraftState.SINKING) {
-                moveVector = new com.flowpowered.math.vector.Vector3i(0, moveVector.getY(), 0);
+                moveVector = new Vector3i(0, moveVector.getY(), 0);
             }
             if (!this.getType().allowVerticalMovement() && this.getState() != CraftState.SINKING) {
-                moveVector = new com.flowpowered.math.vector.Vector3i(moveVector.getX(), 0, moveVector.getZ());
+                moveVector = new Vector3i(moveVector.getX(), 0, moveVector.getZ());
             }
             if (moveVector.length() == 0) {
                 return;
@@ -667,6 +670,10 @@ public class Craft {
     }
 
     public int getTickCooldown() {
+        //TODO Remove after testing
+        return 50;
+
+        /*
         Map<BlockType, Set<Vector3i>> blockMap = hitBox.map(world);
 
         if(state == CraftState.SINKING)
@@ -688,7 +695,9 @@ public class Craft {
         if(type.getDynamicFlyBlockSpeedFactor() != 0){
             double count = blockMap.get(type.getDynamicFlyBlock()).size();
 
+
             return Math.max((int) (20 / (type.getCruiseTickCooldown() * (1  + type.getDynamicFlyBlockSpeedFactor() * (count / hitBox.size() - 0.5)))), 1);
+
         }
 
         if(type.getDynamicLagSpeedFactor() == 0)
@@ -696,6 +705,7 @@ public class Craft {
 
         //TODO: modify skip blocks by an equal proportion to this, than add another modifier based on dynamic speed factor
         return Math.max((int)(type.getCruiseTickCooldown() * meanMoveTime / 1000 * 20 / type.getDynamicLagSpeedFactor() + chestPenalty), 1);
+         */
     }
 
 
@@ -749,6 +759,10 @@ public class Craft {
             }
         }
         return waterLine;
+    }
+
+    public int getProcessingStartTime() {
+        return processingStartTime;
     }
 
     public void submitTask(AsyncTask task) {

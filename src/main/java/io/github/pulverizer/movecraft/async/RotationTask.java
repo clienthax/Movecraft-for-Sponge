@@ -278,8 +278,6 @@ public class RotationTask extends AsyncTask {
                     Movecraft.getInstance().getLogger().info("NULL Player Rotation Failed: " + getFailMessage());
                 }
 
-                craft.setProcessing(false);
-
             } else {
 
                 MapUpdateManager.getInstance().scheduleUpdates(getUpdates());

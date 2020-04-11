@@ -1,5 +1,6 @@
 package io.github.pulverizer.movecraft;
 
+import com.flowpowered.math.vector.Vector2i;
 import com.flowpowered.math.vector.Vector3d;
 import com.flowpowered.math.vector.Vector3i;
 import io.github.pulverizer.movecraft.config.Settings;
@@ -23,15 +24,6 @@ import org.spongepowered.api.world.Location;
 import org.spongepowered.api.world.World;
 
 import java.util.*;
-
-import static net.minecraft.world.chunk.Chunk.NULL_BLOCK_STORAGE;
-
-//import org.bukkit.Location;
-//import org.bukkit.Material;
-//import org.bukkit.craftbukkit.v1_12_R1.CraftWorld;
-//import org.bukkit.craftbukkit.v1_12_R1.entity.CraftPlayer;
-//import org.bukkit.craftbukkit.v1_12_R1.util.CraftMagicNumbers;
-//import org.bukkit.entity.Player;
 
 public class WorldHandler {
     private static final net.minecraft.util.Rotation[] ROTATION;
@@ -81,7 +73,6 @@ public class WorldHandler {
         //*******************************************
         //*   Step three: Translate all the blocks  *
         //*******************************************
-        // blockedByWater=false means an ocean-going vessel
         //TODO: Simplify
         //TODO: go by chunks
         //TODO: Don't move unnecessary blocks
@@ -129,6 +120,7 @@ public class WorldHandler {
         //*         Step two: Get the tiles         *
         //*******************************************
         World nativeWorld = craft.getWorld();
+        ChunkDataMap chunkDataMap = new ChunkDataMap(nativeWorld);
         List<TileHolder> tiles = gatherTiles(nativeWorld, positions);
         //*******************************************
         //*   Step three: Translate all the blocks  *
@@ -138,11 +130,11 @@ public class WorldHandler {
         //TODO: go by chunks
         //TODO: Don't move unnecessary blocks
         //get the blocks and translate the positions
-        Map<Vector3i, BlockState> blockMap = new HashMap<>();
-        positions.forEach(position -> blockMap.put(position.add(translateVector), nativeWorld.getBlock(position)));
+        Set<Vector3i> newPositions = new HashSet<>();
+        positions.forEach(position -> chunkDataMap.addBlock(position.add(translateVector), nativeWorld.getBlock(position)));
 
         //create the new blocks
-        blockMap.forEach((newPosition, blockState) -> setBlockFast(nativeWorld, newPosition, blockState));
+        chunkDataMap.setBlocksFast();
         //*******************************************
         //*    Step four: replace all the tiles     *
         //*******************************************
@@ -150,13 +142,13 @@ public class WorldHandler {
         //*******************************************
         //*   Step five: Destroy the leftovers      *
         //*******************************************
-        Collection<Vector3i> deletePositions = CollectionUtils.filter(positions, blockMap.keySet());
+        Collection<Vector3i> deletePositions = CollectionUtils.filter(positions, newPositions);
         deletePositions.forEach(position -> setBlockFast(nativeWorld, position, BlockTypes.AIR.getDefaultState()));
 
         //*******************************************
         //*   Step six: Process fire spread         *
         //*******************************************
-        processFireSpread(nativeWorld, blockMap.keySet());
+        processFireSpread(nativeWorld, newPositions);
     }
 
     private List<TileHolder> gatherTiles(World world, Set<Vector3i> positions) {
@@ -207,11 +199,55 @@ public class WorldHandler {
         WorldServer worldServer = (WorldServer) world;
         BlockPos blockPos = new BlockPos(position.getX(), position.getY(), position.getZ());
 
-        TileEntity tile = worldServer.getTileEntity(blockPos);
-        if (tile == null)
+        // Optimized version of WorldServer#getTileEntity()
+        TileEntity tile = null;
+
+        // This should never be the case
+        /*
+        if (worldServer.processingLoadedTiles) {
+            for (TileEntity tileEntity : worldServer.addedTileEntityList) {
+                if (!tileEntity.isInvalid() && tileEntity.getPos().equals(blockPos)) {
+                    tile = tileEntity;
+                    break;
+                }
+            }
+        }*/
+
+        //if (tile == null) {
+            tile = worldServer.getChunk(blockPos).getTileEntity(blockPos, Chunk.EnumCreateEntityType.IMMEDIATE);
+        //}
+
+        if (tile == null) {
+            for (TileEntity tileEntity : worldServer.addedTileEntityList) {
+                if (!tileEntity.isInvalid() && tileEntity.getPos().equals(blockPos)) {
+                    tile = tileEntity;
+                    break;
+                }
+            }
+        }
+        // END
+
+        if (tile == null) {
             return null;
-        //cleanup
-        worldServer.removeTileEntity(blockPos);
+        }
+
+        // cleanup
+        // Optimized version of WorldServer.removeTileEntity();
+        // This should never be the case
+        /*
+        if (worldServer.processingLoadedTiles) {
+            tile.invalidate();
+            worldServer.addedTileEntityList.remove(tile);
+        } else {
+         */
+            worldServer.addedTileEntityList.remove(tile);
+            worldServer.loadedTileEntityList.remove(tile);
+            worldServer.tickableTileEntities.remove(tile);
+
+            worldServer.getChunk(blockPos).getTileEntityMap().remove(blockPos);
+            tile.invalidate();
+        //}
+        // END
 
         if (!bMap.containsKey(worldServer)) {
             bMap.put(worldServer, worldServer.loadedTileEntityList);
@@ -273,6 +309,7 @@ public class WorldHandler {
         // Same as Spigot's invalidateBlockCache()
         tile.blockMetadata = -1;
         tile.blockType = null;
+        // END
 
         // Optimised version of Chunk#addTileEntity(BlockPos, TileEntity)
         tile.setWorld(worldServer);
@@ -280,6 +317,7 @@ public class WorldHandler {
         tile.validate();
 
         chunk.getTileEntityMap().put(blockPos, tile);
+        // END
     }
 
     private class TileHolder {
@@ -303,6 +341,136 @@ public class WorldHandler {
 
         public Vector3i getTilePosition() {
             return tilePosition;
+        }
+    }
+
+    private class ChunkDataMap {
+        private final World world;
+        private final Map<Vector2i, ChunkDataHolder> chunkData;
+
+        public ChunkDataMap(World world) {
+            this.world = world;
+            chunkData = new HashMap<>();
+        }
+
+        public ChunkDataHolder getOrCreateChunkData(Vector3i worldPosition) {
+            Vector2i chunkPos = new Vector2i(worldPosition.getX(), worldPosition.getZ());
+
+            if (!chunkData.containsKey(chunkPos)) {
+                ChunkDataHolder newChunkDataHolder = new ChunkDataHolder(world, chunkPos);
+                chunkData.put(chunkPos, newChunkDataHolder);
+            }
+
+            return chunkData.get(chunkPos);
+        }
+
+        public void addBlock(Vector3i newWorldPosition, BlockState blockState) {
+            getOrCreateChunkData(newWorldPosition).addBlock(newWorldPosition, blockState);
+        }
+
+        public void addTileEntity(Vector3i newWorldPosition, TileHolder tileHolder) {
+            getOrCreateChunkData(newWorldPosition).addTileHolder(newWorldPosition, tileHolder);
+        }
+
+        public void setBlocksFast() {
+            chunkData.forEach((position, chunk) -> chunk.setBlocksFast());
+        }
+
+        public void moveTileEntities() {
+            chunkData.forEach((position, chunk) -> chunk.moveTileEntities());
+        }
+    }
+
+    private class ChunkDataHolder {
+        private final WorldServer worldServer;
+        private final Vector2i position;
+
+        // stores world positions
+        private final Map<Integer, Map<Vector3i, IBlockState>> blockMaps;
+        private final Map<Vector3i, TileHolder> tileHolderMap;
+
+        public ChunkDataHolder(World world, Vector2i chunkPosition) {
+            worldServer = (WorldServer) world;
+            position = chunkPosition;
+
+            blockMaps = new HashMap<>();
+            tileHolderMap = new HashMap<>();
+        }
+
+        public void addBlock(Vector3i newWorldPosition, BlockState blockState) {
+            int height = newWorldPosition.getY() >> 4;
+            if (!blockMaps.containsKey(height)) {
+                blockMaps.put(height, new HashMap<>());
+            }
+
+            blockMaps.get(height).put(newWorldPosition, (IBlockState) blockState);
+        }
+
+        public void addTileHolder(Vector3i newWorldPosition, TileHolder tileHolder) {
+            tileHolderMap.put(newWorldPosition, tileHolder);
+        }
+
+        public Vector2i getPosition() {
+            return position;
+        }
+
+        public void setBlocksFast() {
+            Chunk backingChunk = worldServer.getChunk(position.getX(), position.getY());
+            for (Map.Entry<Integer, Map<Vector3i, IBlockState>> entry : blockMaps.entrySet()) {
+                Map<Vector3i, IBlockState> blockMap = entry.getValue();
+                int i = entry.getKey();
+
+                System.out.println("Working Chunk " + position + " at height: " + i);
+
+                ExtendedBlockStorage chunkSection = backingChunk.getBlockStorageArray()[i];
+
+                if (chunkSection == null) {
+                    // Put a GLASS block to initialize the section. It will be replaced next with the real block.
+                    backingChunk.setBlockState(locationToBlockPos(new Vector3i()), Blocks.GLASS.getDefaultState());
+                    chunkSection = backingChunk.getBlockStorageArray()[i];
+                }
+
+                System.out.println("Chunk Section was " + chunkSection);
+                if (chunkSection != null) {
+                    ExtendedBlockStorage finalChunkSection = chunkSection;
+
+                    blockMap.forEach((newPosition, iBlockState) -> {
+                        BlockPos blockPos = locationToBlockPos(newPosition);
+
+                        finalChunkSection.set(newPosition.getX() & 15, newPosition.getY() & 15, newPosition.getZ() & 15, iBlockState);
+                        worldServer.notifyBlockUpdate(blockPos, iBlockState, iBlockState, 3);
+                    });
+                }
+            }
+        }
+
+        public void moveTileEntities() {
+            tileHolderMap.forEach((newPosition, tileHolder) -> {
+                TileEntity tile = tileHolder.getTile();
+
+                // Convert Vector3i to Minecraft's BlockPos
+                BlockPos blockPos = locationToBlockPos(newPosition);
+
+                // Same as Spigot's invalidateBlockCache()
+                tile.blockMetadata = -1;
+                tile.blockType = null;
+                // END
+
+                // Optimised version of Chunk#addTileEntity(BlockPos, TileEntity)
+                tile.setWorld(worldServer);
+                tile.setPos(blockPos);
+                tile.validate();
+
+
+                worldServer.getChunk(position.getX(), position.getY()).getTileEntityMap().put(blockPos, tile);
+                // END
+
+                if (tileHolder.getNextTick() == null)
+                    return;
+                final long currentTime = worldServer.getWorldTime();
+                worldServer.scheduleBlockUpdate(blockPos, tile.getBlockType(), (int) (tileHolder.getNextTick().scheduledTime - currentTime), tileHolder.getNextTick().priority);
+
+            });
         }
     }
 }

@@ -266,13 +266,12 @@ public class CraftTranslateCommand extends UpdateCommand {
             //logger.info("Marker 8B: " + timeTaken + " ms");
         }
 
-        if (!craft.isNotProcessing())
-            craft.setProcessing(false);
-
         if(Settings.Debug)
             time = System.currentTimeMillis() - time;
             logger.info("Total time: " + time + " ms. Moving with cooldown of " + craft.getTickCooldown() + ". Speed of: " + String.format("%.2f", craft.getSpeed()));
         craft.addMoveTime(time);
+        craft.setLastMoveTick(Sponge.getServer().getRunningTimeTicks());
+        craft.setProcessing(false);
     }
 
     public Craft getCraft(){

@@ -65,7 +65,7 @@ public final class InteractListener {
                 ticksElapsed = ticksElapsed >> 1;
 
 
-            if (Math.abs(ticksElapsed) < craft.getType().getTickCooldown())
+            if (Math.abs(ticksElapsed) < craft.getTickCooldown())
                 return;
 
 
@@ -85,7 +85,6 @@ public final class InteractListener {
                     dy = -1;
 
                 craft.translate(Rotation.NONE, new Vector3i(0, dy, 0), false);
-                craft.setLastMoveTick(Sponge.getServer().getRunningTimeTicks());
                 return;
             }
 
@@ -109,7 +108,6 @@ public final class InteractListener {
             }
 
             craft.translate(Rotation.NONE, new Vector3i(dx, dy, dz), false);
-            craft.setLastMoveTick(Sponge.getServer().getRunningTimeTicks());
             return;
         }
 
