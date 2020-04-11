@@ -12,7 +12,6 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="c90e9d30-d6b2-408e-a161-c8f0d91ad7dd" name="Default" comment="" />
-    <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -34,17 +33,7 @@
         </task>
         <projects_view>
           <tree_state>
-            <expand>
-              <path>
-                <item name="" type="6a2764b6:ExternalProjectsStructure$RootNode" />
-                <item name="movecraft" type="f1a62948:ProjectNode" />
-              </path>
-              <path>
-                <item name="" type="6a2764b6:ExternalProjectsStructure$RootNode" />
-                <item name="movecraft" type="f1a62948:ProjectNode" />
-                <item name="Run Configurations" type="7b0102dc:RunConfigurationsNode" />
-              </path>
-            </expand>
+            <expand />
             <select />
           </tree_state>
         </projects_view>
@@ -58,62 +47,23 @@
       </list>
     </option>
   </component>
-  <component name="FindInProjectRecents">
-    <findStrings>
-      <find>doUpt</find>
-      <find>updates</find>
-      <find>Have I failed yet?</find>
-      <find>getAA</find>
-      <find>getPilot</find>
-      <find>we got</find>
-      <find>detection</find>
-      <find>subc</find>
-      <find>crewsign</find>
-      <find>gettype</find>
-      <find>pilottime</find>
-      <find>addcr</find>
-      <find>hitbox</find>
-      <find>setw</find>
-      <find>state</find>
-      <find>process</find>
-      <find>getha</find>
-      <find>fuel</find>
-      <find>getFuelI</find>
-      <find>lastche</find>
-      <find>getCraftLis</find>
-      <find>c.getOriginalPilot()</find>
-      <find>toS</find>
-      <find>dz</find>
-      <find>fail(</find>
-      <find>minSize</find>
-      <find>data.getMinX()</find>
-      <find>setMinX</find>
-      <find>getCraft()</find>
-      <find>com.flowpowered.math.vector.</find>
-    </findStrings>
-    <replaceStrings>
-      <replace />
-      <replace>/</replace>
-      <replace>event.getText().offer(</replace>
-      <replace>event.getText().set(</replace>
-      <replace>set(</replace>
-      <replace>super.c.getOriginalPilot()</replace>
-      <replace>craft.getOriginalPilot()</replace>
-      <replace>moveVector.getZ()</replace>
-      <replace>craft.getType().getMinSize()</replace>
-      <replace>minX</replace>
-      <replace>minZ</replace>
-      <replace>craft</replace>
-    </replaceStrings>
-  </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
   <component name="ProjectCodeStyleSettingsMigration">
     <option name="version" value="1" />
   </component>
+  <component name="ProjectFrameBounds" extendedState="6">
+    <option name="width" value="1950" />
+    <option name="height" value="1400" />
+  </component>
   <component name="ProjectId" id="1Oj9CebDlooIx3jTbDkfhhbmZFR" />
   <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showExcludedFiles" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
   <component name="PropertiesComponent">
     <property name="GenerateAntBuildDialog.backupFiles" value="true" />
     <property name="GenerateAntBuildDialog.enableUiFormCompile" value="true" />
@@ -123,7 +73,7 @@
     <property name="full.screen.before.presentation.mode" value="false" />
     <property name="last_directory_selection" value="$PROJECT_DIR$/src/main/java" />
     <property name="last_opened_file_path" value="$PROJECT_DIR$" />
-    <property name="project.structure.last.edited" value="SDKs" />
+    <property name="project.structure.last.edited" value="Project" />
     <property name="project.structure.proportion" value="0.15" />
     <property name="project.structure.side.proportion" value="0.25942856" />
     <property name="settings.editor.selected.configurable" value="configurable.group.tools" />
@@ -136,18 +86,6 @@
     <key name="MoveFile.RECENT_KEYS">
       <recent name="C:\Users\berna\IdeaProjects\movecraft\src\main\java\assets\movecraft" />
     </key>
-  </component>
-  <component name="RunDashboard">
-    <option name="ruleStates">
-      <list>
-        <RuleState>
-          <option name="name" value="ConfigurationTypeDashboardGroupingRule" />
-        </RuleState>
-        <RuleState>
-          <option name="name" value="StatusDashboardGroupingRule" />
-        </RuleState>
-      </list>
-    </option>
   </component>
   <component name="RunManager" selected="Gradle.movecraft [build]">
     <configuration default="true" type="Application" factoryName="Application">
@@ -251,83 +189,13 @@
       <path value="$PROJECT_DIR$" />
     </ignored-roots>
   </component>
+  <component name="WindowStateProjectService">
+    <state x="1072" y="169" key="SettingsEditor" timestamp="1586358377634">
+      <screen x="0" y="0" width="3440" height="1400" />
+    </state>
+    <state x="1072" y="169" key="SettingsEditor/0.0.3440.1400@0.0.3440.1400" timestamp="1586358377634" />
+  </component>
   <component name="gradleExecuteTaskHistory">
     <option value="" />
-  </component>
-  <component name="masterDetails">
-    <states>
-      <state key="ArtifactsStructureConfigurable.UI">
-        <settings>
-          <artifact-editor />
-          <last-edited>movecraft:jar</last-edited>
-          <splitter-proportions>
-            <option name="proportions">
-              <list>
-                <option value="0.25942856" />
-              </list>
-            </option>
-          </splitter-proportions>
-        </settings>
-      </state>
-      <state key="FacetStructureConfigurable.UI">
-        <settings>
-          <last-edited>No facets are configured</last-edited>
-          <splitter-proportions>
-            <option name="proportions">
-              <list>
-                <option value="0.25942856" />
-              </list>
-            </option>
-          </splitter-proportions>
-        </settings>
-      </state>
-      <state key="GlobalLibrariesConfigurable.UI">
-        <settings>
-          <splitter-proportions>
-            <option name="proportions">
-              <list>
-                <option value="0.2" />
-              </list>
-            </option>
-          </splitter-proportions>
-        </settings>
-      </state>
-      <state key="JdkListConfigurable.UI">
-        <settings>
-          <last-edited>1.8</last-edited>
-          <splitter-proportions>
-            <option name="proportions">
-              <list>
-                <option value="0.25942856" />
-              </list>
-            </option>
-          </splitter-proportions>
-        </settings>
-      </state>
-      <state key="ModuleStructureConfigurable.UI">
-        <settings>
-          <last-edited>movecraft_test|movecraft</last-edited>
-          <splitter-proportions>
-            <option name="proportions">
-              <list>
-                <option value="0.25942856" />
-              </list>
-            </option>
-          </splitter-proportions>
-        </settings>
-      </state>
-      <state key="ProjectLibrariesConfigurable.UI">
-        <settings>
-          <last-edited>Gradle: aopalliance:aopalliance:1.0</last-edited>
-          <splitter-proportions>
-            <option name="proportions">
-              <list>
-                <option value="0.25942856" />
-              </list>
-            </option>
-          </splitter-proportions>
-        </settings>
-      </state>
-    </states>
   </component>
 </project>

@@ -4,320 +4,344 @@ import com.flowpowered.math.vector.Vector3d;
 import com.flowpowered.math.vector.Vector3i;
 import io.github.pulverizer.movecraft.config.Settings;
 import io.github.pulverizer.movecraft.craft.Craft;
-import io.github.pulverizer.movecraft.utils.HashHitBox;
-import org.spongepowered.api.block.BlockSnapshot;
-import org.spongepowered.api.block.BlockTypes;
-import org.spongepowered.api.block.ScheduledBlockUpdate;
-import org.spongepowered.api.data.key.Keys;
-import org.spongepowered.api.entity.Entity;
-import org.spongepowered.api.util.Direction;
-import org.spongepowered.api.world.*;
+import io.github.pulverizer.movecraft.enums.Rotation;
+import io.github.pulverizer.movecraft.utils.CollectionUtils;
 import io.github.pulverizer.movecraft.utils.MathUtils;
+import net.minecraft.block.BlockFire;
+import net.minecraft.block.state.IBlockState;
+import net.minecraft.init.Blocks;
+import net.minecraft.tileentity.TileEntity;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.world.NextTickListEntry;
+import net.minecraft.world.WorldServer;
+import net.minecraft.world.chunk.Chunk;
+import net.minecraft.world.chunk.storage.ExtendedBlockStorage;
+import org.spongepowered.api.block.BlockState;
+import org.spongepowered.api.block.BlockTypes;
+import org.spongepowered.api.entity.Entity;
+import org.spongepowered.api.world.Location;
+import org.spongepowered.api.world.World;
 
 import java.util.*;
 
-/**
- * An interface for all interactions with the World.
- */
+import static net.minecraft.world.chunk.Chunk.NULL_BLOCK_STORAGE;
+
+//import org.bukkit.Location;
+//import org.bukkit.Material;
+//import org.bukkit.craftbukkit.v1_12_R1.CraftWorld;
+//import org.bukkit.craftbukkit.v1_12_R1.entity.CraftPlayer;
+//import org.bukkit.craftbukkit.v1_12_R1.util.CraftMagicNumbers;
+//import org.bukkit.entity.Player;
 
 public class WorldHandler {
+    private static final net.minecraft.util.Rotation[] ROTATION;
 
-    /**
-     * Constructs an Instance of the WorldHandler.
-     */
-    public WorldHandler() {}
+    static {
+        ROTATION = new net.minecraft.util.Rotation[3];
+        ROTATION[Rotation.NONE.ordinal()] = net.minecraft.util.Rotation.NONE;
+        ROTATION[Rotation.CLOCKWISE.ordinal()] = net.minecraft.util.Rotation.CLOCKWISE_90;
+        ROTATION[Rotation.ANTICLOCKWISE.ordinal()] = net.minecraft.util.Rotation.COUNTERCLOCKWISE_90;
+    }
+
+    private final NextTickProvider tickProvider = new NextTickProvider();
+    private final HashMap<WorldServer, List<TileEntity>> bMap = new HashMap<>();
+
+    public WorldHandler() {
+    }
 
     /**
      * Moves the Entity to the Location in the World that the Entity currently resides in and applies the Rotation to the Entity.
-     * @param entity Entity to be moved.
+     *
+     * @param entity      Entity to be moved.
      * @param newLocation Vector3d location to move the Entity to.
-     * @param rotation New Rotation of the Entity.
+     * @param rotation    New Rotation of the Entity.
      */
-    public void moveEntity(Entity entity, Vector3d newLocation, float rotation){
+    public void moveEntity(Entity entity, Vector3d newLocation, float rotation) {
         boolean entityMoved = entity.setLocationAndRotation(new Location<>(entity.getWorld(), newLocation), entity.getRotation().add(0, rotation, 0));
 
         if (Settings.Debug && !entityMoved)
             Movecraft.getInstance().getLogger().info("Failed to move Entity of type: " + entity.getType().getName());
     }
 
-    /**
-     * Rotates the Craft around the Location using the Rotation.
-     * @param craft Craft to be rotated.
-     * @param originPoint Vector3i that the Craft will be rotated around.
-     * @param rotation Rotation tha the Craft will be rotated by.
-     */
     public void rotateCraft(Craft craft, Vector3i originPoint, Rotation rotation) {
-
-        World nativeWorld = craft.getWorld();
-
         //*******************************************
         //*      Step one: Convert to Positions     *
         //*******************************************
-        HashMap<Vector3i, Vector3i> rotatedBlockPositions = new HashMap<>();
+        HashMap<Vector3i, Vector3i> rotatedPositions = new HashMap<>();
         Rotation counterRotation = rotation == Rotation.CLOCKWISE ? Rotation.ANTICLOCKWISE : Rotation.CLOCKWISE;
-        HashMap<Vector3i, HashMap<Integer, Integer>> updates = new HashMap<>();
-        for(Vector3i newLocation : craft.getHitBox()){
-            rotatedBlockPositions.put(MathUtils.rotateVec(counterRotation, newLocation.sub(originPoint)).add(originPoint), newLocation);
+        for (Vector3i newLocation : craft.getHitBox()) {
+            rotatedPositions.put(MathUtils.rotateVec(counterRotation, newLocation.sub(originPoint)).add(originPoint), newLocation);
+        }
+        //*******************************************
+        //*         Step two: Get the tiles         *
+        //*******************************************
+        World nativeWorld = craft.getWorld();
+        List<TileHolder> tiles = gatherTiles(nativeWorld, rotatedPositions.keySet());
+
+        //*******************************************
+        //*   Step three: Translate all the blocks  *
+        //*******************************************
+        // blockedByWater=false means an ocean-going vessel
+        //TODO: Simplify
+        //TODO: go by chunks
+        //TODO: Don't move unnecessary blocks
+        //get the blocks and rotate them
+        Map<Vector3i, BlockState> blockMap = new HashMap<>();
+        for (Vector3i position : rotatedPositions.keySet()) {
+            blockMap.put(position, (BlockState) ((WorldServer) nativeWorld).getBlockState(locationToBlockPos(position)).withRotation(ROTATION[rotation.ordinal()]));
+        }
+        //create the new block
+        blockMap.forEach((position, blockState) -> setBlockFast(nativeWorld, rotatedPositions.get(position), blockState));
+        //*******************************************
+        //*    Step four: replace all the tiles     *
+        //*******************************************
+        //TODO: go by chunks
+        for (TileHolder tileHolder : tiles) {
+            moveTileEntity(nativeWorld, rotatedPositions.get(tileHolder.getTilePosition()), tileHolder.getTile());
+            if (tileHolder.getNextTick() == null)
+                continue;
+            final long currentTime = ((WorldServer) nativeWorld).getWorldTime();
+            ((WorldServer) nativeWorld).scheduleBlockUpdate(locationToBlockPos(rotatedPositions.get(tileHolder.getTilePosition())), tileHolder.getTile().getBlockType(), (int) (tileHolder.getNextTick().scheduledTime - currentTime), tileHolder.getNextTick().priority);
         }
 
-        //get the old blocks and add them
-        HashMap<Vector3i,BlockSnapshot> blockData = new HashMap<>();
-        for(Vector3i blockPosition : rotatedBlockPositions.keySet()){
-            blockData.put(blockPosition,nativeWorld.createSnapshot(blockPosition));
-
-            HashMap<Integer, Integer> blockUpdates = new HashMap<>();
-            nativeWorld.getLocation(blockPosition).getScheduledUpdates().forEach(update -> blockUpdates.put(update.getPriority(), update.getTicks()));
-
-            updates.put(blockPosition, blockUpdates);
+        //*******************************************
+        //*   Step five: Destroy the leftovers      *
+        //*******************************************
+        //TODO: add support for pass-through
+        Collection<Vector3i> deletePositions = CollectionUtils.filter(rotatedPositions.keySet(), rotatedPositions.values());
+        for (Vector3i position : deletePositions) {
+            setBlockFast(nativeWorld, position, BlockTypes.AIR.getDefaultState());
         }
-
-        //remove the old blocks from the world
-        for (Vector3i blockPosition : rotatedBlockPositions.keySet()) {
-            nativeWorld.getLocation(blockPosition).getScheduledUpdates().forEach(update -> nativeWorld.getLocation(blockPosition).removeScheduledUpdate(update));
-            nativeWorld.getLocation(blockPosition).getTileEntity().ifPresent(tileEntity -> tileEntity.setValid(false));
-            setBlock(nativeWorld, blockPosition, BlockSnapshot.builder().blockState(BlockTypes.AIR.getDefaultState()).world(nativeWorld.getProperties()).position(blockPosition).build());
-        }
-
-        //create the new blocks
-        for(Map.Entry<Vector3i,BlockSnapshot> entry : blockData.entrySet()) {
-            setBlock(nativeWorld, rotatedBlockPositions.get(entry.getKey()), rotation, entry.getValue());
-            updates.get(entry.getKey()).forEach((priority , ticks) -> nativeWorld.getLocation(rotatedBlockPositions.get(entry.getKey())).addScheduledUpdate(priority, ticks));
-        }
+        //*******************************************
+        //*   Step six: Process fire spread         *
+        //*******************************************
+        processFireSpread(nativeWorld, blockMap.keySet());
     }
 
-    /**
-     * Moves the Craft using the Vector3i.
-     * @param craft Craft to be moved.
-     * @param translateBlockVector 3D direction that the Craft is to be moved in.
-     * @param newHitBox New HitBox of the Craft after moving.
-     */
-    public void translateCraft(Craft craft, Vector3i translateBlockVector, HashHitBox newHitBox) {
-
-        World nativeWorld = craft.getWorld();
-
+    public void translateCraft(Craft craft, Vector3i translateVector) {
+        //TODO: Add support for rotations
         //A craftTranslateCommand should only occur if the craft is moving to a valid position
         //*******************************************
-        //*          Convert to Positions           *
+        //*      Step one: Convert to Positions     *
         //*******************************************
-        List<Vector3i> blockPositions = new ArrayList<>();
-        for(Vector3i vector3i : craft.getHitBox()) {
-            blockPositions.add(vector3i);
-        }
-
-        //get the old blocks
-        List<BlockSnapshot> blocks = new ArrayList<>();
-        HashMap<Vector3i, HashMap<Integer, Integer>> updates = new HashMap<>();
-        for(Vector3i blockPosition : blockPositions){
-            blocks.add(nativeWorld.createSnapshot(blockPosition));
-        }
-
-        //add the blockPositions
-        List<Vector3i> newBlockPositions = new ArrayList<>();
-        for(Vector3i blockPosition : blockPositions){
-            newBlockPositions.add(blockPosition.add(translateBlockVector));
-        }
-
-        //remove the old blocks from the world
-        for (Vector3i blockPosition : blockPositions) {
-            HashMap<Integer, Integer> blockUpdates = new HashMap<>();
-            nativeWorld.getLocation(blockPosition).getScheduledUpdates().forEach(update -> blockUpdates.put(update.getPriority(), update.getTicks()));
-
-            Vector3i position = blockPosition.add(translateBlockVector);
-            updates.put(position, blockUpdates);
-
-            nativeWorld.getLocation(blockPosition).getScheduledUpdates().forEach(update -> nativeWorld.getLocation(blockPosition).removeScheduledUpdate(update));
-            nativeWorld.getLocation(blockPosition).getTileEntity().ifPresent(tileEntity -> tileEntity.setValid(false));
-            //setBlock(nativeWorld, blockPosition, BlockTypes.AIR.getDefaultState().snapshotFor(nativeWorld.getLocation(position)));
-        }
+        Set<Vector3i> positions = new HashSet<>(craft.getHitBox().asSet());
+        //*******************************************
+        //*         Step two: Get the tiles         *
+        //*******************************************
+        World nativeWorld = craft.getWorld();
+        List<TileHolder> tiles = gatherTiles(nativeWorld, positions);
+        //*******************************************
+        //*   Step three: Translate all the blocks  *
+        //*******************************************
+        // blockedByWater=false means an ocean-going vessel
+        //TODO: Simplify
+        //TODO: go by chunks
+        //TODO: Don't move unnecessary blocks
+        //get the blocks and translate the positions
+        Map<Vector3i, BlockState> blockMap = new HashMap<>();
+        positions.forEach(position -> blockMap.put(position.add(translateVector), nativeWorld.getBlock(position)));
 
         //create the new blocks
-        for(int i = 0; i < newBlockPositions.size(); i++) {
-            setBlock(nativeWorld, newBlockPositions.get(i), blocks.get(i).withLocation(nativeWorld.getLocation(newBlockPositions.get(i))));
-            int finalI = i;
-            updates.get(newBlockPositions.get(i)).forEach((priority , ticks) -> nativeWorld.getLocation(newBlockPositions.get(finalI)).addScheduledUpdate(priority, ticks));
+        blockMap.forEach((newPosition, blockState) -> setBlockFast(nativeWorld, newPosition, blockState));
+        //*******************************************
+        //*    Step four: replace all the tiles     *
+        //*******************************************
+        replaceTilesTranslate(nativeWorld, tiles, translateVector);
+        //*******************************************
+        //*   Step five: Destroy the leftovers      *
+        //*******************************************
+        Collection<Vector3i> deletePositions = CollectionUtils.filter(positions, blockMap.keySet());
+        deletePositions.forEach(position -> setBlockFast(nativeWorld, position, BlockTypes.AIR.getDefaultState()));
+
+        //*******************************************
+        //*   Step six: Process fire spread         *
+        //*******************************************
+        processFireSpread(nativeWorld, blockMap.keySet());
+    }
+
+    private List<TileHolder> gatherTiles(World world, Set<Vector3i> positions) {
+        List<TileHolder> tiles = new ArrayList<>();
+
+        //get the tiles
+        positions.forEach(position -> {
+            if (world.getBlockType(position) == BlockTypes.AIR)
+                return;
+
+            TileEntity tile = removeTileEntity(world, position);
+            if (tile == null)
+                return;
+            //get the nextTick to move with the tile
+
+            //world.getChunkAtWorldCoords(position).getTileEntities().remove(position);
+            tiles.add(new TileHolder(tile, tickProvider.getNextTick((WorldServer) world, position), position));
+        });
+
+        return tiles;
+    }
+
+    //TODO Rewrite to handle translations AND rotations
+    private void replaceTilesTranslate(World nativeWorld, List<TileHolder> tiles, Vector3i translateVector) {
+        //TODO: go by chunks
+        tiles.forEach(tileHolder -> {
+            moveTileEntity(nativeWorld, tileHolder.getTilePosition().add(translateVector), tileHolder.getTile());
+            if (tileHolder.getNextTick() == null)
+                return;
+            final long currentTime = ((WorldServer) nativeWorld).getWorldTime();
+            ((WorldServer) nativeWorld).scheduleBlockUpdate(tileHolder.getNextTick().position.add(locationToBlockPos(translateVector)), tileHolder.getTile().getBlockType(), (int) (tileHolder.getNextTick().scheduledTime - currentTime), tileHolder.getNextTick().priority);
+        });
+    }
+
+    private void processFireSpread(World world, Set<Vector3i> positions) {
+        positions.forEach(position -> {
+            IBlockState type = ((WorldServer) world).getBlockState(locationToBlockPos(position));
+
+            if (!(type.getBlock() instanceof BlockFire)) {
+                return;
+            }
+            BlockFire fire = (BlockFire) type.getBlock();
+            fire.randomTick((WorldServer) world, locationToBlockPos(position), type, ((WorldServer) world).rand);
+        });
+    }
+
+    private TileEntity removeTileEntity(World world, Vector3i position) {
+        WorldServer worldServer = (WorldServer) world;
+        BlockPos blockPos = new BlockPos(position.getX(), position.getY(), position.getZ());
+
+        TileEntity tile = null;
+
+        // Optimized version of WorldServer#getTileEntity()
+        if (worldServer.processingLoadedTiles) {
+            for (TileEntity tileEntity : worldServer.addedTileEntityList) {
+                if (!tileEntity.isInvalid() && tileEntity.getPos().equals(blockPos)) {
+                    tile = tileEntity;
+                    break;
+                }
+            }
         }
 
-        blockPositions.removeAll(newBlockPositions);
-        blockPositions.forEach(position -> setBlock(nativeWorld, position, BlockTypes.AIR.getDefaultState().snapshotFor(nativeWorld.getLocation(position))));
+        if (tile == null) {
+            tile = worldServer.getChunk(blockPos).getTileEntity(blockPos, Chunk.EnumCreateEntityType.IMMEDIATE);
+        }
 
-        craft.setHitBox(newHitBox);
+        if (tile == null) {
+            for (TileEntity tileEntity : worldServer.addedTileEntityList) {
+                if (!tileEntity.isInvalid() && tileEntity.getPos().equals(blockPos)) {
+                    tile = tileEntity;
+                    break;
+                }
+            }
+        }
+        // END
 
+        if (tile == null) {
+            return null;
+        }
+
+        //cleanup
+        //Optimized version of WorldServer#removeTileEntity();
+        tile.invalidate();
+        worldServer.addedTileEntityList.remove(tile);
+
+        if (!worldServer.processingLoadedTiles) {
+            worldServer.loadedTileEntityList.remove(tile);
+            worldServer.tickableTileEntities.remove(tile);
+
+            worldServer.getChunk(blockPos).getTileEntityMap().remove(blockPos);
+        }
+        // END
+
+        if (!bMap.containsKey(worldServer)) {
+            bMap.put(worldServer, worldServer.loadedTileEntityList);
+        }
+
+        bMap.get(world).remove(tile);
+        return tile;
     }
 
-    /**
-     * Sets the Block at the Location in the World to the BlockSnapshot.
-     * @param world World in which the block will be placed.
-     * @param blockPosition Vector3i location at which the BlockSnapshot will be placed.
-     * @param block BlockSnapshot to be placed.
-     */
-    private void setBlock(World world, Vector3i blockPosition, BlockSnapshot block) {
-
-        world.getLocation(blockPosition).restoreSnapshot(block, true, BlockChangeFlags.NONE);
+    public static BlockPos locationToBlockPos(Vector3i loc) {
+        return new BlockPos(loc.getX(), loc.getY(), loc.getZ());
     }
 
-    /**
-     * Rotates the BlockSnapshot and then sets the Block at the Location in the World to the BlockSnapshot.
-     * @param world World in which the block will be placed.
-     * @param blockPosition Vector3i location at which the BlockSnapshot will be placed.
-     * @param rotation Rotation that the block will be rotated with.
-     * @param block BlockSnapshot to be placed.
-     */
-    private void setBlock(World world, Vector3i blockPosition, Rotation rotation, BlockSnapshot block) {
-        BlockSnapshot rotatedBlock = rotateBlock(rotation, block);
-        world.getLocation(blockPosition).restoreSnapshot(rotatedBlock, true, BlockChangeFlags.NONE);
+    public void setBlockFast(World world, Vector3i position, BlockState blockState) {
+        WorldServer worldServer = (WorldServer) world;
+        BlockPos blockPos = locationToBlockPos(position);
+        IBlockState iBlockState = (IBlockState) blockState;
+
+        Chunk chunk = worldServer.getChunk(blockPos);
+        ExtendedBlockStorage chunkSection = chunk.getBlockStorageArray()[position.getY() >> 4];
+        if (chunkSection == null) {
+            // Put a GLASS block to initialize the section. It will be replaced next with the real block.
+            chunk.setBlockState(blockPos, Blocks.GLASS.getDefaultState());
+            chunkSection = chunk.getBlockStorageArray()[position.getY() >> 4];
+        }
+
+        chunkSection.set(position.getX() & 15, position.getY() & 15, position.getZ() & 15, iBlockState);
+        worldServer.notifyBlockUpdate(blockPos, iBlockState, iBlockState, 3);
     }
 
-    /**
-     * Sets the Block at the Location to the BlockSnapshot.
-     * @param location Location at which the BlockSnapshot will be placed.
-     * @param block BlockSnapshot to be placed.
-     */
-    public void setBlock(Location<World> location, BlockSnapshot block){
-        location.restoreSnapshot(block, true, BlockChangeFlags.NONE);
+    public void setBlockFast(Location<World> location, Rotation rotation, BlockState blockState) {
+        //TODO Clean this up
+        blockState = (BlockState) ((IBlockState) blockState).withRotation(ROTATION[rotation.ordinal()]);
+
+        setBlockFast(location.getExtent(), location.getBlockPosition(), blockState);
     }
 
-    /**
-     * Rotates the BlockSnapshot and then sets the Block at the Location to the BlockSnapshot.
-     * @param location Location at which the BlockSnapshot will be placed.
-     * @param rotation Rotation that the block will be rotated with.
-     * @param block BlockSnapshot to be placed.
-     */
-    public void setBlock(Location<World> location, Rotation rotation, BlockSnapshot block) {
-
-        BlockSnapshot rotatedBlock = rotateBlock(rotation, block);
-        location.restoreSnapshot(rotatedBlock, true, BlockChangeFlags.NONE);
-    }
-
-    /**
-     * Rotates a BlockSnapshot using the Rotation.
-     * @param rotation Rotation that the BlockSnapshot will be rotated with.
-     * @param block BlockSnapshot to be rotated.
-     * @return New rotated BlockSnapshot.
-     */
-    public BlockSnapshot rotateBlock(Rotation rotation, BlockSnapshot block) {
-
-        if (rotation == Rotation.NONE || !block.supports(Keys.DIRECTION) || !block.get(Keys.DIRECTION).isPresent())
-            return block;
-
-        BlockSnapshot rotatedBlock = block;
-        Direction oldBlockDirection = block.get(Keys.DIRECTION).get();
-        Direction newBlockDirection = Direction.NONE;
-
-        if (rotation == Rotation.CLOCKWISE && oldBlockDirection == Direction.NORTH)
-            newBlockDirection = Direction.EAST;
-
-        if (rotation == Rotation.CLOCKWISE && oldBlockDirection == Direction.NORTH_NORTHEAST)
-            newBlockDirection = Direction.EAST_SOUTHEAST;
-
-        if (rotation == Rotation.CLOCKWISE && oldBlockDirection == Direction.NORTHEAST)
-            newBlockDirection = Direction.SOUTHEAST;
-
-        if (rotation == Rotation.CLOCKWISE && oldBlockDirection == Direction.EAST_NORTHEAST)
-            newBlockDirection = Direction.SOUTH_SOUTHEAST;
-
-        if (rotation == Rotation.CLOCKWISE && oldBlockDirection == Direction.EAST)
-            newBlockDirection = Direction.SOUTH;
-
-        if (rotation == Rotation.CLOCKWISE && oldBlockDirection == Direction.EAST_SOUTHEAST)
-            newBlockDirection = Direction.SOUTH_SOUTHWEST;
-
-        if (rotation == Rotation.CLOCKWISE && oldBlockDirection == Direction.SOUTHEAST)
-            newBlockDirection = Direction.SOUTHWEST;
-
-        if (rotation == Rotation.CLOCKWISE && oldBlockDirection == Direction.SOUTH_SOUTHEAST)
-            newBlockDirection = Direction.WEST_SOUTHWEST;
-
-        if (rotation == Rotation.CLOCKWISE && oldBlockDirection == Direction.SOUTH)
-            newBlockDirection = Direction.WEST;
-
-        if (rotation == Rotation.CLOCKWISE && oldBlockDirection == Direction.SOUTH_SOUTHWEST)
-            newBlockDirection = Direction.WEST_NORTHWEST;
-
-        if (rotation == Rotation.CLOCKWISE && oldBlockDirection == Direction.SOUTHWEST)
-            newBlockDirection = Direction.NORTHWEST;
-
-        if (rotation == Rotation.CLOCKWISE && oldBlockDirection == Direction.WEST_SOUTHWEST)
-            newBlockDirection = Direction.NORTH_NORTHWEST;
-
-        if (rotation == Rotation.CLOCKWISE && oldBlockDirection == Direction.WEST)
-            newBlockDirection = Direction.NORTH;
-
-        if (rotation == Rotation.CLOCKWISE && oldBlockDirection == Direction.WEST_NORTHWEST)
-            newBlockDirection = Direction.NORTH_NORTHEAST;
-
-        if (rotation == Rotation.CLOCKWISE && oldBlockDirection == Direction.NORTHWEST)
-            newBlockDirection = Direction.NORTHEAST;
-
-        if (rotation == Rotation.CLOCKWISE && oldBlockDirection == Direction.NORTH_NORTHWEST)
-            newBlockDirection = Direction.EAST_NORTHEAST;
-
-        if (rotation == Rotation.ANTICLOCKWISE && oldBlockDirection == Direction.NORTH)
-            newBlockDirection = Direction.WEST;
-
-        if (rotation == Rotation.ANTICLOCKWISE && oldBlockDirection == Direction.NORTH_NORTHWEST)
-            newBlockDirection = Direction.WEST_SOUTHWEST;
-
-        if (rotation == Rotation.ANTICLOCKWISE && oldBlockDirection == Direction.NORTHWEST)
-            newBlockDirection = Direction.SOUTHWEST;
-
-        if (rotation == Rotation.ANTICLOCKWISE && oldBlockDirection == Direction.WEST_NORTHWEST)
-            newBlockDirection = Direction.SOUTH_SOUTHWEST;
-
-        if (rotation == Rotation.ANTICLOCKWISE && oldBlockDirection == Direction.WEST)
-            newBlockDirection = Direction.SOUTH;
-
-        if (rotation == Rotation.ANTICLOCKWISE && oldBlockDirection == Direction.WEST_SOUTHWEST)
-            newBlockDirection = Direction.SOUTH_SOUTHEAST;
-
-        if (rotation == Rotation.ANTICLOCKWISE && oldBlockDirection == Direction.SOUTHWEST)
-            newBlockDirection = Direction.SOUTHEAST;
-
-        if (rotation == Rotation.ANTICLOCKWISE && oldBlockDirection == Direction.SOUTH_SOUTHWEST)
-            newBlockDirection = Direction.EAST_SOUTHEAST;
-
-        if (rotation == Rotation.ANTICLOCKWISE && oldBlockDirection == Direction.SOUTH)
-            newBlockDirection = Direction.EAST;
-
-        if (rotation == Rotation.ANTICLOCKWISE && oldBlockDirection == Direction.SOUTH_SOUTHEAST)
-            newBlockDirection = Direction.EAST_NORTHEAST;
-
-        if (rotation == Rotation.ANTICLOCKWISE && oldBlockDirection == Direction.SOUTHEAST)
-            newBlockDirection = Direction.NORTHEAST;
-
-        if (rotation == Rotation.ANTICLOCKWISE && oldBlockDirection == Direction.EAST_SOUTHEAST)
-            newBlockDirection = Direction.NORTH_NORTHEAST;
-
-        if (rotation == Rotation.ANTICLOCKWISE && oldBlockDirection == Direction.EAST)
-            newBlockDirection = Direction.NORTH;
-
-        if (rotation == Rotation.ANTICLOCKWISE && oldBlockDirection == Direction.EAST_NORTHEAST)
-            newBlockDirection = Direction.NORTH_NORTHWEST;
-
-        if (rotation == Rotation.ANTICLOCKWISE && oldBlockDirection == Direction.NORTHEAST)
-            newBlockDirection = Direction.NORTHWEST;
-
-        if (rotation == Rotation.ANTICLOCKWISE && oldBlockDirection == Direction.NORTH_NORTHEAST)
-            newBlockDirection = Direction.WEST_NORTHWEST;
-
-        if (newBlockDirection == Direction.NONE)
-            return block;
-
-        rotatedBlock = rotatedBlock.with(Keys.DIRECTION, newBlockDirection).get();
-
-        return rotatedBlock;
-    }
-
-    /* Temp Disabled
-    public void disableShadow(BlockType blockType) {
+    /*public void disableShadow(BlockType type) {
         Method method;
         try {
-            Block tempBlock = CraftMagicNumbers.getBlock(blockType.getId());
+            Block tempBlock = CraftMagicNumbers.getBlock(type.getId());
             method = Block.class.getDeclaredMethod("e", int.class);
             method.setAccessible(true);
             method.invoke(tempBlock, 0);
         } catch (NoSuchMethodException | InvocationTargetException | IllegalArgumentException | IllegalAccessException | SecurityException e) {
             e.printStackTrace();
         }
+    }*/
+
+    private void moveTileEntity(World world, Vector3i newPosition, TileEntity tile) {
+        // Cast Sponge's World to Minecraft's WorldServer
+        WorldServer worldServer = (WorldServer) world;
+        // Convert Vector3i to Minecraft's BlockPos
+        BlockPos blockPos = locationToBlockPos(newPosition);
+
+        // Get the chunk
+        Chunk chunk = worldServer.getChunk(blockPos);
+
+        // Same as Spigot's invalidateBlockCache()
+        tile.blockMetadata = -1;
+        tile.blockType = null;
+        // END
+
+        // Optimised version of Chunk#addTileEntity(BlockPos, TileEntity)
+        tile.setWorld(worldServer);
+        tile.setPos(blockPos);
+        tile.validate();
+
+        chunk.getTileEntityMap().put(blockPos, tile);
+        // END
     }
-    */
+
+    private class TileHolder {
+        private final TileEntity tile;
+        private final NextTickListEntry nextTick;
+        private final Vector3i tilePosition;
+
+        public TileHolder(TileEntity tile, NextTickListEntry nextTick, Vector3i tilePosition) {
+            this.tile = tile;
+            this.nextTick = nextTick;
+            this.tilePosition = tilePosition;
+        }
+
+        public TileEntity getTile() {
+            return tile;
+        }
+
+        public NextTickListEntry getNextTick() {
+            return nextTick;
+        }
+
+        public Vector3i getTilePosition() {
+            return tilePosition;
+        }
+    }
 }
