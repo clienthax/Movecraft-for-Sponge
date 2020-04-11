@@ -627,7 +627,6 @@ public class Craft {
         return meanMoveTime;
     }
 
-    //TODO - Split back into rotate and translate
     //TODO - Add code to handle SubCrafts
     public void translate(Vector3i moveVector, boolean isSubCraft) {
         // check to see if the craft is trying to move in a direction not permitted by the type

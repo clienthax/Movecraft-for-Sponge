@@ -399,9 +399,10 @@ public class AsyncManager implements Runnable {
         // Cleanup crafts that are bugged and have not moved in the past 60 seconds, but have no crew or are still processing.
         for (Craft craft : CraftManager.getInstance()) {
 
-            if (craft.getCrewList().isEmpty() && craft.getLastMoveTick() < Sponge.getServer().getRunningTimeTicks() - 1200) {
-                CraftManager.getInstance().forceRemoveCraft(craft);
-            }
+            //TODO - RE-ADD AFTER TESTING
+            //if (craft.getCrewList().isEmpty() && craft.getLastMoveTick() < Sponge.getServer().getRunningTimeTicks() - 1200) {
+            //    CraftManager.getInstance().forceRemoveCraft(craft);
+            //}
 
             // Stop crafts from moving if they have taken too long to process.
             if (!craft.isNotProcessing() && craft.getState() == CraftState.CRUISING && craft.getProcessingStartTime() < Sponge.getServer().getRunningTimeTicks() - 1200) {

@@ -60,7 +60,7 @@ public final class CraftSign {
             final Craft craft = new Craft(type, null, loc);
 
             //get Cruise Direction
-            Direction cruiseDirection = block.get(Keys.DIRECTION).get().getOpposite();
+            Direction cruiseDirection = block.get(Keys.DIRECTION).get();
             if (cruiseDirection != Direction.NORTH && cruiseDirection != Direction.WEST && cruiseDirection != Direction.SOUTH && cruiseDirection != Direction.EAST) {
                 player.sendMessage(Text.of("Invalid Cruise Direction"));
                 return;

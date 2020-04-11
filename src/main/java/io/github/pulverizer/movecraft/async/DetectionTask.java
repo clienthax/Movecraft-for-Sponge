@@ -121,7 +121,7 @@ public class DetectionTask extends AsyncTask {
 
             Movecraft.getInstance().getLogger().info("Subcraft: " + isSubcraft);
             Movecraft.getInstance().getLogger().info("Hitbox: " + getHitBox().size());
-            if (parentCraft != null)
+            if (parentCraft != null && player != null)
                 Movecraft.getInstance().getLogger().info("Parent Craft: " + parentCraft.getHitBox().size() + "   Pilot: " + Sponge.getServer().getPlayer(player.getUniqueId()));
 
             if (player != null && isSubcraft && !parentCraft.isCrewMember(player.getUniqueId())) {
@@ -179,7 +179,10 @@ public class DetectionTask extends AsyncTask {
                     Movecraft.getInstance().getLogger().info("Detection Failed - NULL Hitbox!");
                 }
             }
+        } else {
+            Movecraft.getInstance().getLogger().info("Craft Detection Failed. " + failMessage);
         }
+
         if(craft.getHitBox() != null){
             CraftDetectEvent event = new CraftDetectEvent(craft);
             Sponge.getEventManager().post(event);
@@ -249,23 +252,19 @@ public class DetectionTask extends AsyncTask {
         if (!isAllowedBlock(testID))
             return;
 
-        UUID player = craft.getCommander();
-        if (player != null) {
-
-            addToBlockList(workingLocation);
-            for (List<BlockType> flyBlockDef : dynamicFlyBlocks.keySet()) {
-                if (flyBlockDef.contains(testID)) {
-                    addToBlockCount(flyBlockDef);
-                } else {
-                    addToBlockCount(null);
-                }
+        addToBlockList(workingLocation);
+        for (List<BlockType> flyBlockDef : dynamicFlyBlocks.keySet()) {
+            if (flyBlockDef.contains(testID)) {
+                addToBlockCount(flyBlockDef);
+            } else {
+                addToBlockCount(null);
             }
+        }
 
-            if (isWithinLimit(detectedHitBox.size(), 0, craft.getType().getMaxSize())) {
+        if (isWithinLimit(detectedHitBox.size(), 0, craft.getType().getMaxSize())) {
 
-                addToDetectionStack(workingLocation);
+            addToDetectionStack(workingLocation);
 
-            }
         }
     }
 

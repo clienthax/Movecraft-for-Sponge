@@ -24,7 +24,6 @@ import java.util.*;
 
 public final class SubcraftRotateSign {
     private static final String HEADER = "Subcraft Rotate";
-    private static final Set<UUID> rotatingPlayers = new HashSet<>();
 
     public static void onSignClick(InteractBlockEvent event, Player player, BlockSnapshot block) {
 
@@ -47,11 +46,6 @@ public final class SubcraftRotateSign {
             return;
         }
 
-        if(rotatingPlayers.contains(player.getUniqueId())){
-            player.sendMessage(Text.of("You are already rotating!"));
-            event.setCancelled(true);
-            return;
-        }
         // add subcraft
         String craftTypeStr = sign.lines().get(1).toPlain();
         CraftType type = CraftManager.getInstance().getCraftTypeFromString(craftTypeStr);
@@ -90,7 +84,6 @@ public final class SubcraftRotateSign {
         final Location<World> loc = event.getTargetBlock().getLocation().get();
         final Craft subCraft = new Craft(type, player.getUniqueId(), loc);
         Vector3i startPoint = new Vector3i(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
-        rotatingPlayers.add(player.getUniqueId());
 
         Task.builder()
                 .delayTicks(3)
@@ -99,7 +92,6 @@ public final class SubcraftRotateSign {
                     Task.builder()
                             .delayTicks(3)
                             .execute(() -> {
-                                rotatingPlayers.remove(player.getUniqueId());
                                 CraftManager.getInstance().removeCraft(subCraft);
                             })
                             .submit(Movecraft.getInstance()); })

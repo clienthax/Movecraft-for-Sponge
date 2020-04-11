@@ -11,9 +11,16 @@ public class CraftDetectEvent extends CraftEvent {
     public CraftDetectEvent(Craft craft) {
         super(craft);
 
-        cause = Cause.builder()
-                .append(craft.getCommander())
-                .build(EventContext.empty());
+        if (craft.getCommander() != null) {
+            cause = Cause.builder()
+                    .append(this)
+                    .append(craft.getCommander())
+                    .build(EventContext.empty());
+        } else {
+            cause = Cause.builder()
+                    .append(this)
+                    .build(EventContext.empty());
+        }
     }
 
     @Override
