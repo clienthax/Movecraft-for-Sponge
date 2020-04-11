@@ -96,8 +96,8 @@ public class SignListener {
                     return;
                 }
 
-                if (CraftManager.getInstance().getCraftTypeFromString(header) != null)
-                    CraftSign.onSignChange(event, player);
+                if (Settings.RequireCreatePerm && CraftManager.getInstance().getCraftTypeFromString(header) != null)
+                    CraftSign.onSignChange(event, player, header);
 
                 break;
         }

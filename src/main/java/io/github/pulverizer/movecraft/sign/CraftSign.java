@@ -19,16 +19,17 @@ import org.spongepowered.api.util.Direction;
 import org.spongepowered.api.world.Location;
 import org.spongepowered.api.world.World;
 
+/**
+ * Permissions Checked
+ * Code complete EXCEPT: TODOs and code clean up related to SignListener
+ *
+ * @author BernardisGood
+ * @version 1.0 - 11 Apr 2020
+ */
 public final class CraftSign {
 
-    public static void onSignChange(ChangeSignEvent event, Player player){
-
-        if (!Settings.RequireCreatePerm)
-            return;
-
-        ListValue<Text> lines = event.getText().lines();
-
-        if (!player.hasPermission("movecraft." + lines.get(0).toPlain() + ".create")) {
+    public static void onSignChange(ChangeSignEvent event, Player player, String craftType){
+        if (!player.hasPermission("movecraft." + craftType + ".create")) {
             player.sendMessage(Text.of("Insufficient Permissions"));
             event.setCancelled(true);
         }
@@ -45,7 +46,7 @@ public final class CraftSign {
         if (type == null)
             return;
 
-        // Valid sign prompt for ship command.
+        // Valid sign, check player has command permission
         if (!player.hasPermission("movecraft." + lines.get(0).toPlain() + ".crew.command")) {
             player.sendMessage(Text.of("Insufficient Permissions"));
             return;
@@ -55,8 +56,7 @@ public final class CraftSign {
         Location<World> loc = block.getLocation().get();
 
         if (type.getCruiseOnPilot()) {
-            //TODO: Don't set Commander! Just OG commander. Set to null for now as fix.
-            final Craft craft = new Craft(type, null, loc);
+            final Craft craft = new Craft(type, player.getUniqueId(), loc);
 
             //get Cruise Direction
             Direction cruiseDirection = block.get(Keys.DIRECTION).get();
@@ -80,10 +80,8 @@ public final class CraftSign {
             if (oldCraft == null) {
                 new Craft(type, player.getUniqueId(), loc);
             } else {
-                if (oldCraft.isNotProcessing()) {
-                    CraftManager.getInstance().removeCraft(oldCraft);
-                    new Craft(type, player.getUniqueId(), loc);
-                }
+                player.sendMessage(Text.of("You are already in a crew."));
+                player.sendMessage(Text.of("You must leave your current crew before you can commandeer your own craft."));
             }
         }
         event.setCancelled(true);

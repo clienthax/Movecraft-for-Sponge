@@ -31,7 +31,15 @@ public abstract class AsyncTask {
 
     private void task() {
         try {
+            long startTime = System.currentTimeMillis();
+
             execute();
+
+            long endTime = System.currentTimeMillis();
+            if (Settings.Debug) {
+                Movecraft.getInstance().getLogger().info(type + " Task Took: " + (endTime - startTime) + "ms");
+            }
+
             AsyncManager.getInstance().submitCompletedTask(this);
         } catch (Exception e) {
             Movecraft.getInstance().getLogger().error("Internal Error - Processor thread encountered an error!");

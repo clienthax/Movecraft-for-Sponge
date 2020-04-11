@@ -56,7 +56,6 @@ public class RotationTask extends AsyncTask {
 
     @Override
     protected void execute() throws InterruptedException {
-        long startTime = System.currentTimeMillis();
 
         if (oldHitBox.isEmpty() || craft.getState() == CraftState.DISABLED)
             return;
@@ -253,11 +252,6 @@ public class RotationTask extends AsyncTask {
                 }
             }
         }
-        long endTime = System.currentTimeMillis();
-
-        if (Settings.Debug)
-            Movecraft.getInstance().getLogger().info("Rotation Task Took: " + (endTime - startTime) + "ms");
-
     }
     
     @Override

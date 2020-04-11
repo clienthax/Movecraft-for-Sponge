@@ -33,6 +33,7 @@ public class Craft {
     //Facts
     private final CraftType type;
     private final UUID id = UUID.randomUUID();
+    private final UUID commandeeredBy;
     private int initialSize;
     private final Long originalPilotTime;
 
@@ -81,7 +82,7 @@ public class Craft {
         world = startLocation.getExtent();
         setLastMoveTick(Sponge.getServer().getRunningTimeTicks() - 100);
         this.originalPilotTime = System.currentTimeMillis();
-        setCommander(player);
+        commandeeredBy = player;
         submitTask(new DetectionTask(this, startLocation));
     }
 
@@ -568,6 +569,15 @@ public class Craft {
             addCrewMember(player);
 
         commander = player;
+    }
+
+    /**
+     * Fetches the UUID of the player that commandeered the craft.
+     *
+     * @return The UUID of the player that commandeered the craft
+     */
+    public UUID commandeeredBy() {
+        return commandeeredBy;
     }
 
     /**

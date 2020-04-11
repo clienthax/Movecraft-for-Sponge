@@ -40,7 +40,7 @@ public class PilotSign {
 
         if(event instanceof InteractBlockEvent.Primary && player.getUniqueId() == foundCraft.getPilot()){
             foundCraft.setPilot(null);
-            if (player != null) {player.sendMessage(Text.of("You are no longer the pilot of this craft."));}
+            player.sendMessage(Text.of("You are no longer the pilot of this craft."));
             event.setCancelled(true);
             return;
         }

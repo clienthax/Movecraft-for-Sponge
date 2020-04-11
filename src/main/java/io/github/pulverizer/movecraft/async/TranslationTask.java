@@ -58,7 +58,6 @@ public class TranslationTask extends AsyncTask {
 
     @Override
     protected void execute() throws InterruptedException {
-        long startTime = System.currentTimeMillis();
 
         if (oldHitBox.isEmpty() || craft.getState() == CraftState.DISABLED)
             return;
@@ -190,12 +189,6 @@ public class TranslationTask extends AsyncTask {
         }
         //TODO: Re-add!
         //captureYield(harvestedBlocks);
-
-        long endTime = System.currentTimeMillis();
-
-        if (Settings.Debug)
-            Movecraft.getInstance().getLogger().info("Translation Task Took: " + (endTime - startTime) + "ms");
-
     }
     
     @Override

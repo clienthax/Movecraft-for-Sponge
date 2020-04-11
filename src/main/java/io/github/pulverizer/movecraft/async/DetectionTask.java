@@ -2,13 +2,12 @@ package io.github.pulverizer.movecraft.async;
 
 import com.flowpowered.math.vector.Vector3i;
 import io.github.pulverizer.movecraft.Movecraft;
-import io.github.pulverizer.movecraft.config.Settings;
 import io.github.pulverizer.movecraft.craft.Craft;
 import io.github.pulverizer.movecraft.craft.CraftManager;
 import io.github.pulverizer.movecraft.event.CraftDetectEvent;
 import io.github.pulverizer.movecraft.sign.CommanderSign;
-import io.github.pulverizer.movecraft.utils.*;
-
+import io.github.pulverizer.movecraft.utils.CollectionUtils;
+import io.github.pulverizer.movecraft.utils.HashHitBox;
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.block.BlockType;
 import org.spongepowered.api.block.BlockTypes;
@@ -38,8 +37,7 @@ public class DetectionTask extends AsyncTask {
     private Date commanderSignDate;
     private Time commanderSignTime;
     private String commanderSignUsername;
-    private int commanderSignID;
-    private boolean foundCommander = false;
+    private int commanderSignId;
 
     private boolean failed;
     private String failMessage;
@@ -52,115 +50,102 @@ public class DetectionTask extends AsyncTask {
 
     @Override
     public void execute() {
-        long startTime = System.currentTimeMillis();
 
+        // Get craft type flyblocks
         Map<List<BlockType>, List<Double>> flyBlocks = craft.getType().getFlyBlocks();
         dynamicFlyBlocks = flyBlocks;
 
+        // Detect blocks
         blockStack.push(startLocation);
         do {
             detectSurrounding(blockStack.pop());
         } while (!blockStack.isEmpty());
 
-        Player player = Sponge.getServer().getPlayer(craft.getCommander()).orElse(null);
+        // Get the player
+        Player player = Sponge.getServer().getPlayer(craft.commandeeredBy()).orElse(null);
 
+        // Check commander sign
         if (foundCommanderSign) {
+            HashMap<UUID, Boolean> commanderSignMemberMap = CommanderSign.getMembers(commanderSignUsername, commanderSignId);
 
-            HashMap<UUID, Boolean> commanderSignMemberMap = CommanderSign.getMembers(commanderSignUsername, commanderSignID);
+            if (commanderSignMemberMap == null) {
+                Movecraft.getInstance().getLogger().warn("Commander sign not registered in database");
 
-            if (commanderSignMemberMap.get(player.getUniqueId()) != null)
-                foundCommander = true;
+            } else if (!commanderSignMemberMap.containsKey(craft.commandeeredBy())
+                    && !Sponge.getServer().getPlayer(craft.commandeeredBy()).get().hasPermission("movecraft.bypasslock")) {
 
-            commanderSignMemberMap.forEach((uuid, isOwner) -> Movecraft.getInstance().getLogger().info(Sponge.getServer().getPlayer(uuid).get().getName()));
-
-            if (foundCommander && !Sponge.getServer().getPlayer(craft.getCommander()).get().hasPermission("movecraft.bypasslock"))
                 fail("Not one of the registered commanders for this craft.");
-
+            }
         }
 
-        if (failed()) {
-            if (player != null)
-                player.sendMessage(Text.of(getFailMessage()));
-            else
-                Movecraft.getInstance().getLogger().info("NULL Player Craft Detection failed:" + getFailMessage());
+        // Run final checks
+        isWithinLimit(detectedHitBox.size(), craft.getType().getMinSize(), craft.getType().getMaxSize());
+        confirmStructureRequirements(flyBlocks, blockTypeCount);
 
-            return;
+        // Check that the player is still online
+        // If they are offline we cancel the Detection Task
+        if (player == null) {
+            fail("Player went offline.");
         }
 
-        if (isWithinLimit(detectedHitBox.size(), craft.getType().getMinSize(), craft.getType().getMaxSize()) && confirmStructureRequirements(flyBlocks, blockTypeCount)) {
+        if (!failed()) {
+            // Submit the hitbox
             hitBox = detectedHitBox;
         }
-
-        long endTime = System.currentTimeMillis();
-
-        if (Settings.Debug)
-            Movecraft.getInstance().getLogger().info("Detection Task Took: " + (endTime - startTime) + "ms");
-
     }
 
     @Override
     public void postProcess() {
 
-        Player player = Sponge.getServer().getPlayer(craft.getCommander()).orElse(null);
+        Player player = Sponge.getServer().getPlayer(craft.commandeeredBy()).orElse(null);
 
         if (!failed()) {
-            Set<Craft> craftsInWorld = CraftManager.getInstance().getCraftsInWorld(craft.getWorld());
             boolean failed = false;
-            boolean isSubcraft = false;
             Craft parentCraft = null;
 
-            for (Craft testCraft : craftsInWorld) {
+            for (Craft testCraft : CraftManager.getInstance().getCraftsInWorld(craft.getWorld())) {
                 if (testCraft.getHitBox().intersects(getHitBox())) {
-                    Movecraft.getInstance().getLogger().info("Test Craft Size: " + testCraft.getHitBox().size());
 
-                    isSubcraft = true;
                     parentCraft = testCraft;
                     break;
                 }
             }
 
-            Movecraft.getInstance().getLogger().info("Subcraft: " + isSubcraft);
-            Movecraft.getInstance().getLogger().info("Hitbox: " + getHitBox().size());
-            if (parentCraft != null && player != null)
-                Movecraft.getInstance().getLogger().info("Parent Craft: " + parentCraft.getHitBox().size() + "   Pilot: " + Sponge.getServer().getPlayer(player.getUniqueId()));
+            Movecraft.getInstance().getLogger().info("Subcraft: " + (parentCraft != null));
+            Movecraft.getInstance().getLogger().info("Size: " + getHitBox().size());
+            if (parentCraft != null && player != null) {
+                Movecraft.getInstance().getLogger().info("Parent Craft: " + parentCraft.getHitBox().size() + "   Commander: " + player);
 
-            if (player != null && isSubcraft && !parentCraft.isCrewMember(player.getUniqueId())) {
-                // Player is already controlling a craft
-                player.sendMessage(Text.of("Detection Failed! You are not in the crew of this craft."));
-            } else {
+                if (!parentCraft.isCrewMember(player.getUniqueId())) {
+                    // Player is already controlling a craft
+                    fail("You are not in the crew of this craft.");
 
-                if (isSubcraft) {
+                } else if (parentCraft.getType() == craft.getType() || parentCraft.getHitBox().size() <= getHitBox().size()) {
+                    fail("Craft is already being controlled by another player.");
 
-                    if (parentCraft.getType() == craft.getType() || parentCraft.getHitBox().size() <= getHitBox().size()) {
-                        player.sendMessage(Text.of("Detection Failed. Craft is already being controlled by another player."));
-                        failed = true;
-
-                    } else {
-
-                        // if this is a different type than the overlapping craft, and is smaller, this must be a child craft, like a fighter on a carrier
-                        if (!parentCraft.isNotProcessing()) {
-                            failed = true;
-                            player.sendMessage(Text.of("Parent Craft is busy."));
-                        }
-                        parentCraft.setHitBox(new HashHitBox(CollectionUtils.filter(parentCraft.getHitBox(), getHitBox())));
-                        parentCraft.setInitialSize(parentCraft.getInitialSize() - getHitBox().size());
+                } else {
+                    // if this is a different type than the overlapping craft, and is smaller, this must be a child craft, like a fighter on a carrier
+                    if (!parentCraft.isNotProcessing()) {
+                        fail("Parent Craft is busy.");
                     }
+
+                    parentCraft.setHitBox(new HashHitBox(CollectionUtils.filter(parentCraft.getHitBox(), getHitBox())));
+                    parentCraft.setInitialSize(parentCraft.getInitialSize() - getHitBox().size());
                 }
             }
 
-            if (craft.getType().getMustBeSubcraft() && !isSubcraft) {
-                failed = true;
-                if (player != null)
-                    player.sendMessage(Text.of("Craft must be part of another craft!"));
+            if (craft.getType().getMustBeSubcraft() && parentCraft == null) {
+                fail("Craft must be part of another craft!");
             }
-            if (!failed) {
+
+            if (!failed()) {
                 craft.setInitialSize(getHitBox().size());
                 craft.setHitBox(getHitBox());
 
                 final int waterLine = craft.getWaterLine();
-                if(!craft.getType().blockedByWater() && craft.getHitBox().getMinY() <= waterLine){
-                    for(Vector3i location : craft.getHitBox().boundingHitBox()){
-                        if(location.getY() <= waterLine){
+                if (!craft.getType().blockedByWater() && craft.getHitBox().getMinY() <= waterLine) {
+                    for (Vector3i location : craft.getHitBox().boundingHitBox()) {
+                        if (location.getY() <= waterLine) {
                             craft.getPhasedBlocks().add(BlockTypes.WATER.getDefaultState().snapshotFor(new Location<>(craft.getWorld(), location)));
                         }
                     }
@@ -169,21 +154,34 @@ public class DetectionTask extends AsyncTask {
                 if (craft.getHitBox() != null) {
 
                     if (player != null) {
-                        player.sendMessage(Text.of("Successfully piloted " + craft.getType().getName() + " Size: " + craft.getHitBox().size()));
-                        Movecraft.getInstance().getLogger().info("New Craft Detected! Pilot: " + player.getName() + " CraftType: " + craft.getType().getName() + " Size: " + craft.getHitBox().size() + " Location: " + craft.getHitBox().getMidPoint().toString());
+                        //TODO We need a better way of doing this
+                        if (!craft.getType().getMustBeSubcraft() || !craft.getType().getCruiseOnPilot()) {
+                            craft.setCommander(craft.commandeeredBy());
+                        }
+
+                        player.sendMessage(Text.of("Successfully commandeered " + craft.getType().getName() + " Size: " + craft.getHitBox().size()));
+                        Movecraft.getInstance().getLogger().info("New Craft Detected! Commandeered By: " + player.getName() + " CraftType: " + craft.getType().getName() + " Size: " + craft.getHitBox().size() + " Location: " + craft.getHitBox().getMidPoint().toString());
                     } else {
-                        Movecraft.getInstance().getLogger().info("New Craft Detected! Pilot: " + "NULL PLAYER" + " CraftType: " + craft.getType().getName() + " Size: " + craft.getHitBox().size() + " Location: " + craft.getHitBox().getMidPoint().toString());
+                        Movecraft.getInstance().getLogger().info("New Craft Detected! Commandeered By: " + craft.commandeeredBy() + " CraftType: " + craft.getType().getName() + " Size: " + craft.getHitBox().size() + " Location: " + craft.getHitBox().getMidPoint().toString());
                     }
+
                     CraftManager.getInstance().addCraft(craft);
                 } else {
-                    Movecraft.getInstance().getLogger().info("Detection Failed - NULL Hitbox!");
+                    fail("NULL Hitbox!");
                 }
             }
-        } else {
-            Movecraft.getInstance().getLogger().info("Craft Detection Failed. " + failMessage);
         }
 
-        if(craft.getHitBox() != null){
+        // Check if the task failed
+        if (failed()) {
+            if (player != null) {
+                player.sendMessage(Text.of(getFailMessage()));
+            }
+
+            Movecraft.getInstance().getLogger().info("Craft " + super.type + " Failed: " + getFailMessage());
+        }
+
+        if (craft.getHitBox() != null) {
             CraftDetectEvent event = new CraftDetectEvent(craft);
             Sponge.getEventManager().post(event);
         }
@@ -196,25 +194,28 @@ public class DetectionTask extends AsyncTask {
         if (!notVisited(workingLocation))
             return;
 
-        BlockType testID = world.getBlockType(workingLocation);
+        BlockType testType = world.getBlockType(workingLocation);
 
-        if (testID == BlockTypes.AIR)
+        if (testType == BlockTypes.AIR)
             return;
 
-        if (isForbiddenBlock(testID))
+        if (isForbiddenBlock(testType))
             fail("Detection Failed - Forbidden block found.");
 
 
-        if (testID == BlockTypes.FLOWING_WATER || testID == BlockTypes.WATER) {
+        if (testType == BlockTypes.FLOWING_WATER || testType == BlockTypes.WATER) {
             waterContact = true;
         }
 
-        if (testID == BlockTypes.STANDING_SIGN || testID == BlockTypes.WALL_SIGN && world.getTileEntity(workingLocation).isPresent()) {
+        if (testType == BlockTypes.STANDING_SIGN || testType == BlockTypes.WALL_SIGN && world.getTileEntity(workingLocation).isPresent()) {
 
             ListValue<Text> signText = ((Sign) world.getTileEntity(workingLocation).get()).lines();
-            if (signText.get(0).toPlain().equalsIgnoreCase("Commander:") && craft.getCommander() != null) {
+            if (signText.get(0).toPlain().equalsIgnoreCase("Commander:")) {
 
-                Map.Entry<Date, Time> timestamp = CommanderSign.getCreationTimeStamp(signText.get(1).toPlain(), Integer.parseInt(signText.get(2).toPlain()));
+                String testUsername = signText.get(1).toPlain();
+                int testId = Integer.parseInt(signText.get(2).toPlain());
+
+                Map.Entry<Date, Time> timestamp = CommanderSign.getCreationTimeStamp(testUsername, testId);
 
                 if (timestamp != null) {
 
@@ -222,39 +223,38 @@ public class DetectionTask extends AsyncTask {
                         foundCommanderSign = true;
                         commanderSignDate = timestamp.getKey();
                         commanderSignTime = timestamp.getValue();
-                        commanderSignUsername = signText.get(1).toPlain();
-                        commanderSignID = Integer.parseInt(signText.get(2).toPlain());
+                        commanderSignUsername = testUsername;
+                        commanderSignId = testId;
 
                     } else if (timestamp.getKey().before(commanderSignDate)) {
                         commanderSignDate = timestamp.getKey();
                         commanderSignTime = timestamp.getValue();
-                        commanderSignUsername = signText.get(1).toPlain();
-                        commanderSignID = Integer.parseInt(signText.get(2).toPlain());
+                        commanderSignUsername = testUsername;
+                        commanderSignId = testId;
 
                     } else if (timestamp.getKey().equals(commanderSignDate) && timestamp.getValue().before(commanderSignTime)) {
                         commanderSignDate = timestamp.getKey();
                         commanderSignTime = timestamp.getValue();
-                        commanderSignUsername = signText.get(1).toPlain();
-                        commanderSignID = Integer.parseInt(signText.get(2).toPlain());
+                        commanderSignUsername = testUsername;
+                        commanderSignId = testId;
 
                     }
                 }
             }
 
-            for (int i = 0; i < 4; i++) {
-                if (isForbiddenSignString(signText.get(i).toString())) {
+            signText.forEach(line -> {
+                if (isForbiddenSignString(line.toString())) {
                     fail("Detection Failed - Forbidden sign string found.");
                 }
-            }
+            });
         }
 
-
-        if (!isAllowedBlock(testID))
+        if (!isAllowedBlock(testType))
             return;
 
         addToBlockList(workingLocation);
         for (List<BlockType> flyBlockDef : dynamicFlyBlocks.keySet()) {
-            if (flyBlockDef.contains(testID)) {
+            if (flyBlockDef.contains(testType)) {
                 addToBlockCount(flyBlockDef);
             } else {
                 addToBlockCount(null);
@@ -290,7 +290,6 @@ public class DetectionTask extends AsyncTask {
         surroundingLocations.add(location.add(-1, 1, 0));
         //UP - NORTHWEST
         surroundingLocations.add(location.add(-1, 1, -1));
-
 
 
         //NORTH
