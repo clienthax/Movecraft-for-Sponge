@@ -61,9 +61,6 @@ public class DetectionTask extends AsyncTask {
             detectSurrounding(blockStack.pop());
         } while (!blockStack.isEmpty());
 
-        // Get the player
-        Player player = Sponge.getServer().getPlayer(craft.commandeeredBy()).orElse(null);
-
         // Check commander sign
         if (foundCommanderSign) {
             HashMap<UUID, Boolean> commanderSignMemberMap = CommanderSign.getMembers(commanderSignUsername, commanderSignId);
@@ -84,7 +81,7 @@ public class DetectionTask extends AsyncTask {
 
         // Check that the player is still online
         // If they are offline we cancel the Detection Task
-        if (player == null) {
+        if (Sponge.getServer().getPlayer(craft.commandeeredBy()).orElse(null) == null) {
             fail("Player went offline.");
         }
 
@@ -114,7 +111,7 @@ public class DetectionTask extends AsyncTask {
             Movecraft.getInstance().getLogger().info("Subcraft: " + (parentCraft != null));
             Movecraft.getInstance().getLogger().info("Size: " + getHitBox().size());
             if (parentCraft != null && player != null) {
-                Movecraft.getInstance().getLogger().info("Parent Craft: " + parentCraft.getHitBox().size() + "   Commander: " + player);
+                Movecraft.getInstance().getLogger().info("Parent Craft: " + parentCraft.getHitBox().size() + "   Commander: " + player.getName());
 
                 if (!parentCraft.isCrewMember(player.getUniqueId())) {
                     // Player is already controlling a craft
@@ -134,7 +131,7 @@ public class DetectionTask extends AsyncTask {
                 }
             }
 
-            if (craft.getType().getMustBeSubcraft() && parentCraft == null) {
+            if (craft.getType().mustBeSubcraft() && parentCraft == null) {
                 fail("Craft must be part of another craft!");
             }
 
@@ -155,7 +152,8 @@ public class DetectionTask extends AsyncTask {
 
                     if (player != null) {
                         //TODO We need a better way of doing this
-                        if (!craft.getType().getMustBeSubcraft() || !craft.getType().getCruiseOnPilot()) {
+                        // Maybe "CraftType#canHaveCrew"?
+                        if (!craft.getType().mustBeSubcraft() || !craft.getType().getCruiseOnPilot()) {
                             craft.setCommander(craft.commandeeredBy());
                         }
 

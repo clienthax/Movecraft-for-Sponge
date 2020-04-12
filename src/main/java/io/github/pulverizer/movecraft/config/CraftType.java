@@ -667,7 +667,7 @@ final public class CraftType {
         return focusedExplosion;
     }
 
-    public boolean getMustBeSubcraft() {
+    public boolean mustBeSubcraft() {
         return mustBeSubcraft;
     }
 

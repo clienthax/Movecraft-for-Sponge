@@ -24,7 +24,7 @@ import org.spongepowered.api.world.World;
  * Code complete EXCEPT: TODOs and code clean up related to SignListener
  *
  * @author BernardisGood
- * @version 1.0 - 11 Apr 2020
+ * @version 1.1 - 12 Apr 2020
  */
 public final class CraftSign {
 
@@ -56,7 +56,6 @@ public final class CraftSign {
         Location<World> loc = block.getLocation().get();
 
         if (type.getCruiseOnPilot()) {
-            final Craft craft = new Craft(type, player.getUniqueId(), loc);
 
             //get Cruise Direction
             Direction cruiseDirection = block.get(Keys.DIRECTION).get();
@@ -65,23 +64,27 @@ public final class CraftSign {
                 return;
             }
 
+            final Craft craft = new Craft(type, player.getUniqueId(), loc);
+
             craft.setCruiseDirection(cruiseDirection);
             craft.setState(CraftState.CRUISING);
 
-            //TODO: Replace with task in AsyncManager!
+            //TODO: Move to Detection Task
+            // And add fly time config options to CraftType
             Task.builder()
                     .execute(() -> CraftManager.getInstance().removeCraft(craft))
                     .delayTicks(20*15)
                     .submit(Movecraft.getInstance());
 
         } else {
-            Craft oldCraft = CraftManager.getInstance().getCraftByPlayer(player.getUniqueId());
+            final Craft oldCraft = CraftManager.getInstance().getCraftByPlayer(player.getUniqueId());
 
             if (oldCraft == null) {
                 new Craft(type, player.getUniqueId(), loc);
-            } else {
-                player.sendMessage(Text.of("You are already in a crew."));
-                player.sendMessage(Text.of("You must leave your current crew before you can commandeer your own craft."));
+
+            } else if (oldCraft.isNotProcessing()) {
+                oldCraft.removeCrewMember(player.getUniqueId());
+                new Craft(type, player.getUniqueId(), loc);
             }
         }
         event.setCancelled(true);
