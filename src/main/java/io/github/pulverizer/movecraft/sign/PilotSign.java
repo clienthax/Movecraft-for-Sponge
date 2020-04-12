@@ -10,6 +10,13 @@ import org.spongepowered.api.event.block.InteractBlockEvent;
 import org.spongepowered.api.text.Text;
 import org.spongepowered.api.world.World;
 
+/**
+ * Permissions to be reviewed
+ * Code to be reviewed
+ *
+ * @author BernardisGood
+ * @version 1.0 - 12 Apr 2020
+ */
 public class PilotSign {
     private static final String HEADER = "Pilot";
 

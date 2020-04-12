@@ -12,6 +12,13 @@ import org.spongepowered.api.event.block.InteractBlockEvent;
 import org.spongepowered.api.event.block.tileentity.ChangeSignEvent;
 import org.spongepowered.api.text.Text;
 
+/**
+ * Permissions to be reviewed
+ * Code to be reviewed
+ *
+ * @author BernardisGood
+ * @version 1.0 - 12 Apr 2020
+ */
 public final class HelmSign {
 
     public static void onSignChange(ChangeSignEvent event){

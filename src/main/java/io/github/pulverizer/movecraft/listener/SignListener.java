@@ -84,7 +84,7 @@ public class SignListener {
 
             case "crew:":
 
-                if (Settings.AllowCrewSigns) {
+                if (Settings.EnableCrewSigns) {
                     CrewSign.onSignChange(event, player);
                 }
                 break;
@@ -96,7 +96,7 @@ public class SignListener {
                     return;
                 }
 
-                if (Settings.RequireCreatePerm && CraftManager.getInstance().getCraftTypeFromString(header) != null)
+                if (Settings.RequireCreateSignPerm && CraftManager.getInstance().getCraftTypeFromString(header) != null)
                     CraftSign.onSignChange(event, player, header);
 
                 break;

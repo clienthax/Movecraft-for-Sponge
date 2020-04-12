@@ -22,6 +22,13 @@ import java.sql.Date;
 import java.sql.Time;
 import java.util.*;
 
+/**
+ * Permissions Checked
+ * Code to be reviewed
+ *
+ * @author BernardisGood
+ * @version 1.0 - 12 Apr 2020
+ */
 public class DetectionTask extends AsyncTask {
     private final World world;
     private final Vector3i startLocation;

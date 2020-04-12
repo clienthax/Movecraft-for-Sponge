@@ -19,6 +19,13 @@ import org.spongepowered.api.world.World;
 
 import java.util.LinkedList;
 
+/**
+ * Permissions to be reviewed
+ * Code to be reviewed
+ *
+ * @author BernardisGood
+ * @version 1.0 - 12 Apr 2020
+ */
 public final class RemoteSign {
     private static final String HEADER = "Remote Sign";
 

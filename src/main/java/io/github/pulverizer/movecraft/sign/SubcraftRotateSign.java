@@ -16,6 +16,14 @@ import org.spongepowered.api.text.Text;
 import org.spongepowered.api.world.Location;
 import org.spongepowered.api.world.World;
 
+
+/**
+ * Permissions to be reviewed
+ * Code to be reviewed
+ *
+ * @author BernardisGood
+ * @version 1.0 - 12 Apr 2020
+ */
 public final class SubcraftRotateSign {
     private static final String HEADER = "Subcraft Rotate";
 

@@ -10,6 +10,13 @@ import org.spongepowered.api.event.block.InteractBlockEvent;
 import org.spongepowered.api.text.Text;
 import org.spongepowered.api.world.World;
 
+/**
+ * Permissions Checked
+ * Code to be reviewed
+ *
+ * @author BernardisGood
+ * @version 1.1 - 12 Apr 2020
+ */
 public final class CannonDirectorSign {
     private static final String HEADER = "Cannon Director";
 
@@ -25,46 +32,33 @@ public final class CannonDirectorSign {
 
         event.setCancelled(true);
 
-        Craft foundCraft = null;
-        World blockWorld = block.getLocation().get().getExtent();
-        for (Craft tcraft : CraftManager.getInstance().getCraftsInWorld(blockWorld)) {
-            if (MathUtils.locationInHitbox(tcraft.getHitBox(), block.getLocation().get()) && !tcraft.getCrewList().isEmpty()) {
-                foundCraft = tcraft;
-                break;
-            }
-        }
 
-        if (foundCraft == null) {
-            if (player != null) {
-                player.sendMessage(Text.of("ERROR: Sign must be a part of a piloted craft!"));
-            }
+
+        Craft craft = CraftManager.getInstance().getCraftByPlayer(player.getUniqueId());
+
+        if (craft == null) {
+            player.sendMessage(Text.of("You are not the member of a crew."));
             return;
         }
 
-        if (!foundCraft.getType().allowCannonDirectorSign()) {
-            if (player != null) {
-                player.sendMessage(Text.of("ERROR: Cannon Director Signs not allowed on this craft!"));
-            }
+        if (!player.hasPermission("movecraft." + craft.getType().getName().toLowerCase() + ".directors.cannons") && (craft.getType().requiresSpecificPerms() || !player.hasPermission("movecraft.directors.cannons"))) {
+            player.sendMessage(Text.of("Insufficient Permissions"));
             return;
         }
-        if(event instanceof InteractBlockEvent.Primary && player.getUniqueId() == foundCraft.getCannonDirector()){
-            foundCraft.setCannonDirector(null);
-            if (player != null) {
-                player.sendMessage(Text.of("You are no longer directing the cannons of this craft."));
-            }
+
+        if (!craft.getType().allowCannonDirectorSign()) {
+            player.sendMessage(Text.of("ERROR: Cannon Director Signs not allowed on this craft!"));
+            return;
+        }
+
+        if(event instanceof InteractBlockEvent.Primary && player.getUniqueId() == craft.getCannonDirector()){
+            craft.setCannonDirector(null);
+            player.sendMessage(Text.of("You are no longer directing the cannons of this craft."));
             return;
         }
 
 
-        foundCraft.setCannonDirector(player.getUniqueId());
-        if(player != null) {
-            player.sendMessage(Text.of("You are now directing the cannons of this craft."));
-        }
-        if (foundCraft.getAADirector() == player.getUniqueId())
-            foundCraft.setAADirector(null);
-
-        if (foundCraft.getPilot() == player.getUniqueId())
-            foundCraft.setPilot(null);
-
+        craft.setCannonDirector(player.getUniqueId());
+        player.sendMessage(Text.of("You are now directing the cannons of this craft."));
     }
 }

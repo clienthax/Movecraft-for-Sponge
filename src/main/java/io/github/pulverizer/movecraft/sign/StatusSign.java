@@ -15,6 +15,14 @@ import org.spongepowered.api.world.World;
 
 import java.util.*;
 
+/**
+ * No Permissions
+ * No Settings
+ * Code to be reviewed
+ *
+ * @author BernardisGood
+ * @version 1.0 - 12 Apr 2020
+ */
 public final class StatusSign {
 
     public static void onCraftDetect(CraftDetectEvent event, World world, HashHitBox hitBox) {

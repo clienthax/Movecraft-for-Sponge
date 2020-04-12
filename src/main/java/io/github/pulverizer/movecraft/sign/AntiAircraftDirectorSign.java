@@ -8,6 +8,13 @@ import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.event.block.InteractBlockEvent;
 import org.spongepowered.api.text.Text;
 
+/**
+ * Permissions Checked
+ * Code to be reviewed
+ *
+ * @author BernardisGood
+ * @version 1.1 - 12 Apr 2020
+ */
 public class AntiAircraftDirectorSign {
     private static final String HEADER = "AA Director";
 
@@ -26,7 +33,12 @@ public class AntiAircraftDirectorSign {
         Craft craft = CraftManager.getInstance().getCraftByPlayer(player.getUniqueId());
 
         if (craft == null) {
-            player.sendMessage(Text.of("You are not part of the crew aboard this craft!"));
+            player.sendMessage(Text.of("You are not the member of a crew."));
+            return;
+        }
+
+        if (!player.hasPermission("movecraft." + craft.getType().getName().toLowerCase() + ".directors.aa") && (craft.getType().requiresSpecificPerms() || !player.hasPermission("movecraft.directors.aa"))) {
+            player.sendMessage(Text.of("Insufficient Permissions"));
             return;
         }
 
@@ -34,19 +46,14 @@ public class AntiAircraftDirectorSign {
             player.sendMessage(Text.of("ERROR: AA Director Signs not allowed on this craft!"));
             return;
         }
-        if(event instanceof InteractBlockEvent.Primary && player.getUniqueId() == craft.getAADirector()){
+        if (event instanceof InteractBlockEvent.Primary && player.getUniqueId() == craft.getAADirector()) {
             craft.setAADirector(null);
             player.sendMessage(Text.of("You are no longer directing the AA of this craft."));
             return;
         }
 
-        craft.setAADirector(player.getUniqueId());
-        player.sendMessage(Text.of("You are now directing the AA of this craft."));
-
-        if (craft.getCannonDirector() == player.getUniqueId())
-            craft.setCannonDirector(null);
-
-        if (craft.getPilot() == player.getUniqueId())
-            craft.setPilot(null);
+        if (craft.setAADirector(player.getUniqueId())) {
+            player.sendMessage(Text.of("You are now directing the AA of this craft."));
+        }
     }
 }

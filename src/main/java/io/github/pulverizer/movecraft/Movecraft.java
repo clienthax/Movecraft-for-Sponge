@@ -164,9 +164,9 @@ public class Movecraft {
         Settings.FireballLifespan = mainConfigNode.getNode("FireballLifespan").getInt(6);
         Settings.FireballPenetration = mainConfigNode.getNode("FireballPenetration").getBoolean(true);
         Settings.ProtectPilotedCrafts = mainConfigNode.getNode("ProtectPilotedCrafts").getBoolean(true);
-        Settings.AllowCrewSigns = mainConfigNode.getNode("AllowCrewSigns").getBoolean(true);
+        Settings.EnableCrewSigns = mainConfigNode.getNode("AllowCrewSigns").getBoolean(true);
         Settings.SetHomeToCrewSign = mainConfigNode.getNode("SetHomeToCrewSign").getBoolean(true);
-        Settings.RequireCreatePerm = mainConfigNode.getNode("RequireCreatePerm").getBoolean(false);
+        Settings.RequireCreateSignPerm = mainConfigNode.getNode("RequireCreatePerm").getBoolean(false);
         Settings.TNTContactExplosives = mainConfigNode.getNode("TNTContactExplosives").getBoolean(true);
         Settings.FadeWrecksAfter = mainConfigNode.getNode("FadeWrecksAfter").getInt(0);
         Settings.ReleaseOnCrewDeath = mainConfigNode.getNode("ReleaseOnCrewDeath").getBoolean(true);
@@ -249,7 +249,7 @@ public class Movecraft {
         AsyncManager.initialize();
         MapUpdateManager.initialize();
         CommanderSign.initDatabase();
-        if (Settings.AllowCrewSigns) {
+        if (Settings.EnableCrewSigns) {
             CrewSign.initDatabase();
         }
 

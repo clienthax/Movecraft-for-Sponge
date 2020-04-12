@@ -17,7 +17,6 @@ import org.spongepowered.api.event.block.ChangeBlockEvent;
 import org.spongepowered.api.event.block.tileentity.ChangeSignEvent;
 import org.spongepowered.api.event.entity.living.humanoid.player.RespawnPlayerEvent;
 import org.spongepowered.api.text.Text;
-import org.spongepowered.api.util.RespawnLocation;
 import org.spongepowered.api.world.Location;
 import org.spongepowered.api.world.World;
 
@@ -29,12 +28,24 @@ import java.util.*;
 
 import static org.spongepowered.api.event.Order.FIRST;
 
+/**
+ * No Permissions
+ * Settings checked
+ * Code to be reviewed
+ *
+ * @author BernardisGood
+ * @version 1.0 - 12 Apr 2020
+ */
 public class CrewSign {
 
     private static final String HEADER = "Crew:";
     private static final String MAIN_TABLE = "CrewSigns";
 
     public static void onSignChange(ChangeSignEvent event, Player player) {
+
+        if (!Settings.EnableCrewSigns) {
+            return;
+        }
 
         World world = event.getTargetTile().getLocation().getExtent();
         Vector3i location = event.getTargetTile().getLocation().getBlockPosition();
@@ -141,9 +152,6 @@ public class CrewSign {
 
     public static void onSignTranslate(World world, Vector3i location, Sign sign) {
 
-        if (!Settings.AllowCrewSigns)
-            return;
-
         ListValue<Text> lines = sign.lines();
 
         String username = lines.get(1).toPlain();
@@ -155,8 +163,13 @@ public class CrewSign {
     @Listener(order = FIRST)
     public final void onPlayerRespawn(RespawnPlayerEvent event) {
 
-        if (!event.isDeath())
+        if (!Settings.EnableCrewSigns) {
             return;
+        }
+
+        if (!event.isDeath()) {
+            return;
+        }
 
         Player player = event.getTargetEntity();
         HashMap<UUID, ArrayList<Vector3i>> respawnOptions = new HashMap<>();
@@ -231,7 +244,7 @@ public class CrewSign {
             respawnTransform = respawnTransform.setLocation(finalLocation);
             event.setToTransform(respawnTransform);
 
-            //TODO: Waiting on SpongeCommon issue #1824
+            //TODO: Waiting on SpongeCommon issue #1824 - https://github.com/SpongePowered/SpongeCommon/issues/1824
             /*
             if (player.get(Keys.RESPAWN_LOCATIONS).isPresent()) {
 
@@ -357,6 +370,5 @@ public class CrewSign {
         } catch (SQLException e) {
             e.printStackTrace();
         }
-
     }
 }

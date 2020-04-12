@@ -51,7 +51,7 @@ public class Craft {
     private UUID commander;
     private UUID nextInCommand;
     private UUID pilot;
-    private UUID AADirector;
+    private UUID aaDirector;
     private UUID cannonDirector;
     private final HashSet<UUID> crewList = new HashSet<>();
 
@@ -232,7 +232,13 @@ public class Craft {
         if (!isCrewMember(player) && player != null)
             return false;
 
-        AADirector = player;
+        if (cannonDirector == player)
+            setCannonDirector(null);
+
+        if (pilot == player)
+            setPilot(null);
+
+        aaDirector = player;
         return true;
     }
 
@@ -241,7 +247,7 @@ public class Craft {
      * @return The current AA director of the craft.
      */
     public UUID getAADirector() {
-        return AADirector;
+        return aaDirector;
     }
 
     /**
@@ -252,6 +258,12 @@ public class Craft {
     public boolean setCannonDirector(UUID player) {
         if (!isCrewMember(player) && player != null)
             return false;
+
+        if (aaDirector == player)
+            setAADirector(null);
+
+        if (pilot == player)
+            setPilot(null);
 
         cannonDirector = player;
         return true;

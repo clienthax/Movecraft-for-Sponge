@@ -15,6 +15,13 @@ import java.sql.*;
 import java.sql.Date;
 import java.util.*;
 
+/**
+ * Permissions Checked
+ * Code to be reviewed
+ *
+ * @author BernardisGood
+ * @version 1.0 - 12 Apr 2020
+ */
 public final class CommanderSign {
 
     private static final String HEADER = "Commander:";
@@ -22,6 +29,12 @@ public final class CommanderSign {
     private static final String MEMBER_TABLE = "CommanderSigns_Members";
 
     public static void onSignChange(ChangeSignEvent event, Player player) {
+
+        if (!player.hasPermission("movecraft.commandersign")) {
+            player.sendMessage(Text.of("Insufficient Permissions"));
+            event.setCancelled(true);
+            return;
+        }
 
         Connection sqlConnection = Movecraft.getInstance().connectToSQL();
 

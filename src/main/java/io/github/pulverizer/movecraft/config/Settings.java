@@ -20,7 +20,7 @@ public class Settings {
     public static double TracerRateTicks = 5.0;
     public static boolean ProtectPilotedCrafts = false;
     public static boolean DisableSpillProtection = false;
-    public static boolean RequireCreatePerm = false;
+    public static boolean RequireCreateSignPerm = false;
     public static boolean TNTContactExplosives = true;
     public static int FadeWrecksAfter = 0;
     public static int ManOverBoardTimeout = 60;
@@ -29,8 +29,9 @@ public class Settings {
     public static int BlockQueueChunkSize = 1000;
     public static double RepairMoneyPerBlock = 0.0;
     public static boolean FireballPenetration = true;
-    public static boolean AllowCrewSigns = true;
-    public static boolean SetHomeToCrewSign = true;
+    public static boolean EnableCrewSigns = true;
+    // TODO - Should we be overriding /home
+    //public static boolean SetHomeToCrewSign = true;
     public static Map<BlockType, Integer> DurabilityOverride;
     public static HashSet<BlockType> DisableShadowBlocks;
     public static boolean ReleaseOnCrewDeath;

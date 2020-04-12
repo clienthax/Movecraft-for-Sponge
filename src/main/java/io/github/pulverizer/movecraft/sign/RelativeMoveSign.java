@@ -11,6 +11,13 @@ import org.spongepowered.api.event.block.InteractBlockEvent;
 import org.spongepowered.api.text.Text;
 import org.spongepowered.api.util.Direction;
 
+/**
+ * Permissions to be reviewed
+ * Code to be reviewed
+ *
+ * @author BernardisGood
+ * @version 1.0 - 12 Apr 2020
+ */
 public final class RelativeMoveSign {
     private static final String HEADER = "RMove:";
 

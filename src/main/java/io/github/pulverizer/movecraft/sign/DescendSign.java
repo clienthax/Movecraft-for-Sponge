@@ -16,6 +16,13 @@ import org.spongepowered.api.text.Text;
 import org.spongepowered.api.util.Direction;
 import org.spongepowered.api.world.World;
 
+/**
+ * No Permissions
+ * Code to be reviewed
+ *
+ * @author BernardisGood
+ * @version 1.0 - 12 Apr 2020
+ */
 public final class DescendSign {
 
     public static void onCraftDetect(CraftDetectEvent event, World world, HashHitBox hitBox){

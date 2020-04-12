@@ -41,6 +41,7 @@ final public class CraftType {
     private final boolean focusedExplosion;
     private final boolean mustBeSubcraft;
     private final boolean keepMovingOnSink;
+    private final boolean requiresSpecificPerms;
     private final int maxSize;
     private final int minSize;
     private final int minHeightLimit;
@@ -93,6 +94,7 @@ final public class CraftType {
         name = (String) data.get("name");
         maxSize = integerFromObject(data.get("maxSize"));
         minSize = integerFromObject(data.get("minSize"));
+        requiresSpecificPerms = (boolean) data.getOrDefault("requiresSpecificPerms", true);
         Collections.addAll(allowedBlocks, blockIDListFromObject(data.get("allowedBlocks")));
         furnaceBlocks = new ArrayList<>();
         if (data.containsKey("furnaceBlocks")) {
@@ -525,6 +527,10 @@ final public class CraftType {
 
     public int getMinSize() {
         return minSize;
+    }
+
+    public boolean requiresSpecificPerms() {
+        return requiresSpecificPerms;
     }
 
     public HashSet<BlockType> getAllowedBlocks() {

@@ -24,7 +24,7 @@ import org.spongepowered.api.world.World;
  * Code complete EXCEPT: TODOs and code clean up related to SignListener
  *
  * @author BernardisGood
- * @version 1.1 - 12 Apr 2020
+ * @version 1.2 - 12 Apr 2020
  */
 public final class CraftSign {
 
@@ -47,7 +47,7 @@ public final class CraftSign {
             return;
 
         // Valid sign, check player has command permission
-        if (!player.hasPermission("movecraft." + lines.get(0).toPlain() + ".crew.command")) {
+        if (!player.hasPermission("movecraft." + lines.get(0).toPlain() + ".crew.command") && (type.requiresSpecificPerms() || !player.hasPermission("movecraft.crew.command"))) {
             player.sendMessage(Text.of("Insufficient Permissions"));
             return;
         }

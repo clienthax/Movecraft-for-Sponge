@@ -19,6 +19,13 @@ import org.spongepowered.api.text.Text;
 import org.spongepowered.api.util.Direction;
 import org.spongepowered.api.world.World;
 
+/**
+ * Permissions to be reviewed
+ * Code to be reviewed
+ *
+ * @author BernardisGood
+ * @version 1.0 - 12 Apr 2020
+ */
 public final class CruiseSign {
 
     public static void onCraftDetect(CraftDetectEvent event, World world, HashHitBox hitBox){
@@ -98,7 +105,7 @@ public final class CruiseSign {
 
     public static void onSignChange(ChangeSignEvent event, Player player) {
 
-        if (player.hasPermission("movecraft.sign.cruise") || !Settings.RequireCreatePerm) {
+        if (player.hasPermission("movecraft.sign.cruise") || !Settings.RequireCreateSignPerm) {
             return;
         }
         player.sendMessage(Text.of("Insufficient Permissions"));
