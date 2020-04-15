@@ -274,68 +274,8 @@ public class DetectionTask extends AsyncTask {
     }
 
     private void detectSurrounding(Vector3i location) {
-
-        HashSet<Vector3i> surroundingLocations = new HashSet<>();
-
-        //UP
-        surroundingLocations.add(location.add(0, 1, 0));
-        //UP - NORTH
-        surroundingLocations.add(location.add(0, 1, -1));
-        //UP - NORTHEAST
-        surroundingLocations.add(location.add(1, 1, -1));
-        //UP - EAST
-        surroundingLocations.add(location.add(1, 1, 0));
-        //UP - SOUTHEAST
-        surroundingLocations.add(location.add(1, 1, 1));
-        //UP - SOUTH
-        surroundingLocations.add(location.add(0, 1, 1));
-        //UP - SOUTHWEST
-        surroundingLocations.add(location.add(-1, 1, 1));
-        //UP - WEST
-        surroundingLocations.add(location.add(-1, 1, 0));
-        //UP - NORTHWEST
-        surroundingLocations.add(location.add(-1, 1, -1));
-
-
-        //NORTH
-        surroundingLocations.add(location.add(0, 0, -1));
-        //NORTHEAST
-        surroundingLocations.add(location.add(1, 0, -1));
-        //EAST
-        surroundingLocations.add(location.add(1, 0, 0));
-        //SOUTHEAST
-        surroundingLocations.add(location.add(1, 0, 1));
-        //SOUTH
-        surroundingLocations.add(location.add(0, 0, 1));
-        //SOUTHWEST
-        surroundingLocations.add(location.add(-1, 0, 1));
-        //WEST
-        surroundingLocations.add(location.add(-1, 0, 0));
-        //NORTHWEST
-        surroundingLocations.add(location.add(-1, 0, -1));
-
-        //DOWN
-        surroundingLocations.add(location.add(0, -1, 0));
-        //DOWN - NORTH
-        surroundingLocations.add(location.add(0, -1, -1));
-        //DOWN - NORTHEAST
-        surroundingLocations.add(location.add(1, -1, -1));
-        //DOWN - EAST
-        surroundingLocations.add(location.add(1, -1, 0));
-        //DOWN - SOUTHEAST
-        surroundingLocations.add(location.add(1, -1, 1));
-        //DOWN - SOUTH
-        surroundingLocations.add(location.add(0, -1, 1));
-        //DOWN - SOUTHWEST
-        surroundingLocations.add(location.add(-1, -1, 1));
-        //DOWN - WEST
-        surroundingLocations.add(location.add(-1, -1, 0));
-        //DOWN - NORTHWEST
-        surroundingLocations.add(location.add(-1, -1, -1));
-
         //Detect blocks in surrounding locations.
-        surroundingLocations.forEach(this::detectBlock);
-
+        CollectionUtils.neighbors(location).forEach(this::detectBlock);
     }
 
     private boolean confirmStructureRequirements(Map<List<BlockType>, List<Double>> flyBlocks, Map<List<BlockType>, Integer> countData) {

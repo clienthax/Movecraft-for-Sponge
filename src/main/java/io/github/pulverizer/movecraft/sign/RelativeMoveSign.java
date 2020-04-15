@@ -1,6 +1,7 @@
 package io.github.pulverizer.movecraft.sign;
 
 import com.flowpowered.math.vector.Vector3i;
+import io.github.pulverizer.movecraft.craft.Craft;
 import io.github.pulverizer.movecraft.craft.CraftManager;
 import org.spongepowered.api.block.BlockSnapshot;
 import org.spongepowered.api.block.tileentity.Sign;
@@ -12,11 +13,13 @@ import org.spongepowered.api.text.Text;
 import org.spongepowered.api.util.Direction;
 
 /**
- * Permissions to be reviewed
+ * Add Permissions:
+ * - Create Sign
+ *
  * Code to be reviewed
  *
  * @author BernardisGood
- * @version 1.0 - 12 Apr 2020
+ * @version 1.1 - 12 Apr 2020
  */
 public final class RelativeMoveSign {
     private static final String HEADER = "RMove:";
@@ -32,9 +35,23 @@ public final class RelativeMoveSign {
         if (!lines.get(0).toPlain().equalsIgnoreCase(HEADER)) {
             return;
         }
-        if (CraftManager.getInstance().getCraftByPlayer(player.getUniqueId()) == null) {
+
+        Craft craft = CraftManager.getInstance().getCraftByPlayer(player.getUniqueId());
+
+        if (craft == null) {
             return;
         }
+
+        if (!craft.getType().getCanStaticMove()) {
+            return;
+        }
+
+        // Use permissions
+        if (!player.hasPermission("movecraft." + craft.getType().getName() + ".movement.relativemove") && (craft.getType().requiresSpecificPerms() || !player.hasPermission("movecraft.movement.relativemove"))) {
+            player.sendMessage(Text.of("Insufficient Permissions"));
+            return;
+        }
+
         String[] numbers = lines.get(1).toPlain().split(",");
         int dLeftRight = Integer.parseInt(numbers[0]);
         // negative = left,
@@ -43,7 +60,7 @@ public final class RelativeMoveSign {
         int dBackwardForward = Integer.parseInt(numbers[2]);
         // negative = backwards,
         // positive = forwards
-        int maxMove = CraftManager.getInstance().getCraftByPlayer(player.getUniqueId()).getType().maxStaticMove();
+        int maxMove = craft.getType().maxStaticMove();
 
         if (dLeftRight > maxMove)
             dLeftRight = maxMove;
@@ -101,12 +118,6 @@ public final class RelativeMoveSign {
                 break;
         }
 
-        if (!player.hasPermission("movecraft." + CraftManager.getInstance().getCraftByPlayer(player.getUniqueId()).getType().getName() + ".movement.relativemove")) {
-            player.sendMessage(Text.of("Insufficient Permissions"));
-            return;
-        }
-        if (CraftManager.getInstance().getCraftByPlayer(player.getUniqueId()).getType().getCanStaticMove()) {
-            CraftManager.getInstance().getCraftByPlayer(player.getUniqueId()).translate(new Vector3i(dx, dy, dz), false);
-        }
+        CraftManager.getInstance().getCraftByPlayer(player.getUniqueId()).translate(new Vector3i(dx, dy, dz), false);
     }
 }

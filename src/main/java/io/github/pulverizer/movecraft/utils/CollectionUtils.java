@@ -54,6 +54,23 @@ public class CollectionUtils {
             new Vector3i(-1, 0, 0)};
 
     /**
+     * Provides the axial neighbors of a location. Neighbors are defined as locations that exist within one meter of a given location
+     *
+     * @param location the location to provide neighbors for
+     * @return an iterable set of neighbors to the given location
+     */
+
+    public static HashSet<Vector3i> neighbors(Vector3i location) {
+        final HashSet<Vector3i> neighbors = new HashSet<>(6);
+
+        for (Vector3i test : SHIFTS) {
+            neighbors.add(location.add(test));
+        }
+
+        return neighbors;
+    }
+
+    /**
      * Finds the axial neighbors to a location. Neighbors are defined as locations that exist within one meter of a given location.
      * @param hitbox
      * @param location the location to search for neighbors
@@ -63,7 +80,7 @@ public class CollectionUtils {
         if(hitbox.isEmpty()){
             return Collections.emptyList();
         }
-        final List<Vector3i> neighbors = new ArrayList<>(6);
+        final HashSet<Vector3i> neighbors = new HashSet<>(6);
         for(Vector3i test : SHIFTS){
             if(hitbox.contains(location.add(test))){
                 neighbors.add(location.add(test));

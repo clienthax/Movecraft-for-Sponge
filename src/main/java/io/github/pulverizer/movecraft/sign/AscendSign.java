@@ -21,7 +21,7 @@ import org.spongepowered.api.world.World;
  * Code to be reviewed
  *
  * @author BernardisGood
- * @version 1.0 - 12 Apr 2020
+ * @version 1.1 - 12 Apr 2020
  */
 public class AscendSign {
 
@@ -35,7 +35,7 @@ public class AscendSign {
             Sign sign = (Sign) world.getTileEntity(location).get();
             ListValue<Text> lines = sign.lines();
 
-            if (lines.get(0).toPlain().equalsIgnoreCase("Ascend: ON")) {
+            if (lines.get(0).toPlain().equalsIgnoreCase("Ascend: ON") || lines.get(0).toPlain().equalsIgnoreCase("Ascend:")) {
                 lines.set(0, Text.of("Ascend: OFF"));
                 sign.offer(lines);
             }
@@ -52,9 +52,9 @@ public class AscendSign {
         Sign sign = (Sign) block.getLocation().get().getTileEntity().get();
         ListValue<Text> lines = sign.lines();
         if (lines.get(0).toPlain().equalsIgnoreCase("Ascend: OFF")) {
+
             if (!craft.getType().getCanCruise()) {
-                //TODO: Find a better message.
-                player.sendMessage(Text.of("You are not piloting a craft!"));
+                player.sendMessage(Text.of("This CraftType does not support this action"));
                 return;
             }
 
@@ -70,11 +70,6 @@ public class AscendSign {
         }
 
         if (lines.get(0).toPlain().equalsIgnoreCase("Ascend: ON")) {
-            if (!craft.getType().getCanCruise()) {
-                //TODO: Find a better message.
-                player.sendMessage(Text.of("You are not piloting a craft!"));
-                return;
-            }
 
             event.setCancelled(true);
             lines.set(0, Text.of("Ascend: OFF"));

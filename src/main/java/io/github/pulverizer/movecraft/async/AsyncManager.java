@@ -2,6 +2,7 @@ package io.github.pulverizer.movecraft.async;
 
 import com.flowpowered.math.vector.Vector3i;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import io.github.pulverizer.movecraft.config.Settings;
 import io.github.pulverizer.movecraft.craft.Craft;
 import io.github.pulverizer.movecraft.craft.CraftManager;
@@ -154,18 +155,18 @@ public class AsyncManager implements Runnable {
     }
 
     private void detectSinking(){
-        List<Craft> crafts = Lists.newArrayList(CraftManager.getInstance());
-        for(Craft craft : crafts) {
+        HashSet<Craft> crafts = Sets.newHashSet(CraftManager.getInstance());
+        crafts.forEach(craft -> {
             if (craft.getState() == CraftState.SINKING) {
-                continue;
+                return;
             }
             if (craft.getType().getSinkPercent() == 0.0 || !craft.isNotProcessing()) {
-                continue;
+                return;
             }
             long ticksElapsed = Sponge.getServer().getRunningTimeTicks() - craft.getLastCheckTime();
 
             if (ticksElapsed <= Settings.SinkCheckTicks) {
-                continue;
+                return;
             }
 
             final World world = craft.getWorld();
@@ -268,24 +269,24 @@ public class AsyncManager implements Runnable {
             } else {
                 craft.setLastCheckTime(Sponge.getServer().getRunningTimeTicks());
             }
-        }
+        });
     }
 
     //Controls sinking crafts
     private void processSinking() {
         //copy the crafts before iteration to prevent concurrent modifications
-        List<Craft> crafts = Lists.newArrayList(CraftManager.getInstance());
-        for(Craft craft : crafts){
+        HashSet<Craft> crafts = Sets.newHashSet(CraftManager.getInstance());
+        crafts.forEach(craft -> {
             if (craft == null || craft.getState() != CraftState.SINKING) {
-                continue;
+                return;
             }
             if (craft.getHitBox().isEmpty() || craft.getHitBox().getMinY() < 5) {
                 CraftManager.getInstance().removeCraft(craft);
-                continue;
+                return;
             }
             long ticksElapsed = Sponge.getServer().getRunningTimeTicks() - craft.getLastMoveTick();
             if (Math.abs(ticksElapsed) < craft.getType().getSinkRateTicks()) {
-                continue;
+                return;
             }
             int dx = 0;
             int dz = 0;
@@ -294,7 +295,7 @@ public class AsyncManager implements Runnable {
                 dz = craft.getLastMoveVector().getZ();
             }
             craft.translate(new Vector3i(dx, -1, dz), false);
-        }
+        });
     }
 
     private void processDetection() {

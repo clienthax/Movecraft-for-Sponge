@@ -44,7 +44,7 @@ public class TranslationTask extends AsyncTask {
     private World world;
 
     private final List<BlockType> harvestBlocks = craft.getType().getHarvestBlocks();
-    private final List<Vector3i> harvestedBlocks = new ArrayList<>();
+    private final HashSet<Vector3i> harvestedBlocks = new HashSet<>();
     private final List<BlockType> harvesterBladeBlocks = craft.getType().getHarvesterBladeBlocks();
     private final HashHitBox collisionBox = new HashHitBox();
 
@@ -101,7 +101,7 @@ public class TranslationTask extends AsyncTask {
                     }
                 }
 
-                List<Vector3i> toRemove = new ArrayList<>();
+                HashSet<Vector3i> toRemove = new HashSet<>();
                 Vector3i next = location;
 
                 do {

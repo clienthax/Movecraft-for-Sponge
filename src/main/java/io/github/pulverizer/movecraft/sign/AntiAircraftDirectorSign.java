@@ -10,6 +10,9 @@ import org.spongepowered.api.text.Text;
 
 /**
  * Permissions Checked
+ * Add Permissions:
+ * - Create Sign
+ *
  * Code to be reviewed
  *
  * @author BernardisGood

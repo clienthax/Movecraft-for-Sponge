@@ -165,7 +165,7 @@ public class Movecraft {
         Settings.FireballPenetration = mainConfigNode.getNode("FireballPenetration").getBoolean(true);
         Settings.ProtectPilotedCrafts = mainConfigNode.getNode("ProtectPilotedCrafts").getBoolean(true);
         Settings.EnableCrewSigns = mainConfigNode.getNode("AllowCrewSigns").getBoolean(true);
-        Settings.SetHomeToCrewSign = mainConfigNode.getNode("SetHomeToCrewSign").getBoolean(true);
+        //Settings.SetHomeToCrewSign = mainConfigNode.getNode("SetHomeToCrewSign").getBoolean(true);
         Settings.RequireCreateSignPerm = mainConfigNode.getNode("RequireCreatePerm").getBoolean(false);
         Settings.TNTContactExplosives = mainConfigNode.getNode("TNTContactExplosives").getBoolean(true);
         Settings.FadeWrecksAfter = mainConfigNode.getNode("FadeWrecksAfter").getInt(0);

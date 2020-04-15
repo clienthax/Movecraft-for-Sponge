@@ -91,7 +91,7 @@ final public class CraftType {
             throw new TypeNotFoundException("No file found at path " + f.getAbsolutePath());
         }
 
-        name = (String) data.get("name");
+        name = ((String) data.get("name")).toLowerCase();
         maxSize = integerFromObject(data.get("maxSize"));
         minSize = integerFromObject(data.get("minSize"));
         requiresSpecificPerms = (boolean) data.getOrDefault("requiresSpecificPerms", true);

@@ -3,6 +3,7 @@ package io.github.pulverizer.movecraft.craft;
 import com.flowpowered.math.vector.Vector3i;
 import io.github.pulverizer.movecraft.Movecraft;
 import io.github.pulverizer.movecraft.config.CraftType;
+import io.netty.util.internal.ConcurrentSet;
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.block.BlockType;
 import org.spongepowered.api.block.BlockTypes;
@@ -17,7 +18,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-public class CraftManager implements Iterable<Craft>{
+public class CraftManager implements Iterable<Craft> {
     private static CraftManager ourInstance;
     private final Set<Craft> craftList = ConcurrentHashMap.newKeySet();
     private Set<CraftType> craftTypes;
@@ -156,7 +157,7 @@ public class CraftManager implements Iterable<Craft>{
     }
 
     public void removeCraftByPlayer(UUID player){
-        List<Craft> crafts = new ArrayList<>();
+        HashSet<Craft> crafts = new HashSet<>();
         for(Craft c : craftList){
             if(c.getPilot() != null && c.getPilot().equals(player)){
                 releaseEvents.remove(c);

@@ -24,13 +24,6 @@ import org.spongepowered.api.world.World;
 
 import java.util.*;
 
-//import org.bukkit.Location;
-//import org.bukkit.Material;
-//import org.bukkit.craftbukkit.v1_12_R1.CraftWorld;
-//import org.bukkit.craftbukkit.v1_12_R1.entity.CraftPlayer;
-//import org.bukkit.craftbukkit.v1_12_R1.util.CraftMagicNumbers;
-//import org.bukkit.entity.Player;
-
 public class WorldHandler {
     private static final net.minecraft.util.Rotation[] ROTATION;
 
@@ -73,7 +66,7 @@ public class WorldHandler {
         //*         Step two: Get the tiles         *
         //*******************************************
         World nativeWorld = craft.getWorld();
-        List<TileHolder> tiles = gatherTiles(nativeWorld, rotatedPositions.keySet());
+        HashSet<TileHolder> tiles = gatherTiles(nativeWorld, rotatedPositions.keySet());
 
         //*******************************************
         //*   Step three: Translate all the blocks  *
@@ -126,7 +119,7 @@ public class WorldHandler {
         //*         Step two: Get the tiles         *
         //*******************************************
         World nativeWorld = craft.getWorld();
-        List<TileHolder> tiles = gatherTiles(nativeWorld, positions);
+        HashSet<TileHolder> tiles = gatherTiles(nativeWorld, positions);
         //*******************************************
         //*   Step three: Translate all the blocks  *
         //*******************************************
@@ -156,8 +149,8 @@ public class WorldHandler {
         processFireSpread(nativeWorld, blockMap.keySet());
     }
 
-    private List<TileHolder> gatherTiles(World world, Set<Vector3i> positions) {
-        List<TileHolder> tiles = new ArrayList<>();
+    private HashSet<TileHolder> gatherTiles(World world, Set<Vector3i> positions) {
+        HashSet<TileHolder> tiles = new HashSet<>();
 
         //get the tiles
         positions.forEach(position -> {
@@ -177,7 +170,7 @@ public class WorldHandler {
     }
 
     //TODO Rewrite to handle translations AND rotations
-    private void replaceTilesTranslate(World nativeWorld, List<TileHolder> tiles, Vector3i translateVector) {
+    private void replaceTilesTranslate(World nativeWorld, Set<TileHolder> tiles, Vector3i translateVector) {
         //TODO: go by chunks
         tiles.forEach(tileHolder -> {
             moveTileEntity(nativeWorld, tileHolder.getTilePosition().add(translateVector), tileHolder.getTile());

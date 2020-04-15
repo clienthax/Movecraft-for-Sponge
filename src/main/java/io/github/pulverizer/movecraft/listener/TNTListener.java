@@ -279,7 +279,7 @@ public class TNTListener {
         // Remove any blocks from the list that were adjacent to water, to prevent spillage
         if (!Settings.DisableSpillProtection) {
 
-            List<Location<World>> affectedLocations = new ArrayList<>(event.getAffectedLocations());
+            HashSet<Location<World>> affectedLocations = new HashSet<>(event.getAffectedLocations());
 
             for (Location<World> affectedLocation : affectedLocations) {
 

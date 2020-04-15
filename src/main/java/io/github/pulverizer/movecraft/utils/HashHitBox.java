@@ -346,11 +346,11 @@ public class HashHitBox implements MutableHitBox {
      * @return an iterable set of neighbors to the given location
      */
 
-    public Iterable<Vector3i> neighbors(Vector3i location) {
+    public Set<Vector3i> neighbors(Vector3i location) {
         if (this.isEmpty()) {
-            return Collections.emptyList();
+            return Collections.emptySet();
         }
-        final List<Vector3i> neighbors = new ArrayList<>(6);
+        final Set<Vector3i> neighbors = new HashSet<>(6);
         for (Vector3i test : SHIFTS) {
             if (this.contains(location.add(test))) {
                 neighbors.add(location.add(test));

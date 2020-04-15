@@ -59,6 +59,10 @@ public final class CommanderSign {
                 usedNumIDs.add(resultSet.getInt("ID"));
             }
 
+            if (usedNumIDs.size() == Integer.MAX_VALUE) {
+                fail(event, player);
+                return;
+            }
             Collections.sort(usedNumIDs);
 
             for (int id : usedNumIDs) {
