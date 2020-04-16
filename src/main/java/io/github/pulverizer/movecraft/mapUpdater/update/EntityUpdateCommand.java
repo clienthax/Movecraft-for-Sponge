@@ -2,6 +2,7 @@ package io.github.pulverizer.movecraft.mapUpdater.update;
 
 import com.flowpowered.math.vector.Vector3d;
 import io.github.pulverizer.movecraft.Movecraft;
+import io.github.pulverizer.movecraft.utils.WorldUtils;
 import org.spongepowered.api.entity.Entity;
 
 import java.util.Objects;
@@ -26,7 +27,7 @@ public class EntityUpdateCommand extends UpdateCommand {
 
     @Override
     public void doUpdate() {
-        Movecraft.getInstance().getWorldHandler().moveEntity(entity, newLocation, yaw);
+        WorldUtils.moveEntity(entity, newLocation, yaw);
     }
 
     @Override

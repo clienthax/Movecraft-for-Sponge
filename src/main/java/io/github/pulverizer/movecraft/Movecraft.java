@@ -4,6 +4,7 @@ import com.google.common.reflect.TypeToken;
 import com.google.inject.Inject;
 import io.github.pulverizer.movecraft.listener.*;
 import io.github.pulverizer.movecraft.sign.*;
+import io.github.pulverizer.movecraft.utils.WorldUtils;
 import ninja.leaping.configurate.ConfigurationNode;
 import ninja.leaping.configurate.ConfigurationOptions;
 import ninja.leaping.configurate.loader.ConfigurationLoader;
@@ -46,7 +47,6 @@ import java.util.Map;
 public class Movecraft {
 
     private static Movecraft instance;
-    private WorldHandler worldHandler;
 
     private ConfigurationLoader<ConfigurationNode> mainConfigLoader;
     private ConfigurationNode mainConfigNode;
@@ -152,8 +152,6 @@ public class Movecraft {
         } else {
             Settings.PilotTool = pilotStick;
         }
-
-        worldHandler = new WorldHandler();
 
 
         Settings.SinkCheckTicks = mainConfigNode.getNode("SinkCheckTicks").getDouble(100.0);
@@ -264,14 +262,6 @@ public class Movecraft {
                 .execute(mapUpdateManager)
                 .intervalTicks(1)
                 .submit(this);
-    }
-
-    /**
-     * Fetches the WorldHandler instance that the Plugin is using.
-     * @return WorldHandler instance.
-     */
-    public WorldHandler getWorldHandler(){
-        return worldHandler;
     }
 
 }

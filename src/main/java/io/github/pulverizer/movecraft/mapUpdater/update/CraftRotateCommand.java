@@ -9,6 +9,7 @@ import io.github.pulverizer.movecraft.enums.CraftState;
 import io.github.pulverizer.movecraft.enums.Rotation;
 import io.github.pulverizer.movecraft.event.SignTranslateEvent;
 import io.github.pulverizer.movecraft.utils.*;
+import io.github.pulverizer.movecraft.world.ChunkDataManager;
 import org.slf4j.Logger;
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.block.BlockSnapshot;
@@ -53,8 +54,6 @@ public class CraftRotateCommand extends UpdateCommand {
             passthroughBlocks.add(BlockTypes.TALLGRASS);
             passthroughBlocks.add(BlockTypes.DOUBLE_PLANT);
         }
-
-        final WorldHandler handler = Movecraft.getInstance().getWorldHandler();
 
         if (!passthroughBlocks.isEmpty()) {
             MutableHitBox originalLocations = new HashHitBox();
@@ -129,8 +128,8 @@ public class CraftRotateCommand extends UpdateCommand {
             }
 
             //add the craft
+            rotateCraft();
 
-            handler.rotateCraft(craft, originLocation, rotation);
             //trigger sign event
             for (Vector3i location : craft.getHitBox()) {
                 BlockType blockType = craft.getWorld().getBlockType(location);
@@ -164,7 +163,7 @@ public class CraftRotateCommand extends UpdateCommand {
             }
         }else{
             //add the craft
-            handler.rotateCraft(craft, originLocation, rotation);
+            rotateCraft();
             //trigger sign event
             for (Vector3i location : craft.getHitBox()) {
                 BlockType blockType = craft.getWorld().getBlockType(location);
@@ -180,6 +179,38 @@ public class CraftRotateCommand extends UpdateCommand {
         craft.addMoveTime(time);
         craft.setLastMoveTick(Sponge.getServer().getRunningTimeTicks());
         craft.setProcessing(false);
+    }
+
+    private void rotateCraft() {
+        //TODO - hitbox should not be getting set before this method is called!
+
+        // Get old positions
+        HashSet<Vector3i> oldPositions = new HashSet<>();
+        Rotation counterRotation = rotation == Rotation.CLOCKWISE ? Rotation.ANTICLOCKWISE : Rotation.CLOCKWISE;
+        for (Vector3i newLocation : craft.getHitBox()) {
+            oldPositions.add(MathUtils.rotateVec(counterRotation, newLocation.sub(originLocation)).add(originLocation));
+        }
+
+        // Set up the chunk data manager
+        ChunkDataManager chunkDataManager = new ChunkDataManager(craft.getWorld(), oldPositions);
+
+        // Get the tiles
+        chunkDataManager.fetchTilesAndRotate(rotation, originLocation);
+
+        // Get the blocks and rotate them
+        chunkDataManager.fetchBlocksAndRotate(rotation, originLocation);
+
+        // Create the new blocks
+        chunkDataManager.setBlocks();
+
+        // Place the tile entities
+        chunkDataManager.placeTiles();
+
+        // Destroy the leftovers
+        chunkDataManager.destroyLeftovers();
+
+        //Process fire spread
+        chunkDataManager.processFireSpread();
     }
 
     public Craft getCraft() {

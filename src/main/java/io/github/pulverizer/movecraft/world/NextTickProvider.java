@@ -1,6 +1,7 @@
-package io.github.pulverizer.movecraft;
+package io.github.pulverizer.movecraft.world;
 
 import com.flowpowered.math.vector.Vector3i;
+import io.github.pulverizer.movecraft.utils.WorldUtils;
 import net.minecraft.init.Blocks;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.NextTickListEntry;
@@ -24,7 +25,7 @@ public class NextTickProvider {
     }
 
     public NextTickListEntry getNextTick(WorldServer world, Vector3i vecPosition){
-        BlockPos position = WorldHandler.locationToBlockPos(vecPosition);
+        BlockPos position = WorldUtils.locationToBlockPos(vecPosition);
 
         if(!isRegistered(world))
             registerWorld(world);

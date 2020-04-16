@@ -3,7 +3,8 @@ package io.github.pulverizer.movecraft.mapUpdater.update;
 import com.flowpowered.math.vector.Vector3i;
 import io.github.pulverizer.movecraft.enums.CraftState;
 import io.github.pulverizer.movecraft.Movecraft;
-import io.github.pulverizer.movecraft.WorldHandler;
+import io.github.pulverizer.movecraft.world.ChunkDataManager;
+import io.github.pulverizer.movecraft.utils.WorldUtils;
 import io.github.pulverizer.movecraft.config.Settings;
 import io.github.pulverizer.movecraft.craft.Craft;
 import io.github.pulverizer.movecraft.craft.CraftManager;
@@ -44,6 +45,8 @@ public class CraftTranslateCommand extends UpdateCommand {
 
     @Override
     public void doUpdate() {
+        //A craftTranslateCommand should only occur if the craft is moving to a valid position
+
         long time = System.currentTimeMillis();
         //long timeTaken = 0;
 
@@ -65,16 +68,13 @@ public class CraftTranslateCommand extends UpdateCommand {
             passthroughBlocks.add(BlockTypes.DOUBLE_PLANT);
         }
 
-        WorldHandler handler = Movecraft.getInstance().getWorldHandler();
-
         if(passthroughBlocks.isEmpty()){
 
             //timeTaken = System.currentTimeMillis() - time;
             //logger.info("Marker 1A: " + timeTaken + " ms");
 
             //add the craft
-            //OLD Movecraft.getInstance().getWorldHandler().translateCraft(craft, min, max, displacement);
-            handler.translateCraft(craft, displacement);
+            translateCraft();
 
             // update the craft hitbox
             craft.setHitBox(newHitBox);
@@ -183,8 +183,7 @@ public class CraftTranslateCommand extends UpdateCommand {
             //logger.info("Marker 5B: " + timeTaken + " ms");
 
             //add the craft
-            //OLD handler.translateCraft(craft, min, max, displacement, newHitBox);
-            handler.translateCraft(craft, displacement);
+            translateCraft();
 
             // update the craft hitbox
             craft.setHitBox(newHitBox);
@@ -217,6 +216,7 @@ public class CraftTranslateCommand extends UpdateCommand {
                 }
             }
 
+            //TODO - remove these debug messages
             //timeTaken = System.currentTimeMillis() - time;
             //logger.info("Marker 7B: " + timeTaken + " ms");
 
@@ -239,6 +239,28 @@ public class CraftTranslateCommand extends UpdateCommand {
         craft.addMoveTime(time);
         craft.setLastMoveTick(Sponge.getServer().getRunningTimeTicks());
         craft.setProcessing(false);
+    }
+
+    private void translateCraft() {
+        // Set up the chunk data manager
+        ChunkDataManager chunkDataManager = new ChunkDataManager(craft.getWorld(), new HashSet<>(craft.getHitBox().asSet()));
+
+        // Get the tile entities
+        chunkDataManager.fetchTilesAndTranslate(displacement);
+        //get the blocks and translate the positions
+        chunkDataManager.fetchBlocksAndTranslate(displacement);
+
+        // Create the new blocks
+        chunkDataManager.setBlocks();
+
+        // Place the tiles in the new positions
+        chunkDataManager.placeTiles();
+
+        // Destroy the leftovers
+        chunkDataManager.destroyLeftovers();
+
+        //Process fire spread
+        chunkDataManager.processFireSpread();
     }
 
     public Craft getCraft(){

@@ -1,4 +1,4 @@
-package io.github.pulverizer.movecraft;
+package io.github.pulverizer.movecraft.craft;
 
 /**
  * An Enum of possible states of a Craft.
