@@ -1,5 +1,6 @@
 package io.github.pulverizer.movecraft.sign;
 
+import io.github.pulverizer.movecraft.config.Settings;
 import io.github.pulverizer.movecraft.craft.Craft;
 import io.github.pulverizer.movecraft.utils.MathUtils;
 import io.github.pulverizer.movecraft.craft.CraftManager;
@@ -7,6 +8,7 @@ import org.spongepowered.api.block.BlockSnapshot;
 import org.spongepowered.api.block.tileentity.Sign;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.event.block.InteractBlockEvent;
+import org.spongepowered.api.event.block.tileentity.ChangeSignEvent;
 import org.spongepowered.api.text.Text;
 import org.spongepowered.api.world.World;
 
@@ -15,7 +17,7 @@ import org.spongepowered.api.world.World;
  * Code to be reviewed
  *
  * @author BernardisGood
- * @version 1.2 - 17 Apr 2020
+ * @version 1.3 - 17 Apr 2020
  */
 public final class CannonDirectorSign {
     private static final String HEADER = "Cannon Director";

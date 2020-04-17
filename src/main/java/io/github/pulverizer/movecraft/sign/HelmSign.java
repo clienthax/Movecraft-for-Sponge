@@ -1,5 +1,6 @@
 package io.github.pulverizer.movecraft.sign;
 
+import io.github.pulverizer.movecraft.config.Settings;
 import io.github.pulverizer.movecraft.enums.Rotation;
 import io.github.pulverizer.movecraft.craft.Craft;
 import io.github.pulverizer.movecraft.utils.MathUtils;
@@ -10,20 +11,26 @@ import org.spongepowered.api.data.value.mutable.ListValue;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.event.block.InteractBlockEvent;
 import org.spongepowered.api.event.block.tileentity.ChangeSignEvent;
+import org.spongepowered.api.network.PlayerConnection;
 import org.spongepowered.api.text.Text;
 
 /**
- * Add Permissions:
- * - Create Sign
- *
+ * Permissions Checked
  * Code to be reviewed
  *
  * @author BernardisGood
- * @version 1.2 - 17 Apr 2020
+ * @version 1.3 - 17 Apr 2020
  */
 public final class HelmSign {
 
-    public static void onSignChange(ChangeSignEvent event){
+    public static void onSignChange(ChangeSignEvent event, Player player){
+
+        if (Settings.RequireCreateSignPerm && !player.hasPermission("movecraft.createsign.cruise")) {
+            player.sendMessage(Text.of("Insufficient Permissions"));
+            event.setCancelled(true);
+            return;
+        }
+
         ListValue<Text> lines = event.getText().lines();
 
         lines.set(0, Text.of("\\  ||  /"));

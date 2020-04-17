@@ -1,6 +1,7 @@
 package io.github.pulverizer.movecraft.sign;
 
 import com.flowpowered.math.vector.Vector3i;
+import io.github.pulverizer.movecraft.config.Settings;
 import io.github.pulverizer.movecraft.utils.MathUtils;
 import io.github.pulverizer.movecraft.craft.Craft;
 import io.github.pulverizer.movecraft.craft.CraftManager;
@@ -13,6 +14,7 @@ import org.spongepowered.api.data.type.HandTypes;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.event.SpongeEventFactory;
 import org.spongepowered.api.event.block.InteractBlockEvent;
+import org.spongepowered.api.event.block.tileentity.ChangeSignEvent;
 import org.spongepowered.api.text.Text;
 import org.spongepowered.api.util.Tristate;
 import org.spongepowered.api.world.World;
@@ -20,14 +22,22 @@ import org.spongepowered.api.world.World;
 import java.util.LinkedList;
 
 /**
- * Add Permissions:
- * - Create Sign
+ * Permissions checked
+ * Code needs review
  *
  * @author BernardisGood
- * @version 1.2 - 17 Apr 2020
+ * @version 1.3 - 17 Apr 2020
  */
 public final class RemoteSign {
     private static final String HEADER = "Remote Sign";
+
+    public static void onSignChange(ChangeSignEvent event, Player player) {
+
+        if (Settings.RequireCreateSignPerm && !player.hasPermission("movecraft.createsign.remote")) {
+            player.sendMessage(Text.of("Insufficient Permissions"));
+            event.setCancelled(true);
+        }
+    }
 
     public static void onSignClick(InteractBlockEvent event, Player player, BlockSnapshot block) {
 

@@ -1,6 +1,7 @@
 package io.github.pulverizer.movecraft.sign;
 
 import com.flowpowered.math.vector.Vector3i;
+import io.github.pulverizer.movecraft.config.Settings;
 import io.github.pulverizer.movecraft.craft.Craft;
 import io.github.pulverizer.movecraft.event.CraftDetectEvent;
 import io.github.pulverizer.movecraft.utils.HashHitBox;
@@ -8,6 +9,8 @@ import org.spongepowered.api.block.BlockType;
 import org.spongepowered.api.block.BlockTypes;
 import org.spongepowered.api.block.tileentity.Sign;
 import org.spongepowered.api.data.value.mutable.ListValue;
+import org.spongepowered.api.entity.living.player.Player;
+import org.spongepowered.api.event.block.tileentity.ChangeSignEvent;
 import org.spongepowered.api.text.Text;
 import org.spongepowered.api.text.format.TextColor;
 import org.spongepowered.api.text.format.TextColors;
@@ -16,16 +19,21 @@ import org.spongepowered.api.world.World;
 import java.util.*;
 
 /**
- * Add Permissions:
- * - Create Sign
- *
- * No Settings
+ * Permissions checked
  * Code to be reviewed
  *
  * @author BernardisGood
- * @version 1.0 - 12 Apr 2020
+ * @version 1.3 - 17 Apr 2020
  */
 public final class StatusSign {
+
+    public static void onSignChange(ChangeSignEvent event, Player player) {
+
+        if (Settings.RequireCreateSignPerm && !player.hasPermission("movecraft.createsign.status")) {
+            player.sendMessage(Text.of("Insufficient Permissions"));
+            event.setCancelled(true);
+        }
+    }
 
     public static void onCraftDetect(CraftDetectEvent event, World world, HashHitBox hitBox) {
 

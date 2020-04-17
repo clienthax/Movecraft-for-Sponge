@@ -24,7 +24,7 @@ import org.spongepowered.api.world.World;
  * Code complete EXCEPT: TODOs and code clean up related to SignListener
  *
  * @author BernardisGood
- * @version 1.2 - 12 Apr 2020
+ * @version 1.3 - 12 Apr 2020
  */
 public final class CraftSign {
 

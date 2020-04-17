@@ -20,13 +20,11 @@ import org.spongepowered.api.util.Direction;
 import org.spongepowered.api.world.World;
 
 /**
- * Add Permissions:
- * - Create Sign
- *
+ * Permissions Checked
  * Code to be reviewed
  *
  * @author BernardisGood
- * @version 1.2 - 17 Apr 2020
+ * @version 1.3 - 17 Apr 2020
  */
 public final class CruiseSign {
 
@@ -107,10 +105,9 @@ public final class CruiseSign {
 
     public static void onSignChange(ChangeSignEvent event, Player player) {
 
-        if (player.hasPermission("movecraft.sign.cruise") || !Settings.RequireCreateSignPerm) {
-            return;
+        if (Settings.RequireCreateSignPerm && !player.hasPermission("movecraft.createsign.cruise")) {
+            player.sendMessage(Text.of("Insufficient Permissions"));
+            event.setCancelled(true);
         }
-        player.sendMessage(Text.of("Insufficient Permissions"));
-        event.setCancelled(true);
     }
 }

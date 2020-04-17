@@ -2,6 +2,7 @@ package io.github.pulverizer.movecraft.sign;
 
 import com.flowpowered.math.vector.Vector3i;
 import io.github.pulverizer.movecraft.Movecraft;
+import io.github.pulverizer.movecraft.config.Settings;
 import io.github.pulverizer.movecraft.enums.Rotation;
 import io.github.pulverizer.movecraft.craft.Craft;
 import io.github.pulverizer.movecraft.craft.CraftManager;
@@ -11,6 +12,7 @@ import org.spongepowered.api.block.tileentity.Sign;
 import org.spongepowered.api.data.value.mutable.ListValue;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.event.block.InteractBlockEvent;
+import org.spongepowered.api.event.block.tileentity.ChangeSignEvent;
 import org.spongepowered.api.scheduler.Task;
 import org.spongepowered.api.text.Text;
 import org.spongepowered.api.world.Location;
@@ -18,16 +20,22 @@ import org.spongepowered.api.world.World;
 
 
 /**
- * Add Permissions:
- * - Create Sign
- *
+ * Permissions checked
  * Code to be reviewed
  *
  * @author BernardisGood
- * @version 1.2 - 17 Apr 2020
+ * @version 1.3 - 17 Apr 2020
  */
 public final class SubcraftRotateSign {
     private static final String HEADER = "Subcraft Rotate";
+
+    public static void onSignChange(ChangeSignEvent event, Player player) {
+
+        if (Settings.RequireCreateSignPerm && !player.hasPermission("movecraft.createsign.subcraftrotate")) {
+            player.sendMessage(Text.of("Insufficient Permissions"));
+            event.setCancelled(true);
+        }
+    }
 
     public static void onSignClick(InteractBlockEvent event, Player player, BlockSnapshot block) {
 

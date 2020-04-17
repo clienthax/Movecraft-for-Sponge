@@ -21,7 +21,7 @@ import java.util.*;
  * Code to be reviewed
  *
  * @author BernardisGood
- * @version 1.1 - 17 Apr 2020
+ * @version 1.3 - 17 Apr 2020
  */
 public final class CommanderSign {
 
@@ -31,7 +31,7 @@ public final class CommanderSign {
 
     public static void onSignChange(ChangeSignEvent event, Player player) {
 
-        if (Settings.RequireCreateSignPerm && !player.hasPermission("movecraft.commandersign")) {
+        if (Settings.RequireCreateSignPerm && !player.hasPermission("movecraft.createsign.commander")) {
             player.sendMessage(Text.of("Insufficient Permissions"));
             event.setCancelled(true);
             return;

@@ -29,13 +29,11 @@ import java.util.*;
 import static org.spongepowered.api.event.Order.FIRST;
 
 /**
- * No Permissions
- * Should we have a permission for sign creation?
- * Settings checked
+ * Permissions checked
  * Code to be reviewed
  *
  * @author BernardisGood
- * @version 1.0 - 12 Apr 2020
+ * @version 1.3 - 17 Apr 2020
  */
 public class CrewSign {
 
@@ -45,6 +43,14 @@ public class CrewSign {
     public static void onSignChange(ChangeSignEvent event, Player player) {
 
         if (!Settings.EnableCrewSigns) {
+            player.sendMessage(Text.of("Crew beds are not enabled"));
+            event.setCancelled(true);
+            return;
+        }
+
+        if (Settings.RequireCreateSignPerm && !player.hasPermission("movecraft.createsign.crew")) {
+            player.sendMessage(Text.of("Insufficient Permissions"));
+            event.setCancelled(true);
             return;
         }
 

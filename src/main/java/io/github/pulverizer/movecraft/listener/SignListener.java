@@ -75,7 +75,7 @@ public class SignListener {
         switch (header) {
 
             case "[helm]":
-                HelmSign.onSignChange(event);
+                HelmSign.onSignChange(event, player);
                 break;
 
             case "commander:":
@@ -83,19 +83,60 @@ public class SignListener {
                 break;
 
             case "crew:":
-
-                if (Settings.EnableCrewSigns) {
-                    CrewSign.onSignChange(event, player);
-                }
+                CrewSign.onSignChange(event, player);
                 break;
 
+            case "cruise:":
+            case "cruise: off":
+            case "cruise: on":
+                CruiseSign.onSignChange(event, player);
+                break;
+
+            case "subcraft rotate":
+                SubcraftRotateSign.onSignChange(event, player);
+                break;
+
+            case "contacts:":
+                ContactsSign.onSignChange(event, player);
+                break;
+
+            case "status:":
+                StatusSign.onSignChange(event, player);
+                break;
+
+            case "speed:":
+                SpeedSign.onSignChange(event, player);
+                break;
+
+            case "remote sign":
+                RemoteSign.onSignChange(event, player);
+                break;
+
+            case "move:":
+                StaticMoveSign.onSignChange(event, player);
+                break;
+
+            case "rmove:":
+                RelativeMoveSign.onSignChange(event, player);
+                break;
+
+            case "teleport:":
+                TeleportSign.onSignChange(event, player);
+                break;
+
+            case "ascend:":
+            case "ascend: off":
+            case "ascend: on":
+                AscendSign.onSignChange(event, player);
+                break;
+
+            case "descend:":
+            case "descend: off":
+            case "descend: on":
+                DescendSign.onSignChange(event, player);
+                break;
 
             default:
-                if (header.equals("cruise:") || header.equals("cruise: off") || header.equals("cruise: on")) {
-                    CruiseSign.onSignChange(event, player);
-                    return;
-                }
-
                 if (Settings.RequireCreateSignPerm && CraftManager.getInstance().getCraftTypeFromString(header) != null)
                     CraftSign.onSignChange(event, player, header);
 
