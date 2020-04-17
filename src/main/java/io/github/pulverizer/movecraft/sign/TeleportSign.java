@@ -10,11 +10,13 @@ import org.spongepowered.api.event.block.InteractBlockEvent;
 import org.spongepowered.api.text.Text;
 
 /**
- * Permissions to be reviewed
+ * Add Permissions:
+ * - Create Sign
+ *
  * Code to be reviewed
  *
  * @author BernardisGood
- * @version 1.0 - 12 Apr 2020
+ * @version 1.2 - 17 Apr 2020
  */
 public final class TeleportSign {
     private static final String HEADER = "Teleport:";
@@ -40,10 +42,11 @@ public final class TeleportSign {
         int tY = Integer.parseInt(numbers[1]);
         int tZ = Integer.parseInt(numbers[2]);
 
-        if (!player.hasPermission("movecraft." + craft.getType().getName() + ".movement.teleport")) {
-            player.sendMessage(Text.of("Insufficient Permissions!"));
+        if (!player.hasPermission("movecraft." + craft.getType().getName() + ".movement.teleport") && (craft.getType().requiresSpecificPerms() || !player.hasPermission("movecraft.movement.teleport"))) {
+            player.sendMessage(Text.of("Insufficient Permissions"));
             return;
         }
+
         if (craft.getType().getCanTeleport()) {
             int dx = tX - block.getLocation().get().getBlockPosition().getX();
             int dy = tY - block.getLocation().get().getBlockPosition().getY();

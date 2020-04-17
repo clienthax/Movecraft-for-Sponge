@@ -11,11 +11,13 @@ import org.spongepowered.api.text.Text;
 import org.spongepowered.api.world.World;
 
 /**
- * Permissions to be reviewed
+ * Add Permissions:
+ * - Create Sign
+ *
  * Code to be reviewed
  *
  * @author BernardisGood
- * @version 1.0 - 12 Apr 2020
+ * @version 1.2 - 17 Apr 2020
  */
 public class PilotSign {
     private static final String HEADER = "Pilot";
@@ -52,7 +54,12 @@ public class PilotSign {
             return;
         }
 
-        if(player != null && foundCraft.isCrewMember(player.getUniqueId())) {
+        if (!player.hasPermission("movecraft." + foundCraft.getType().getName() + ".crew.pilot") && (foundCraft.getType().requiresSpecificPerms() || !player.hasPermission("movecraft.crew.pilot"))) {
+            player.sendMessage(Text.of("Insufficient Permissions"));
+            return;
+        }
+
+        if(foundCraft.isCrewMember(player.getUniqueId())) {
             foundCraft.setPilot(player.getUniqueId());
             player.sendMessage(Text.of("You are now the pilot of this craft."));
         }

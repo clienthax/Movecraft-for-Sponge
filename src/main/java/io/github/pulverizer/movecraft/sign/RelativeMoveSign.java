@@ -19,7 +19,7 @@ import org.spongepowered.api.util.Direction;
  * Code to be reviewed
  *
  * @author BernardisGood
- * @version 1.1 - 12 Apr 2020
+ * @version 1.2 - 17 Apr 2020
  */
 public final class RelativeMoveSign {
     private static final String HEADER = "RMove:";

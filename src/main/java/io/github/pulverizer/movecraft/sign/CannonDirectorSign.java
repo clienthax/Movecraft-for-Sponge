@@ -15,7 +15,7 @@ import org.spongepowered.api.world.World;
  * Code to be reviewed
  *
  * @author BernardisGood
- * @version 1.1 - 12 Apr 2020
+ * @version 1.2 - 17 Apr 2020
  */
 public final class CannonDirectorSign {
     private static final String HEADER = "Cannon Director";
@@ -41,11 +41,6 @@ public final class CannonDirectorSign {
             return;
         }
 
-        if (!player.hasPermission("movecraft." + craft.getType().getName().toLowerCase() + ".directors.cannons") && (craft.getType().requiresSpecificPerms() || !player.hasPermission("movecraft.directors.cannons"))) {
-            player.sendMessage(Text.of("Insufficient Permissions"));
-            return;
-        }
-
         if (!craft.getType().allowCannonDirectorSign()) {
             player.sendMessage(Text.of("ERROR: Cannon Director Signs not allowed on this craft!"));
             return;
@@ -57,6 +52,10 @@ public final class CannonDirectorSign {
             return;
         }
 
+        if (!player.hasPermission("movecraft." + craft.getType().getName() + ".crew.directors.cannons") && (craft.getType().requiresSpecificPerms() || !player.hasPermission("movecraft.crew.directors.cannons"))) {
+            player.sendMessage(Text.of("Insufficient Permissions"));
+            return;
+        }
 
         craft.setCannonDirector(player.getUniqueId());
         player.sendMessage(Text.of("You are now directing the cannons of this craft."));

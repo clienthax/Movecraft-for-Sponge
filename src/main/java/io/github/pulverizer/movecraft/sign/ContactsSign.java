@@ -14,6 +14,7 @@ import org.spongepowered.api.world.World;
 
 /**
  * No Permissions
+ * Should we have a permission for creating the sign?
  * Code to be reviewed
  *
  * @author BernardisGood

@@ -30,6 +30,7 @@ import static org.spongepowered.api.event.Order.FIRST;
 
 /**
  * No Permissions
+ * Should we have a permission for sign creation?
  * Settings checked
  * Code to be reviewed
  *

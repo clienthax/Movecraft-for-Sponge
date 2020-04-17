@@ -17,11 +17,13 @@ import org.spongepowered.api.util.Direction;
 import org.spongepowered.api.world.World;
 
 /**
- * No Permissions
+ * Add Permissions:
+ * - Create Sign
+ *
  * Code to be reviewed
  *
  * @author BernardisGood
- * @version 1.0 - 12 Apr 2020
+ * @version 1.2 - 17 Apr 2020
  */
 public final class DescendSign {
 
@@ -50,13 +52,20 @@ public final class DescendSign {
         Sign sign = (Sign) block.getLocation().get().getTileEntity().get();
         ListValue<Text> lines = sign.lines();
 
+        Craft craft = CraftManager.getInstance().getCraftByPlayer(player.getUniqueId());
+
+        if (craft == null) {
+            return;
+        }
+
         if (lines.get(0).toPlain().equalsIgnoreCase("Descend: OFF")) {
-            if (CraftManager.getInstance().getCraftByPlayer(player.getUniqueId()) == null) {
+
+            if (!craft.getType().getCanCruise() || player.getUniqueId() != craft.getPilot()) {
                 return;
             }
 
-            Craft craft = CraftManager.getInstance().getCraftByPlayer(player.getUniqueId());
-            if (!craft.getType().getCanCruise() || player.getUniqueId() != craft.getPilot()) {
+            if (!player.hasPermission("movecraft." + craft.getType().getName() + ".movement.descend") && (craft.getType().requiresSpecificPerms() || !player.hasPermission("movecraft.movement.descend"))) {
+                player.sendMessage(Text.of("Insufficient Permissions"));
                 return;
             }
 
@@ -69,9 +78,9 @@ public final class DescendSign {
 
             return;
         }
+
         if (lines.get(0).toPlain().equalsIgnoreCase("Descend: ON")) {
-            Craft craft = CraftManager.getInstance().getCraftByPlayer(player.getUniqueId());
-            if (craft != null && craft.getType().getCanCruise() && player.getUniqueId() == craft.getPilot()) {
+            if (craft.getType().getCanCruise() && player.getUniqueId() == craft.getPilot()) {
                 lines.set(0, Text.of("Descend: OFF"));
                 sign.offer(lines);
                 craft.setState(CraftState.STOPPED);

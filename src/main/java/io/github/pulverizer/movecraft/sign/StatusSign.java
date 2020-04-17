@@ -16,7 +16,9 @@ import org.spongepowered.api.world.World;
 import java.util.*;
 
 /**
- * No Permissions
+ * Add Permissions:
+ * - Create Sign
+ *
  * No Settings
  * Code to be reviewed
  *

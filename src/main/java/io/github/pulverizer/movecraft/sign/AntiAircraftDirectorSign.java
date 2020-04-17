@@ -16,7 +16,7 @@ import org.spongepowered.api.text.Text;
  * Code to be reviewed
  *
  * @author BernardisGood
- * @version 1.1 - 12 Apr 2020
+ * @version 1.2 - 17 Apr 2020
  */
 public class AntiAircraftDirectorSign {
     private static final String HEADER = "AA Director";
@@ -40,18 +40,19 @@ public class AntiAircraftDirectorSign {
             return;
         }
 
-        if (!player.hasPermission("movecraft." + craft.getType().getName().toLowerCase() + ".directors.aa") && (craft.getType().requiresSpecificPerms() || !player.hasPermission("movecraft.directors.aa"))) {
-            player.sendMessage(Text.of("Insufficient Permissions"));
-            return;
-        }
-
         if (!craft.getType().allowAADirectorSign()) {
             player.sendMessage(Text.of("ERROR: AA Director Signs not allowed on this craft!"));
             return;
         }
+
         if (event instanceof InteractBlockEvent.Primary && player.getUniqueId() == craft.getAADirector()) {
             craft.setAADirector(null);
             player.sendMessage(Text.of("You are no longer directing the AA of this craft."));
+            return;
+        }
+
+        if (!player.hasPermission("movecraft." + craft.getType().getName() + ".crew.directors.aa") && (craft.getType().requiresSpecificPerms() || !player.hasPermission("movecraft.crew.directors.aa"))) {
+            player.sendMessage(Text.of("Insufficient Permissions"));
             return;
         }
 

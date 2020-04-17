@@ -44,7 +44,7 @@ public class SignListener {
             CraftSign.onSignClick(rightClickEvent, player, block);
             CruiseSign.onSignClick(rightClickEvent, player, block);
             DescendSign.onSignClick(rightClickEvent, player, block);
-            MoveSign.onSignClick(rightClickEvent, player, block);
+            StaticMoveSign.onSignClick(rightClickEvent, player, block);
             RelativeMoveSign.onSignClick(rightClickEvent, player, block);
             ReleaseSign.onSignClick(rightClickEvent, player, block);
             TeleportSign.onSignClick(rightClickEvent, player, block);

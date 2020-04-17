@@ -20,11 +20,11 @@ import org.spongepowered.api.world.World;
 import java.util.LinkedList;
 
 /**
- * Permissions to be reviewed
- * Code to be reviewed
+ * Add Permissions:
+ * - Create Sign
  *
  * @author BernardisGood
- * @version 1.0 - 12 Apr 2020
+ * @version 1.2 - 17 Apr 2020
  */
 public final class RemoteSign {
     private static final String HEADER = "Remote Sign";
@@ -80,6 +80,12 @@ public final class RemoteSign {
             }
             return;
         }
+
+        if (!player.hasPermission("movecraft." + foundCraft.getType().getName() + ".useremote") && (foundCraft.getType().requiresSpecificPerms() || !player.hasPermission("movecraft.useremote"))) {
+            player.sendMessage(Text.of("Insufficient Permissions"));
+            return;
+        }
+
         LinkedList<Vector3i> foundLocations = new LinkedList<>();
         for (Vector3i tloc : foundCraft.getHitBox()) {
             BlockSnapshot targetBlock = blockWorld.createSnapshot(tloc.getX(), tloc.getY(), tloc.getZ());
@@ -112,9 +118,7 @@ public final class RemoteSign {
             }
         }
         if (foundLocations.isEmpty()) {
-            if (player != null) {
-                player.sendMessage(Text.of("ERROR: Could not find target sign!"));
-            }
+            player.sendMessage(Text.of("ERROR: Could not find target sign!"));
             return;
         }
 

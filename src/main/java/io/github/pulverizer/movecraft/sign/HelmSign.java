@@ -13,11 +13,13 @@ import org.spongepowered.api.event.block.tileentity.ChangeSignEvent;
 import org.spongepowered.api.text.Text;
 
 /**
- * Permissions to be reviewed
+ * Add Permissions:
+ * - Create Sign
+ *
  * Code to be reviewed
  *
  * @author BernardisGood
- * @version 1.0 - 12 Apr 2020
+ * @version 1.2 - 17 Apr 2020
  */
 public final class HelmSign {
 
@@ -57,7 +59,7 @@ public final class HelmSign {
         if (craft == null)
             return;
 
-        if (!player.hasPermission("movecraft." + craft.getType().getName() + ".movement.rotate")) {
+        if (!player.hasPermission("movecraft." + craft.getType().getName().toLowerCase() + ".movement.rotate") && (craft.getType().requiresSpecificPerms() || !player.hasPermission("movecraft.movement.rotate"))) {
             player.sendMessage(Text.of("Insufficient Permissions"));
             return;
         }

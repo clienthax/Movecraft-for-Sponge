@@ -1,6 +1,7 @@
 package io.github.pulverizer.movecraft.sign;
 
 import io.github.pulverizer.movecraft.Movecraft;
+import io.github.pulverizer.movecraft.config.Settings;
 import org.spongepowered.api.block.BlockSnapshot;
 import org.spongepowered.api.block.BlockTypes;
 import org.spongepowered.api.block.tileentity.Sign;
@@ -20,7 +21,7 @@ import java.util.*;
  * Code to be reviewed
  *
  * @author BernardisGood
- * @version 1.0 - 12 Apr 2020
+ * @version 1.1 - 17 Apr 2020
  */
 public final class CommanderSign {
 
@@ -30,7 +31,7 @@ public final class CommanderSign {
 
     public static void onSignChange(ChangeSignEvent event, Player player) {
 
-        if (!player.hasPermission("movecraft.commandersign")) {
+        if (Settings.RequireCreateSignPerm && !player.hasPermission("movecraft.commandersign")) {
             player.sendMessage(Text.of("Insufficient Permissions"));
             event.setCancelled(true);
             return;

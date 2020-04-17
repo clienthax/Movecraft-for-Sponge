@@ -1,6 +1,7 @@
 package io.github.pulverizer.movecraft.sign;
 
 import com.flowpowered.math.vector.Vector3i;
+import io.github.pulverizer.movecraft.craft.Craft;
 import io.github.pulverizer.movecraft.craft.CraftManager;
 import org.spongepowered.api.block.BlockSnapshot;
 import org.spongepowered.api.block.tileentity.Sign;
@@ -10,13 +11,15 @@ import org.spongepowered.api.event.block.InteractBlockEvent;
 import org.spongepowered.api.text.Text;
 
 /**
- * Permissions to be reviewed
+ * Add Permissions:
+ * - Create Sign
+ *
  * Code to be reviewed
  *
  * @author BernardisGood
- * @version 1.0 - 12 Apr 2020
+ * @version 1.2 - 17 Apr 2020
  */
-public final class MoveSign {
+public final class StaticMoveSign {
     private static final String HEADER = "Move:";
 
     public static void onSignClick(InteractBlockEvent.Secondary.MainHand event, Player player, BlockSnapshot block) {
@@ -29,7 +32,9 @@ public final class MoveSign {
         if (!lines.get(0).toPlain().equalsIgnoreCase(HEADER)) {
             return;
         }
-        if (CraftManager.getInstance().getCraftByPlayer(player.getUniqueId()) == null) {
+
+        final Craft craft = CraftManager.getInstance().getCraftByPlayer(player.getUniqueId());
+        if ( craft == null) {
             return;
         }
 
@@ -37,7 +42,7 @@ public final class MoveSign {
         int dx = Integer.parseInt(numbers[0]);
         int dy = Integer.parseInt(numbers[1]);
         int dz = Integer.parseInt(numbers[2]);
-        int maxMove = CraftManager.getInstance().getCraftByPlayer(player.getUniqueId()).getType().maxStaticMove();
+        int maxMove = craft.getType().maxStaticMove();
 
         if (dx > maxMove)
             dx = maxMove;
@@ -52,13 +57,13 @@ public final class MoveSign {
         if (dz < -maxMove)
             dz = -maxMove;
 
-        if (!player.hasPermission("movecraft." + CraftManager.getInstance().getCraftByPlayer(player.getUniqueId()).getType().getName() + ".movement.staticmove")) {
+        if (!player.hasPermission("movecraft." + craft.getType().getName() + ".movement.staticmove") && (craft.getType().requiresSpecificPerms() || !player.hasPermission("movecraft.movement.staticmove"))) {
             player.sendMessage(Text.of("Insufficient Permissions"));
             return;
         }
-        if (CraftManager.getInstance().getCraftByPlayer(player.getUniqueId()).getType().getCanStaticMove()) {
-            CraftManager.getInstance().getCraftByPlayer(player.getUniqueId()).translate(new Vector3i(dx, dy, dz), false);
-            //timeMap.put(player, System.currentTimeMillis());
+
+        if (craft.getType().getCanStaticMove()) {
+            craft.translate(new Vector3i(dx, dy, dz), false);
         }
     }
 }

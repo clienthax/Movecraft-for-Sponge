@@ -11,7 +11,9 @@ import org.spongepowered.api.text.Text;
 import org.spongepowered.api.world.World;
 
 /**
- * No Permissions
+ * Add Permissions:
+ * - Create Sign
+ *
  * No Settings
  * Code to be reviewed
  *

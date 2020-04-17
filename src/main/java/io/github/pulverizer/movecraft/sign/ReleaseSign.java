@@ -10,7 +10,7 @@ import org.spongepowered.api.event.block.InteractBlockEvent;
 import org.spongepowered.api.text.Text;
 
 /**
- * Permissions to be reviewed
+ * No Permissions
  * Code to be reviewed
  *
  * @author BernardisGood

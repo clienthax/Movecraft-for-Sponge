@@ -17,11 +17,13 @@ import org.spongepowered.api.util.Direction;
 import org.spongepowered.api.world.World;
 
 /**
- * Permissions to be reviewed
+ * Add Permissions:
+ * - Create Sign
+ *
  * Code to be reviewed
  *
  * @author BernardisGood
- * @version 1.1 - 12 Apr 2020
+ * @version 1.2 - 17 Apr 2020
  */
 public class AscendSign {
 
@@ -55,6 +57,11 @@ public class AscendSign {
 
             if (!craft.getType().getCanCruise()) {
                 player.sendMessage(Text.of("This CraftType does not support this action"));
+                return;
+            }
+
+            if (!player.hasPermission("movecraft." + craft.getType().getName().toLowerCase() + ".movement.ascend") && (craft.getType().requiresSpecificPerms() || !player.hasPermission("movecraft.movement.ascend"))) {
+                player.sendMessage(Text.of("Insufficient Permissions"));
                 return;
             }
 

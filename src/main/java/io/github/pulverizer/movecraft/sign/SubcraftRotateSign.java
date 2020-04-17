@@ -18,11 +18,13 @@ import org.spongepowered.api.world.World;
 
 
 /**
- * Permissions to be reviewed
+ * Add Permissions:
+ * - Create Sign
+ *
  * Code to be reviewed
  *
  * @author BernardisGood
- * @version 1.0 - 12 Apr 2020
+ * @version 1.2 - 17 Apr 2020
  */
 public final class SubcraftRotateSign {
     private static final String HEADER = "Subcraft Rotate";
@@ -49,7 +51,7 @@ public final class SubcraftRotateSign {
         }
 
         // add subcraft
-        String craftTypeStr = sign.lines().get(1).toPlain();
+        String craftTypeStr = sign.lines().get(1).toPlain().toLowerCase();
         CraftType type = CraftManager.getInstance().getCraftTypeFromString(craftTypeStr);
         if (type == null) {
             event.setCancelled(true);
@@ -61,25 +63,40 @@ public final class SubcraftRotateSign {
             sign.offer(lines);
         }
 
-        if (!player.hasPermission("movecraft." + craftTypeStr + ".pilot") || !player.hasPermission("movecraft." + craftTypeStr + ".add")) {
+        if (!player.hasPermission("movecraft." + craftTypeStr + ".crew.command") && (type.requiresSpecificPerms() || !player.hasPermission("movecraft.crew.command"))) {
             player.sendMessage(Text.of("Insufficient Permissions"));
             event.setCancelled(true);
             return;
         }
 
-        final Craft craft = CraftManager.getInstance().getCraftByPlayer(player.getUniqueId());
+        Craft craft = null;
+        Vector3i signPosition = block.getLocation().get().getBlockPosition();
+        for (Craft testCraft : CraftManager.getInstance().getCraftsInWorld(block.getLocation().get().getExtent())) {
+            if (testCraft.getHitBox().contains(signPosition)) {
+                craft = testCraft;
+                break;
+            }
+        }
         if(craft != null) {
             if (!craft.isNotProcessing()) {
                 player.sendMessage(Text.of("Parent Craft is busy!"));
                 event.setCancelled(true);
                 return;
             }
+
+            if (!player.hasPermission("movecraft." + craft.getType().getName().toLowerCase() + ".rotatesubcraft") && (craft.getType().requiresSpecificPerms() || !player.hasPermission("movecraft.rotatesubcraft"))) {
+                player.sendMessage(Text.of("Insufficient Permissions"));
+                event.setCancelled(true);
+                return;
+            }
+
             craft.setProcessing(true); // prevent the parent craft from moving or updating until the subcraft is done
 
             //TODO: This is bad practice! Never assume anything!
+            Craft finalCraft = craft;
             Task.builder()
                     .delayTicks(10)
-                    .execute(() -> craft.setProcessing(false))
+                    .execute(() -> finalCraft.setProcessing(false))
                     .submit(Movecraft.getInstance());
         }
 
