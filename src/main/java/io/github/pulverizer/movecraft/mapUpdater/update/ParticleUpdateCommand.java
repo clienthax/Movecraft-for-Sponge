@@ -34,7 +34,7 @@ public class ParticleUpdateCommand extends UpdateCommand {
 
     }
 
-    private boolean sendSilhouetteToPlayers() {
+    private void sendSilhouetteToPlayers() {
         if (rand.nextInt(100) < 15) {
 
             ParticleEffect particle = ParticleEffect.builder().type(ParticleTypes.HAPPY_VILLAGER).build();
@@ -43,12 +43,10 @@ public class ParticleUpdateCommand extends UpdateCommand {
 
                 Player p = (Player) entity;
                 double distSquared = location.getPosition().distanceSquared(p.getLocation().getPosition());
-                if ((distSquared < Settings.SilhouetteViewDistance * Settings.SilhouetteViewDistance) && (distSquared > (p.getViewDistance() -1 )*(p.getViewDistance() -1 ))) {
+                if ((distSquared < Settings.SilhouetteViewDistance * Settings.SilhouetteViewDistance) && (distSquared > (location.getExtent().getViewDistance() -1 )*(location.getExtent().getViewDistance() -1 ))) {
                     p.spawnParticles(particle, location.getPosition().toDouble(), 9);
                 }
             }
-            return true;
         }
-        return false;
     }
 }

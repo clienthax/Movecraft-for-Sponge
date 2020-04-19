@@ -1,23 +1,27 @@
 package io.github.pulverizer.movecraft.config;
 
+import com.google.common.reflect.TypeToken;
 import io.github.pulverizer.movecraft.Movecraft;
+import ninja.leaping.configurate.ConfigurationNode;
+import ninja.leaping.configurate.ConfigurationOptions;
+import ninja.leaping.configurate.commented.CommentedConfigurationNode;
+import ninja.leaping.configurate.hocon.HoconConfigurationLoader;
+import ninja.leaping.configurate.loader.ConfigurationLoader;
+import ninja.leaping.configurate.objectmapping.ObjectMappingException;
+import ninja.leaping.configurate.yaml.YAMLConfigurationLoader;
 import org.spongepowered.api.CatalogType;
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.block.BlockType;
 import org.spongepowered.api.block.BlockTypes;
 import org.spongepowered.api.item.ItemType;
 import org.spongepowered.api.item.ItemTypes;
-import org.yaml.snakeyaml.Yaml;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.*;
 import java.util.function.Consumer;
 
 final public class CraftType {
-    private final boolean blockedByWater;
     private final boolean requireWaterContact;
     private final boolean tryNudge;
     private final boolean canCruise;
@@ -69,451 +73,131 @@ final public class CraftType {
     private final float explodeOnCrash;
     private final float collisionExplosion;
     private final String name;
-    private final HashSet<BlockType> allowedBlocks = new HashSet<>();
-    private final HashSet<BlockType> forbiddenBlocks = new HashSet<>();
-    private final HashSet<String> forbiddenSignStrings = new HashSet<>();
+    private final Set<BlockType> allowedBlocks;
+    private final Set<BlockType> forbiddenBlocks;
+    private final Set<String> forbiddenSignStrings;
     private final Map<List<BlockType>, List<Double>> flyBlocks;
     private final Map<List<BlockType>, List<Double>> moveBlocks;
     private final List<BlockType> harvestBlocks;
     private final List<BlockType> harvesterBladeBlocks;
     private final Set<BlockType> passthroughBlocks;
-    private final List<BlockType> furnaceBlocks;
+    private final Set<BlockType> furnaceBlocks;
     private final Map<ItemType, Double> fuelItems;
 
-    public CraftType(File f) {
-        final Map data;
-        try {
-            InputStream input = new FileInputStream(f);
-            Yaml yaml = new Yaml();
-            data = (Map) yaml.load(input);
-            input.close();
-        } catch (IOException e) {
-            throw new TypeNotFoundException("No file found at path " + f.getAbsolutePath());
-        }
+    public CraftType(File file) throws NullPointerException, IOException, ObjectMappingException {
 
-        name = ((String) data.get("name")).toLowerCase();
-        maxSize = integerFromObject(data.get("maxSize"));
-        minSize = integerFromObject(data.get("minSize"));
-        requiresSpecificPerms = (boolean) data.getOrDefault("requiresSpecificPerms", true);
-        Collections.addAll(allowedBlocks, blockIDListFromObject(data.get("allowedBlocks")));
-        furnaceBlocks = new ArrayList<>();
-        if (data.containsKey("furnaceBlocks")) {
-            ArrayList objList = (ArrayList) data.get("furnaceBlocks");
-            for (Object i : objList) {
-                if (i instanceof String) {
-                    findOrLog(furnaceBlocks::add, BlockType.class, (String) i, "Invalid BlockType: {}");
-                }
-            }
-        }
+        ConfigurationLoader<ConfigurationNode> configLoader = ConfigManager.createConfigLoader(file.toPath());
+        ConfigurationNode configNode = configLoader.load();
+
+        // Load config file
+
+        name = configNode.getNode("name").getString().toLowerCase();
+        maxSize = configNode.getNode("maxSize").getInt();
+        minSize = configNode.getNode("minSize").getInt();
+
+        requiresSpecificPerms = configNode.getNode("requiresSpecificPerms").getBoolean(true);
+        allowedBlocks = configNode.getNode("allowedBlocks").getValue(new TypeToken<Set<BlockType>>() {}, new HashSet<>());
+        furnaceBlocks = configNode.getNode("furnaceBlocks").getValue(new TypeToken<Set<BlockType>>() {}, new HashSet<>());
         if (furnaceBlocks.isEmpty()) {
             furnaceBlocks.add(BlockTypes.FURNACE);
             furnaceBlocks.add(BlockTypes.LIT_FURNACE);
         }
 
-        fuelItems = new HashMap<>();
-        if (data.containsKey("fuelItems")) {
-            fuelItems.putAll(itemIDMapFromObject(data.get("flyblocks")));
-        }
+        fuelItems = configNode.getNode("fuelItems").getValue(new TypeToken<Map<ItemType, Double>>() {}, new HashMap<>());
         if (fuelItems.isEmpty()) {
             fuelItems.put(ItemTypes.COAL, 8.0);
             fuelItems.put(ItemTypes.COAL_BLOCK, 72.0);
         }
 
-        Collections.addAll(forbiddenBlocks, blockIDListFromObject(data.get("forbiddenBlocks")));
-        Collections.addAll(forbiddenSignStrings, stringListFromObject(data.get("forbiddenSignStrings")));
 
-        if (data.containsKey("canFly")) {
-            blockedByWater = (Boolean) data.get("canFly");
-        } else if (data.containsKey("blockedByWater")) {
-            blockedByWater = (Boolean) data.get("blockedByWater");
-        } else {
-            blockedByWater = true;
-        }
-        if (data.containsKey("requireWaterContact")) {
-            requireWaterContact = (Boolean) data.get("requireWaterContact");
-        } else {
-            requireWaterContact = false;
-        }
-        if (data.containsKey("tryNudge")) {
-            tryNudge = (Boolean) data.get("tryNudge");
-        } else {
-            tryNudge = false;
-        }
-        tickCooldown = (int) Math.ceil(20 / (doubleFromObject(data.get("speed"))));
-        if (data.containsKey("cruiseSpeed")) {
-            cruiseTickCooldown = (int) Math.ceil(20 / (doubleFromObject(data.get("cruiseSpeed"))));
-        } else {
-            cruiseTickCooldown = tickCooldown;
-        }
+        forbiddenBlocks = configNode.getNode("forbiddenBlocks").getValue(new TypeToken<Set<BlockType>>() {}, new HashSet<>());
+        forbiddenSignStrings = configNode.getNode("forbiddenSignStrings").getValue(new TypeToken<Set<String>>() {}, new HashSet<>());
 
-        flyBlocks = blockIDMapListFromObject(data.get("flyblocks"));
-        if (data.containsKey("moveblocks")) {
-            moveBlocks = blockIDMapListFromObject(data.get("moveblocks"));
-        } else {
-            moveBlocks = new HashMap<>();
-        }
+        requireWaterContact = configNode.getNode("requireWaterContact").getBoolean(false);
+        tryNudge = configNode.getNode("tryNudge").getBoolean(false);
+        tickCooldown = (int) Math.ceil(20 / configNode.getNode("speed").getDouble());
+        cruiseTickCooldown = (int) Math.ceil(20 / configNode.getNode("cruiseSpeed").getDouble());
 
-        if (data.containsKey("canCruise")) {
-            canCruise = (Boolean) data.get("canCruise");
-        } else {
-            canCruise = false;
-        }
-        if (data.containsKey("canTeleport")) {
-            canTeleport = (Boolean) data.get("canTeleport");
-        } else {
-            canTeleport = false;
-        }
-        if (data.containsKey("cruiseOnPilot")) {
-            cruiseOnPilot = (Boolean) data.get("cruiseOnPilot");
-        } else {
-            cruiseOnPilot = false;
-        }
-        if (data.containsKey("cruiseOnPilotVertMove")) {
-            cruiseOnPilotVertMove = integerFromObject(data.get("cruiseOnPilotVertMove"));
-        } else {
-            cruiseOnPilotVertMove = 0;
-        }
-        if (data.containsKey("allowVerticalMovement")) {
-            allowVerticalMovement = (Boolean) data.get("allowVerticalMovement");
-        } else {
-            allowVerticalMovement = true;
-        }
-        if (data.containsKey("rotateAtMidpoint")) {
-            rotateAtMidpoint = (Boolean) data.get("rotateAtMidpoint");
-        } else {
-            rotateAtMidpoint = false;
-        }
-        if (data.containsKey("allowHorizontalMovement")) {
-            allowHorizontalMovement = (Boolean) data.get("allowHorizontalMovement");
-        } else {
-            allowHorizontalMovement = true;
-        }
-        if (data.containsKey("allowRemoteSign")) {
-            allowRemoteSign = (Boolean) data.get("allowRemoteSign");
-        } else {
-            allowRemoteSign = true;
-        }
-        if (data.containsKey("allowCannonDirectorSign")) {
-            allowCannonDirectorSign = (Boolean) data.get("allowCannonDirectorSign");
-        } else {
-            allowCannonDirectorSign = true;
-        }
-        if (data.containsKey("allowAADirectorSign")) {
-            allowAADirectorSign = (Boolean) data.get("allowAADirectorSign");
-        } else {
-            allowAADirectorSign = true;
-        }
-        if (data.containsKey("canStaticMove")) {
-            canStaticMove = (Boolean) data.get("canStaticMove");
-        } else {
-            canStaticMove = false;
-        }
-        if (data.containsKey("maxStaticMove")) {
-            maxStaticMove = integerFromObject(data.get("maxStaticMove"));
-        } else {
-            maxStaticMove = 10000;
-        }
-        if (data.containsKey("cruiseSkipBlocks")) {
-            cruiseSkipBlocks = integerFromObject(data.get("cruiseSkipBlocks"));
-        } else {
-            cruiseSkipBlocks = 0;
-        }
-        if (data.containsKey("vertCruiseSkipBlocks")) {
-            vertCruiseSkipBlocks = integerFromObject(data.get("vertCruiseSkipBlocks"));
-        } else {
-            vertCruiseSkipBlocks = cruiseSkipBlocks;
-        }
-        if (data.containsKey("halfSpeedUnderwater")) {
-            halfSpeedUnderwater = (Boolean) data.get("halfSpeedUnderwater");
-        } else {
-            halfSpeedUnderwater = false;
-        }
-        if (data.containsKey("focusedExplosion")) {
-            focusedExplosion = (Boolean) data.get("focusedExplosion");
-        } else {
-            focusedExplosion = false;
-        }
-        if (data.containsKey("mustBeSubcraft")) {
-            mustBeSubcraft = (Boolean) data.get("mustBeSubcraft");
-        } else {
-            mustBeSubcraft = false;
-        }
-        if (data.containsKey("staticWaterLevel")) {
-            staticWaterLevel = integerFromObject(data.get("staticWaterLevel"));
-        } else {
-            staticWaterLevel = 0;
-        }
-        if (data.containsKey("fuelBurnRate")) {
-            fuelBurnRate = doubleFromObject(data.get("fuelBurnRate"));
-        } else {
-            fuelBurnRate = 0d;
-        }
-        if (data.containsKey("sinkPercent")) {
-            sinkPercent = doubleFromObject(data.get("sinkPercent"));
-        } else {
-            sinkPercent = 0d;
-        }
-        if (data.containsKey("overallSinkPercent")) {
-            overallSinkPercent = doubleFromObject(data.get("overallSinkPercent"));
-        } else {
-            overallSinkPercent = 0d;
-        }
-        if (data.containsKey("detectionMultiplier")) {
-            detectionMultiplier = doubleFromObject(data.get("detectionMultiplier"));
-        } else {
-            detectionMultiplier = 0d;
-        }
-        if (data.containsKey("underwaterDetectionMultiplier")) {
-            underwaterDetectionMultiplier = doubleFromObject(data.get("underwaterDetectionMultiplier"));
-        } else {
-            underwaterDetectionMultiplier = detectionMultiplier;
-        }
-        if(data.containsKey("sinkTickRate")){
-            sinkRateTicks = integerFromObject(data.get("sinkTickRate"));
-        }else if (data.containsKey("sinkSpeed")) {
-            sinkRateTicks = (int) Math.ceil(20 / (doubleFromObject(data.get("sinkSpeed"))));
-        } else {
-            //sinkRateTicks = (int) Settings.SinkRateTicks;
-            sinkRateTicks = 0;
-        }
-        if (data.containsKey("keepMovingOnSink")) {
-            keepMovingOnSink = (Boolean) data.get("keepMovingOnSink");
-        } else {
-            keepMovingOnSink = false;
-        }
-        if (data.containsKey("smokeOnSink")) {
-            smokeOnSink = integerFromObject(data.get("smokeOnSink"));
-        } else {
-            smokeOnSink = 0;
-        }
-        if (data.containsKey("explodeOnCrash")) {
-            double temp = doubleFromObject(data.get("explodeOnCrash"));
-            explodeOnCrash = (float) temp;
-        } else {
-            explodeOnCrash = 0F;
-        }
-        if (data.containsKey("collisionExplosion")) {
-            double temp = doubleFromObject(data.get("collisionExplosion"));
-            collisionExplosion = (float) temp;
-        } else {
-            collisionExplosion = 0F;
-        }
-        if (data.containsKey("minHeightLimit")) {
-            minHeightLimit = Math.max(0, integerFromObject(data.get("minHeightLimit")));
-        } else {
-            minHeightLimit = 0;
-        }
-        if (data.containsKey("maxHeightLimit")) {
-            int value = integerFromObject(data.get("maxHeightLimit"));
-            if (value <= minHeightLimit) {
-                value = 255;
-            }
-            maxHeightLimit = value;
-        } else {
-            maxHeightLimit = 254;
-        }
-        if (data.containsKey("maxHeightAboveGround")) {
-            maxHeightAboveGround = integerFromObject(data.get("maxHeightAboveGround"));
-        } else {
-            maxHeightAboveGround = -1;
-        }
-        if (data.containsKey("canDirectControl")) {
-            canDirectControl = (Boolean) data.get("canDirectControl");
-        } else {
-            canDirectControl = true;
-        }
-        if (data.containsKey("canHover")) {
-            canHover = (Boolean) data.get("canHover");
-        } else {
-            canHover = false;
-        }
-        if (data.containsKey("canHoverOverWater")) {
-            canHoverOverWater = (Boolean) data.get("canHoverOverWater");
-        } else {
-            canHoverOverWater = true;
-        }
-        if (data.containsKey("moveEntities")) {
-            moveEntities = (Boolean) data.get("moveEntities");
-        } else {
-            moveEntities = true;
-        }
+        flyBlocks = blockTypeMapListFromNode(configNode.getNode("flyblocks").getValue(new TypeToken<Map<List<BlockType>, List<String>>>() {}, new HashMap<>()));
+        moveBlocks = blockTypeMapListFromNode(configNode.getNode("moveBlocks").getValue(new TypeToken<Map<List<BlockType>, List<String>>>() {}, new HashMap<>()));
 
-        if(data.containsKey("onlyMovePlayers")){
-            onlyMovePlayers = (Boolean) data.get("onlyMovePlayers");
-        } else {
-            onlyMovePlayers = true;
-        }
+        canCruise = configNode.getNode("canCruise").getBoolean(false);
+        canTeleport = configNode.getNode("canTeleport").getBoolean(false);
+        cruiseOnPilot = configNode.getNode("cruiseOnPilot").getBoolean(false);
+        cruiseOnPilotVertMove = configNode.getNode("cruiseOnPilotVertMove").getInt(0);
+        allowVerticalMovement = configNode.getNode("allowVerticalMovement").getBoolean(true);
+        rotateAtMidpoint = configNode.getNode("rotateAtMidpoint").getBoolean(false);
+        allowHorizontalMovement = configNode.getNode("allowHorizontalMovement").getBoolean(true);
+        allowRemoteSign = configNode.getNode("allowRemoteSign").getBoolean(true);
+        allowCannonDirectorSign = configNode.getNode("allowCannonDirectorSign").getBoolean(true);
+        allowAADirectorSign = configNode.getNode("allowAADirectorSign").getBoolean(true);
+        canStaticMove = configNode.getNode("canStaticMove").getBoolean(false);
+        maxStaticMove = configNode.getNode("maxStaticMove").getInt(10000);
+        cruiseSkipBlocks = configNode.getNode("cruiseSkipBlocks").getInt(0);
+        vertCruiseSkipBlocks = configNode.getNode("vertCruiseSkipBlocks").getInt(cruiseSkipBlocks);
+        halfSpeedUnderwater = configNode.getNode("halfSpeedUnderwater").getBoolean(false);
+        focusedExplosion = configNode.getNode("focusedExplosion").getBoolean(false);
+        mustBeSubcraft = configNode.getNode("mustBeSubcraft").getBoolean(false);
+        staticWaterLevel = configNode.getNode("staticWaterLevel").getInt(0);
+        fuelBurnRate = configNode.getNode("fuelBurnRate").getDouble(0);
+        sinkPercent = configNode.getNode("sinkPercent").getDouble(0);
+        overallSinkPercent = configNode.getNode("overallSinkPercent").getDouble(0);
+        detectionMultiplier = configNode.getNode("detectionMultiplier").getDouble(0);
+        underwaterDetectionMultiplier = configNode.getNode("underwaterDetectionMultiplier").getDouble(detectionMultiplier);
+        //TODO - should the default be Settings.SinkRateTicks?
+        sinkRateTicks = configNode.getNode("sinkTickRate").getInt(0);
+        keepMovingOnSink = configNode.getNode("keepMovingOnSink").getBoolean(false);
+        smokeOnSink = configNode.getNode("smokeOnSink").getInt(0);
+        explodeOnCrash = configNode.getNode("explodeOnCrash").getFloat(0);
+        collisionExplosion = configNode.getNode("collisionExplosion").getFloat(0);
+        minHeightLimit = configNode.getNode("minHeightLimit").getInt(0);
+        maxHeightLimit = configNode.getNode("minHeightLimit").getInt(255);
+        maxHeightAboveGround = configNode.getNode("maxHeightAboveGround").getInt(-1);
+        canDirectControl = configNode.getNode("canDirectControl").getBoolean(true);
+        canHover = configNode.getNode("canHover").getBoolean(false);
+        canHoverOverWater = configNode.getNode("canHoverOverWater").getBoolean(true);
+        moveEntities = configNode.getNode("moveEntities").getBoolean(true);
 
-        if (data.containsKey("useGravity")) {
-            useGravity = (Boolean) data.get("useGravity");
-        } else {
-            useGravity = false;
-        }
+        onlyMovePlayers = configNode.getNode("onlyMovePlayers").getBoolean(true);
 
-        if (data.containsKey("hoverLimit")) {
-            hoverLimit = Math.max(0, integerFromObject(data.get("hoverLimit")));
-        } else {
-            hoverLimit = 0;
-        }
-        harvestBlocks = new ArrayList<>();
-        harvesterBladeBlocks = new ArrayList<>();
-        if (data.containsKey("harvestBlocks")) {
-            ArrayList objList = (ArrayList) data.get("harvestBlocks");
-            for (Object i : objList) {
-                if (i instanceof String) {
-                    findOrLog(harvestBlocks::add, BlockType.class, (String) i, "Invalid BlockType: {}");
-                }
-            }
+        useGravity = configNode.getNode("useGravity").getBoolean(false);
 
-        }
-        if (data.containsKey("harvesterBladeBlocks")) {
-            ArrayList objList = (ArrayList) data.get("harvesterBladeBlocks");
-            for (Object i : objList) {
-                if (i instanceof String) {
-                    findOrLog(harvesterBladeBlocks::add, BlockType.class, (String) i, "Invalid BlockType: {}");
-                }
-            }
-        }
-        passthroughBlocks = new HashSet<>();
-        if (data.containsKey("passthroughBlocks")) {
-            ArrayList objList = (ArrayList) data.get("passthroughBlocks");
-            for (Object i : objList) {
-                if (i instanceof String) {
-                    findOrLog(passthroughBlocks::add, BlockType.class, (String) i, "Invalid BlockType: {}");
-                }
-            }
-        }
-        if(!blockedByWater){
-            passthroughBlocks.add(BlockTypes.FLOWING_WATER);
-            passthroughBlocks.add(BlockTypes.WATER);
-        }
-        if (data.containsKey("allowVerticalTakeoffAndLanding")) {
-            allowVerticalTakeoffAndLanding = (Boolean) data.get("allowVerticalTakeoffAndLanding");
-        } else {
-            allowVerticalTakeoffAndLanding = true;
-        }
+        hoverLimit = configNode.getNode("hoverLimit").getInt(0);
+        harvestBlocks = configNode.getNode("harvestBlocks").getList(TypeToken.of(BlockType.class), new ArrayList<>());
+        harvesterBladeBlocks = configNode.getNode("harvesterBladeBlocks").getList(TypeToken.of(BlockType.class), new ArrayList<>());
+        passthroughBlocks = configNode.getNode("passthroughBlocks").getValue(new TypeToken<Set<BlockType>>() {}, new HashSet<>());
+        allowVerticalTakeoffAndLanding = configNode.getNode("allowVerticalTakeoffAndLanding").getBoolean(true);
 
-        if (data.containsKey("dynamicLagSpeedFactor")) {
-            dynamicLagSpeedFactor = doubleFromObject(data.get("dynamicLagSpeedFactor"));
-        } else {
-            dynamicLagSpeedFactor = 0d;
-        }
-        if (data.containsKey("dynamicFlyBlockSpeedFactor")) {
-            dynamicFlyBlockSpeedFactor = doubleFromObject(data.get("dynamicFlyBlockSpeedFactor"));
-        } else {
-            dynamicFlyBlockSpeedFactor = 0d;
-        }
-        if (data.containsKey("dynamicFlyBlock")) {
-            dynamicFlyBlock = Sponge.getRegistry().getType(BlockType.class, data.get("dynamicFlyBlock").toString()).orElse(BlockTypes.AIR);
-        } else {
-            dynamicFlyBlock = BlockTypes.AIR;
-        }
-        chestPenalty = data.containsKey("chestPenalty") ? doubleFromObject(data.get("chestPenalty")) : 0d;
+        dynamicLagSpeedFactor = configNode.getNode("dynamicLagSpeedFactor").getDouble(0);
+        dynamicFlyBlockSpeedFactor = configNode.getNode("dynamicFlyBlockSpeedFactor").getDouble(0);
+        dynamicFlyBlock = configNode.getNode("dynamicFlyBlock").getValue(TypeToken.of(BlockType.class), BlockTypes.AIR);
+        chestPenalty = configNode.getNode("chestPenalty").getDouble(0);
+
+        // Save config file
+        //TODO - When I've got it to stop destroying tidy configs
+        //configLoader.save(configNode);
     }
 
-    private Integer integerFromObject(Object obj) {
-        if (obj instanceof Double) {
-            return ((Double) obj).intValue();
-        }
-        return (Integer) obj;
-    }
-
-    private Double doubleFromObject(Object obj) {
-        if (obj instanceof Integer) {
-            return ((Integer) obj).doubleValue();
-        }
-        return (Double) obj;
-    }
-
-    private BlockType[] blockIDListFromObject(Object obj) {
-        ArrayList<BlockType> returnList = new ArrayList<>();
-        ArrayList objList = (ArrayList) obj;
-        for (Object i : objList) {
-            if (i instanceof String) {
-                findOrLog(returnList::add, BlockType.class, (String) i, "Invalid BlockType: {}");
-            }
-        }
-        BlockType[] output = new BlockType[returnList.size()];
-        for (int i = 0; i < output.length; i++)
-            output[i] = returnList.get(i);
-        return output;
-    }
-
-    private String[] stringListFromObject(Object obj) {
-        ArrayList<String> returnList = new ArrayList<>();
-        if (obj == null) {
-            return returnList.toArray(new String[1]);
-        }
-        ArrayList objList = (ArrayList) obj;
-        for (Object i : objList) {
-            if (i instanceof String) {
-                String str = (String) i;
-                returnList.add(str);
-            }
-        }
-        return returnList.toArray(new String[1]);
-    }
-
-    private Map<List<BlockType>, List<Double>> blockIDMapListFromObject(Object obj) {
+    private Map<List<BlockType>, List<Double>> blockTypeMapListFromNode(Map<List<BlockType>, List<String>> configMap) {
         HashMap<List<BlockType>, List<Double>> returnMap = new HashMap<>();
-        HashMap<Object, Object> objMap = (HashMap<Object, Object>) obj;
 
-        for (Object i : objMap.keySet()) {
-            ArrayList<BlockType> rowList = new ArrayList<>();
-
-            // first read in the list of the blocks that type of flyblock. It could be a single string (with or without a ":") or integer, or it could be multiple of them
-            if (i instanceof ArrayList<?>) {
-                for (Object o : (ArrayList<Object>) i) {
-                    if (o instanceof String) {
-                        findOrLog(rowList::add, BlockType.class, (String) o, "Invalid BlockType: {}");
-                    }
-                }
-            } else if (i instanceof String) {
-                findOrLog(rowList::add, BlockType.class, (String) i, "Invalid BlockType: {}");
-            }
-
+        configMap.forEach((blockTypeList, minMaxValues) -> {
             // then read in the limitation values, low and high
-            ArrayList<Object> objList = (ArrayList<Object>) objMap.get(i);
             ArrayList<Double> limitList = new ArrayList<>();
-            for (Object limitObj : objList) {
-                if (limitObj instanceof String) {
-                    String str = (String) limitObj;
-                    if (str.contains("N")) { // a # indicates a specific quantity, IE: #2 for exactly 2 of the block
-                        String[] parts = str.split("N");
-                        Double val = Double.valueOf(parts[1]);
-                        limitList.add(10000d + val);  // limit greater than 10000 indicates an specific quantity (not a ratio)
-                    } else {
-                        Double val = Double.valueOf(str);
-                        limitList.add(val);
-                    }
-                } else if (limitObj instanceof Integer) {
-                    Double ret = ((Integer) limitObj).doubleValue();
-                    limitList.add(ret);
-                } else
-                    limitList.add((Double) limitObj);
+            for (String str : minMaxValues) {
+                if (str.contains("N")) { // a # indicates a specific quantity, IE: #2 for exactly 2 of the block
+                    String[] parts = str.split("N");
+                    Double val = Double.valueOf(parts[1]);
+                    limitList.add(10000d + val);  // limit greater than 10000 indicates an specific quantity (not a ratio)
+                } else {
+                    Double val = Double.valueOf(str);
+                    limitList.add(val);
+                }
             }
-            returnMap.put(rowList, limitList);
-        }
-        return returnMap;
-    }
 
-    private <T extends CatalogType> Map<ItemType, Double> itemIDMapFromObject(Object obj) {
-        HashMap<ItemType, Double> returnMap = new HashMap<>();
-        HashMap<Object, Object> objMap = (HashMap<Object, Object>) obj;
+            returnMap.put(blockTypeList, limitList);
+        });
 
-        for (Object i : objMap.keySet()) {
-            final Optional<ItemType> type = Sponge.getRegistry().getType(ItemType.class,(String) i);
-            if (type.isPresent()) {
-                ItemType itemType = type.get();
-
-                double fuelPoints = (double) objMap.get(i);
-
-                returnMap.put(itemType, fuelPoints);
-
-            } else {
-                Movecraft.getInstance().getLogger().warn("Invalid ItemType: {}", i);
-            }
-        }
         return returnMap;
     }
 
@@ -533,20 +217,22 @@ final public class CraftType {
         return requiresSpecificPerms;
     }
 
-    public HashSet<BlockType> getAllowedBlocks() {
+    public Set<BlockType> getAllowedBlocks() {
         return allowedBlocks;
     }
 
-    public HashSet<BlockType> getForbiddenBlocks() {
+    public Set<BlockType> getForbiddenBlocks() {
         return forbiddenBlocks;
     }
 
-    public HashSet<String> getForbiddenSignStrings() {
+    public Set<String> getForbiddenSignStrings() {
         return forbiddenSignStrings;
     }
 
+    //TODO - Remove this temp method
+    @Deprecated
     public boolean blockedByWater() {
-        return blockedByWater;
+        return passthroughBlocks.contains(BlockTypes.WATER) && passthroughBlocks.contains(BlockTypes.FLOWING_WATER);
     }
 
     public boolean getRequireWaterContact() {
@@ -662,7 +348,7 @@ final public class CraftType {
     }
 
     public int getCruiseTickCooldown() {
-        return cruiseTickCooldown;
+        return cruiseTickCooldown == 0 ? tickCooldown : cruiseTickCooldown;
     }
 
     public boolean getHalfSpeedUnderwater() {
@@ -721,7 +407,7 @@ final public class CraftType {
         return harvesterBladeBlocks;
     }
 
-    public List<BlockType> getFurnaceBlocks() {
+    public Set<BlockType> getFurnaceBlocks() {
         return furnaceBlocks;
     }
 
@@ -765,18 +451,8 @@ final public class CraftType {
         return onlyMovePlayers;
     }
 
-    private class TypeNotFoundException extends RuntimeException {
-        public TypeNotFoundException(String s) {
-            super(s);
-        }
-    }
-
-    private <T extends CatalogType> void findOrLog(Consumer<T> consumer, Class<T> clazz, String id, String message) {
-        final Optional<T> type = Sponge.getRegistry().getType(clazz, id);
-        if (type.isPresent()) {
-            consumer.accept(type.get());
-        } else {
-            Movecraft.getInstance().getLogger().warn(message, id);
-        }
+    @Override
+    public int hashCode() {
+        return name.hashCode();
     }
 }

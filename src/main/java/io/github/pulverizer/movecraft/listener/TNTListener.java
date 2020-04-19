@@ -338,6 +338,7 @@ public class TNTListener {
 
 
                     //TODO: Can't seem to get Fluid Level???
+                    // Test anti-spill
                     for (Location<World> testLoc : blockList) {
 
                         if (testLoc.getProperty(MatterProperty.class).get().getValue() == MatterProperty.Matter.LIQUID && testLoc.getBlock().get(Keys.FLUID_LEVEL).isPresent()) {// && testLoc.get(Keys.FLUID_LEVEL).get() == 1) {

@@ -2,7 +2,6 @@ package io.github.pulverizer.movecraft.async;
 
 import com.flowpowered.math.vector.Vector3i;
 import com.google.common.collect.ImmutableSet;
-import io.github.pulverizer.movecraft.enums.CraftState;
 import io.github.pulverizer.movecraft.Movecraft;
 import io.github.pulverizer.movecraft.config.Settings;
 import io.github.pulverizer.movecraft.craft.Craft;
@@ -59,7 +58,7 @@ public class TranslationTask extends AsyncTask {
     @Override
     protected void execute() throws InterruptedException {
 
-        if (oldHitBox.isEmpty() || craft.getState() == CraftState.DISABLED)
+        if (oldHitBox.isEmpty() || craft.isDisabled())
             return;
 
         if (!checkCraftHeight()) {
@@ -68,7 +67,7 @@ public class TranslationTask extends AsyncTask {
 
         // check for fuel and burn some if needed.
         double fuelBurnRate = getCraft().getType().getFuelBurnRate();
-        if (fuelBurnRate != 0.0 && getCraft().getState() != CraftState.SINKING) {
+        if (fuelBurnRate != 0.0 && !getCraft().isSinking()) {
 
             boolean fuelBurned = getCraft().burnFuel(fuelBurnRate);
 
@@ -91,7 +90,7 @@ public class TranslationTask extends AsyncTask {
 
         //-------------------------------------//
 
-        if(craft.getState() == CraftState.SINKING){
+        if(craft.isSinking()){
             for(Vector3i location : collisionBox){
                 if (craft.getType().getExplodeOnCrash() > 0.0F) {
 
@@ -124,7 +123,7 @@ public class TranslationTask extends AsyncTask {
                 }
                 //TODO: Account for underwater explosions
                 /*if (location.getY() < waterLine) { // underwater explosions require more force to do anything
-                    explosionForce += 25;//TODO: find the correct amount
+                    explosionForce += 25; //find the correct amount
                 }*/
                 explosionKey = explosionForce;
                 if (!world.getBlockType(location).equals(BlockTypes.AIR)) {
@@ -148,7 +147,7 @@ public class TranslationTask extends AsyncTask {
         updates.add(new CraftTranslateCommand(craft, new Vector3i(moveVector.getX(), moveVector.getY(), moveVector.getZ()), getNewHitBox()));
 
         //prevents torpedo and rocket pilots
-        if (craft.getType().getMoveEntities() && craft.getState() != CraftState.SINKING) {
+        if (craft.getType().getMoveEntities() && !craft.isSinking()) {
 
             if (Settings.Debug)
                 Movecraft.getInstance().getLogger().info("Craft moves Entities.");
@@ -184,7 +183,7 @@ public class TranslationTask extends AsyncTask {
 
         } else {
             //add releaseTask without playermove to manager
-            if (!craft.getType().getCruiseOnPilot() && craft.getState() != CraftState.SINKING)  // not necessary to release cruiseonpilot crafts, because they will already be released
+            if (!craft.getType().getCruiseOnPilot() && !craft.isSinking())  // not necessary to release cruiseonpilot crafts, because they will already be released
                 CraftManager.getInstance().addReleaseTask(craft);
         }
         //TODO: Re-add!
@@ -203,7 +202,7 @@ public class TranslationTask extends AsyncTask {
 
         if (failed()) {
             // The craft translation failed
-            if (pilot != null && craft.getState() != CraftState.SINKING) {
+            if (pilot != null && !craft.isSinking()) {
                 pilot.sendMessage(Text.of(getFailMessage()));
             }
 
@@ -228,7 +227,7 @@ public class TranslationTask extends AsyncTask {
         final int maxY = oldHitBox.getMaxY();
 
         //Check if the craft is too high
-        if (moveVector.getY() > -1 && craft.getType().getMaxHeightLimit() < craft.getHitBox().getMaxY()){
+        if (moveVector.getY() > -1 && craft.getMaxHeightLimit() < craft.getHitBox().getMaxY()){
             moveVector = new Vector3i(moveVector.getX(), -1, moveVector.getZ());
         }else if(craft.getType().getMaxHeightAboveGround() > 0){
 
@@ -248,10 +247,10 @@ public class TranslationTask extends AsyncTask {
         }
 
         //Fail the movement if the craft is too high
-        if (moveVector.getY() > 0 && maxY + moveVector.getY() > craft.getType().getMaxHeightLimit()) {
+        if (moveVector.getY() > 0 && maxY + moveVector.getY() > craft.getMaxHeightLimit()) {
             fail("Translation Failed - Craft hit height limit.");
             return false;
-        } else if (minY + moveVector.getY() < craft.getType().getMinHeightLimit() && moveVector.getY() < 0 && craft.getState() != CraftState.SINKING) {
+        } else if (minY + moveVector.getY() < craft.getType().getMinHeightLimit() && moveVector.getY() < 0 && !craft.isSinking()) {
             fail("Translation Failed - Craft hit minimum height limit.");
             return false;
         }
@@ -276,7 +275,7 @@ public class TranslationTask extends AsyncTask {
             }
 
             boolean blockObstructed;
-            if (craft.getState() == CraftState.SINKING) {
+            if (craft.isSinking()) {
                 blockObstructed = !FALL_THROUGH_BLOCKS.contains(testMaterial);
             } else {
                 blockObstructed = !craft.getType().getPassthroughBlocks().contains(testMaterial) && !testMaterial.equals(BlockTypes.AIR);
@@ -297,7 +296,7 @@ public class TranslationTask extends AsyncTask {
             }
 
             if (blockObstructed) {
-                if (craft.getState() != CraftState.SINKING && craft.getType().getCollisionExplosion() == 0.0F) {
+                if (!craft.isSinking() && craft.getType().getCollisionExplosion() == 0.0F) {
                     fail(String.format("Translation Failed - Craft is obstructed" + " @ %d,%d,%d,%s", newLocation.getX(), newLocation.getY(), newLocation.getZ(), testMaterial.getName()));
                     return true;
                 }
@@ -319,7 +318,7 @@ public class TranslationTask extends AsyncTask {
         if (craftPilot != null) {
             craftPilot.sendMessage(Text.of(failMessage));
             Location<World> location = craftPilot.getLocation();
-            if (craft.getState() != CraftState.DISABLED) {
+            if (!craft.isDisabled()) {
                 craft.getWorld().playSound(SoundTypes.BLOCK_ANVIL_LAND, location.getPosition(), 1.0f, 0.25f);
                 //craft.setCurTickCooldown(craft.getType().getCruiseTickCooldown());
             } else {

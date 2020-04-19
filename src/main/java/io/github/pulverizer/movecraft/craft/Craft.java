@@ -2,7 +2,6 @@ package io.github.pulverizer.movecraft.craft;
 
 import com.flowpowered.math.vector.Vector3d;
 import com.flowpowered.math.vector.Vector3i;
-import io.github.pulverizer.movecraft.enums.CraftState;
 import io.github.pulverizer.movecraft.enums.Rotation;
 import io.github.pulverizer.movecraft.async.AsyncTask;
 import io.github.pulverizer.movecraft.async.DetectionTask;
@@ -16,11 +15,16 @@ import org.spongepowered.api.Sponge;
 import org.spongepowered.api.block.BlockSnapshot;
 import org.spongepowered.api.block.BlockType;
 import org.spongepowered.api.block.BlockTypes;
+import org.spongepowered.api.block.tileentity.Sign;
+import org.spongepowered.api.block.tileentity.TileEntity;
 import org.spongepowered.api.block.tileentity.carrier.TileEntityCarrier;
+import org.spongepowered.api.data.key.Keys;
+import org.spongepowered.api.data.value.mutable.ListValue;
 import org.spongepowered.api.item.ItemType;
 import org.spongepowered.api.item.inventory.Inventory;
 import org.spongepowered.api.item.inventory.query.QueryOperationTypes;
 import org.spongepowered.api.text.Text;
+import org.spongepowered.api.text.chat.ChatTypes;
 import org.spongepowered.api.util.Direction;
 import org.spongepowered.api.world.Location;
 import org.spongepowered.api.world.World;
@@ -30,24 +34,26 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 public class Craft {
 
-    //Facts
+    // Facts
     private final CraftType type;
     private final UUID id = UUID.randomUUID();
     private final UUID commandeeredBy;
     private int initialSize;
     private final Long originalPilotTime;
+    private final int maxHeightLimit;
 
 
-    //State
+    // State
     private final AtomicBoolean processing = new AtomicBoolean();
     private int processingStartTime = 0;
     private HashHitBox hitBox;
-    private CraftState state;
     private long lastCheckTime = 0L;
     private World world;
+    private boolean sinking = false;
+    private boolean disabled = false;
 
 
-    //Crew
+    // Crew
     private UUID commander;
     private UUID nextInCommand;
     private UUID pilot;
@@ -56,20 +62,35 @@ public class Craft {
     private final HashSet<UUID> crewList = new HashSet<>();
 
 
-    //Direct Control
+    // Direct Control
     private boolean directControl = false;
     private Vector3d pilotOffset = new Vector3d(0,0,0);
 
 
-    //Movement
-    private int lastCruiseUpdateTick;
-    private Direction cruiseDirection;
+    // Movement
     private Vector3i lastMoveVector = new Vector3i();
-    private HashSet<BlockSnapshot> phasedBlocks = new HashSet<>();
+    private HashSet<BlockSnapshot> phasedBlocks = new HashSet<>(); //TODO - move to listener database thingy
     private double burningFuel;
     private int numberOfMoves = 0;
-    private long lastRotateTime = 0;
     private float meanMoveTime;
+    //   Cruising
+    private int lastCruiseUpdateTick;
+    private Direction verticalCruiseDirection = Direction.NONE;
+    private Direction horizontalCruiseDirection = Direction.NONE;
+    //   Rotating
+    private long lastRotateTime = 0;
+
+
+    // TODO - sort
+    protected final HashHitBox collapsedHitBox = new HashHitBox();
+    protected HashHitBox fluidLocations;
+
+    private long lastBlockCheck;
+    private boolean pilotLocked = false;
+    private double pilotLockedX = 0.0;
+    private double pilotLockedY = 0.0;
+    private double pilotLockedZ = 0.0;
+    private String name = "";
 
     /**
      * Initialises the craft and detects the craft's hitbox.
@@ -80,9 +101,11 @@ public class Craft {
     public Craft(CraftType type, UUID player, Location<World> startLocation) {
         this.type = type;
         world = startLocation.getExtent();
-        setLastMoveTick(Sponge.getServer().getRunningTimeTicks() - 100);
-        this.originalPilotTime = System.currentTimeMillis();
+        lastCruiseUpdateTick = Sponge.getServer().getRunningTimeTicks() - 100;
+        originalPilotTime = System.currentTimeMillis();
         commandeeredBy = player;
+        maxHeightLimit = Math.min(type.getMaxHeightLimit(), world.getDimension().getBuildHeight() - 1);
+
         submitTask(new DetectionTask(this, startLocation));
     }
 
@@ -317,39 +340,17 @@ public class Craft {
         return id;
     }
 
-    /**
-     * <pre>
-     *     Sets the current state of the craft.
-     *     If the craft is SINKING it cannot be changed.
-     * </pre>
-     * @param newState The proposed new state of the craft.
-     * @return The actual state of the craft.
-     */
-    public CraftState setState(CraftState newState) {
-        if (state == CraftState.SINKING)
-            return state;
-
-        if (newState == CraftState.SINKING) {
-            CraftSinkEvent event = new CraftSinkEvent(this);
-            Sponge.getEventManager().post(event);
-
-            if (!event.isCancelled()) {
-                state = CraftState.SINKING;
-            }
-            return state;
-        }
-
-        state = newState;
-        return state;
-
+    public void disable() {
+        //TODO - Create an event for this
+        disabled = true;
     }
 
-    /**
-     * Fetches the current state of the craft.
-     * @return Current state of the craft.
-     */
-    public CraftState getState() {
-        return state;
+    public void enable() {
+        disabled = false;
+    }
+
+    public boolean isDisabled() {
+        return disabled;
     }
 
     /**
@@ -434,22 +435,6 @@ public class Craft {
      */
     public HashSet<BlockSnapshot> getPhasedBlocks() {
         return phasedBlocks;
-    }
-
-    /**
-     * Sets the direction of the craft's cruising.
-     * @param cruiseDirection The direction the craft will cruise in.
-     */
-    public void setCruiseDirection(Direction cruiseDirection) {
-        this.cruiseDirection = cruiseDirection;
-    }
-
-    /**
-     * Fetches the direction the craft is currently set to cruise in.
-     * @return The direction the craft is currently set to cruise in.
-     */
-    public Direction getCruiseDirection() {
-        return cruiseDirection;
     }
 
     /**
@@ -623,6 +608,71 @@ public class Craft {
         lastCheckTime = time;
     }
 
+    public void resetSigns(Sign clicked) {
+        hitBox.forEach(loc -> {
+            final TileEntity tileEntity = world.getTileEntity(loc).orElse(null);
+
+            if (!(tileEntity instanceof Sign)) {
+                return;
+            }
+
+            final Sign sign = (Sign) tileEntity;
+            if (sign.equals(clicked)) {
+                return;
+            }
+
+            ListValue<Text> signLines = sign.lines();
+            ListValue<Text> clickedLines = clicked.lines();
+
+            if (signLines.get(0).toPlain().equalsIgnoreCase("Cruise: ON")) {
+                signLines.set(0, Text.of("Cruise: OFF"));
+
+            } else if (signLines.get(0).toPlain().equalsIgnoreCase("Cruise: OFF")
+                    && clickedLines.get(0).toPlain().equalsIgnoreCase("Cruise: ON")
+                    && sign.getBlock().get(Keys.DIRECTION).get() == clicked.getBlock().get(Keys.DIRECTION).get()) {
+                signLines.set(0, Text.of("Cruise: ON"));
+
+            } else if (signLines.get(0).toPlain().equalsIgnoreCase("Ascend: ON")) {
+                signLines.set(0, Text.of("Ascend: OFF"));
+
+            } else if (signLines.get(0).toPlain().equalsIgnoreCase("Ascend: OFF")
+                    && clickedLines.get(0).toPlain().equalsIgnoreCase("Ascend: ON")) {
+                signLines.set(0, Text.of("Ascend: ON"));
+
+            } else if (signLines.get(0).toPlain().equalsIgnoreCase("Descend: ON")) {
+                signLines.set(0, Text.of("Descend: OFF"));
+
+            } else if (signLines.get(0).toPlain().equalsIgnoreCase("Descend: OFF")
+                    && clickedLines.get(0).toPlain().equalsIgnoreCase("Descend: ON")) {
+                signLines.set(0, Text.of("Descend: ON"));
+            }
+            sign.offer(signLines);
+        });
+    }
+
+    public void sink() {
+        // Throw an event
+        CraftSinkEvent event = new CraftSinkEvent(this);
+        Sponge.getEventManager().post(event);
+
+        // Check if the event has been cancelled
+        if (event.isCancelled()) {
+            return;
+        }
+
+        // The event was not cancelled
+        // Change the craft's state
+        sinking = true;
+
+
+        // And notify the crew
+        crewList.forEach(crewMember -> Sponge.getServer().getPlayer(crewMember).ifPresent(player -> player.sendMessage(Text.of("Craft is sinking!"))));
+    }
+
+    public boolean isSinking() {
+        return sinking;
+    }
+
     /**
      * gets the speed of a craft in blocks per second.
      * @return the speed of the craft
@@ -648,39 +698,37 @@ public class Craft {
     }
 
     //TODO - Add code to handle SubCrafts
-    public void translate(Vector3i moveVector, boolean isSubCraft) {
+    public void translate(Vector3i displacement, boolean isSubcraft) {
         // check to see if the craft is trying to move in a direction not permitted by the type
-        if (!this.getType().allowHorizontalMovement() && this.getState() != CraftState.SINKING) {
-            moveVector = new Vector3i(0, moveVector.getY(), 0);
+        if (!this.getType().allowHorizontalMovement() && !sinking) {
+            displacement = new Vector3i(0, displacement.getY(), 0);
         }
-        if (!this.getType().allowVerticalMovement() && this.getState() != CraftState.SINKING) {
-            moveVector = new Vector3i(moveVector.getX(), 0, moveVector.getZ());
+
+        if (!this.getType().allowVerticalMovement() && !sinking) {
+            displacement = new Vector3i(displacement.getX(), 0, displacement.getZ());
         }
-        if (moveVector.length() == 0) {
+
+        if (displacement.getX() == 0 && displacement.getY() == 0 && displacement.getZ() == 0) {
             return;
         }
 
-        if (!this.getType().allowVerticalTakeoffAndLanding() && moveVector.getY() != 0 && this.getState() != CraftState.SINKING) {
-            if (moveVector.getX() == 0 && moveVector.getZ() == 0) {
+        if (!this.getType().allowVerticalTakeoffAndLanding() && displacement.getY() != 0 && !sinking) {
+            if (displacement.getX() == 0 && displacement.getZ() == 0) {
                 return;
             }
         }
 
-        submitTask(new TranslationTask(this, moveVector));
-
+        submitTask(new TranslationTask(this, new Vector3i(displacement.getX(), displacement.getY(), displacement.getZ())));
     }
 
     public void rotate(Vector3i originPoint, Rotation rotation, boolean isSubCraft) {
-        if (!isSubCraft) {
-            if (getLastRotateTime() + 1e9 > System.nanoTime()) {
-                if (getPilot() != null)
-                    Sponge.getServer().getPlayer(getPilot()).ifPresent(player -> player.sendMessage(Text.of("You're turning too quickly!")));
-                return;
-            }
-
-            setLastRotateTime(System.nanoTime());
+        if (getLastRotateTime() + 1e9 > System.nanoTime() && !isSubCraft) {
+            if (pilot != null)
+                Sponge.getServer().getPlayer(pilot).ifPresent(player -> player.sendMessage(Text.of("Rotation - Turning Too Quickly")));
+            return;
         }
 
+        setLastRotateTime(System.nanoTime());
         submitTask(new RotationTask(this, originPoint, rotation, world, isSubCraft));
     }
 
@@ -723,6 +771,57 @@ public class Craft {
          */
     }
 
+
+    public void setCruising(Direction vertical, Direction horizontal) {
+
+        if (vertical != Direction.UP
+                && vertical != Direction.NONE
+                && vertical != Direction.DOWN) {
+            return;
+        }
+        if (horizontal != Direction.NONE
+                && horizontal != Direction.NORTH
+                && horizontal != Direction.WEST
+                && horizontal != Direction.SOUTH
+                && horizontal != Direction.EAST) {
+            return;
+        }
+
+        if (pilot != null) {
+            Sponge.getServer().getPlayer(pilot).ifPresent(player -> player.sendMessage(ChatTypes.ACTION_BAR, Text.of("Cruising " + ((vertical != Direction.NONE || horizontal != Direction.NONE) ? "Enabled" : "Disabled"))));
+        }
+
+        horizontalCruiseDirection = horizontal;
+        verticalCruiseDirection = vertical;
+    }
+
+    public Direction getVerticalCruiseDirection() {
+        return verticalCruiseDirection;
+    }
+
+    public Direction getHorizontalCruiseDirection() {
+        return horizontalCruiseDirection;
+    }
+
+    public boolean isCruising() {
+        return verticalCruiseDirection != Direction.NONE || horizontalCruiseDirection != Direction.NONE;
+    }
+
+    public Set<Craft> getContacts() {
+        final Set<Craft> contacts = new HashSet<>();
+        for (Craft contact : CraftManager.getInstance().getCraftsInWorld(world)) {
+            Vector3i ccenter = this.getHitBox().getMidPoint();
+            Vector3i tcenter = contact.getHitBox().getMidPoint();
+            int distsquared = ccenter.distanceSquared(tcenter);
+            int detectionRange = (int) (contact.getInitialSize() * (tcenter.getY() > 65 ? contact.getType().getDetectionMultiplier() : contact.getType().getUnderwaterDetectionMultiplier()));
+            detectionRange = detectionRange * 10;
+            if (distsquared > detectionRange || contact.getCommander() == this.getCommander()) {
+                continue;
+            }
+            contacts.add(contact);
+        }
+        return contacts;
+    }
 
     public int getWaterLine(){
         //TODO: Remove this temporary system in favor of passthrough blocks. How tho???
@@ -780,6 +879,10 @@ public class Craft {
         return processingStartTime;
     }
 
+    public int getMaxHeightLimit() {
+        return maxHeightLimit;
+    }
+
     public void submitTask(AsyncTask task) {
         if (isNotProcessing()) {
             setProcessing(true);
@@ -792,7 +895,7 @@ public class Craft {
         if(!(obj instanceof Craft)){
             return false;
         }
-        return this.id.equals(((Craft)obj).id);
+        return this.id.equals(((Craft) obj).id);
     }
 
     @Override

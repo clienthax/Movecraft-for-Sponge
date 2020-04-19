@@ -2,7 +2,6 @@ package io.github.pulverizer.movecraft.sign;
 
 import com.flowpowered.math.vector.Vector3i;
 import io.github.pulverizer.movecraft.config.Settings;
-import io.github.pulverizer.movecraft.enums.CraftState;
 import io.github.pulverizer.movecraft.craft.Craft;
 import io.github.pulverizer.movecraft.craft.CraftManager;
 import io.github.pulverizer.movecraft.event.CraftDetectEvent;
@@ -78,8 +77,7 @@ public class AscendSign {
             lines.set(0, Text.of("Ascend: ON"));
             sign.offer(lines);
 
-            craft.setCruiseDirection(Direction.UP);
-            craft.setState(CraftState.CRUISING);
+            craft.setCruising(Direction.UP, craft.getHorizontalCruiseDirection());
 
             return;
         }
@@ -89,7 +87,7 @@ public class AscendSign {
             event.setCancelled(true);
             lines.set(0, Text.of("Ascend: OFF"));
             sign.offer(lines);
-            craft.setState(CraftState.STOPPED);
+            craft.setCruising(Direction.NONE, craft.getHorizontalCruiseDirection());
         }
     }
 }

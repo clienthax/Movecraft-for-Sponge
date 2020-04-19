@@ -110,6 +110,15 @@ public class DetectionTask extends AsyncTask {
             for (Craft testCraft : CraftManager.getInstance().getCraftsInWorld(craft.getWorld())) {
                 if (testCraft.getHitBox().intersects(getHitBox())) {
 
+                    if (testCraft.getType() == craft.getType() || testCraft.getHitBox().size() <= getHitBox().size()) {
+                        if (testCraft.isCrewMember(craft.commandeeredBy())) {
+                            fail("You are already in the crew of this craft.");
+                        } else {
+                            fail("Craft is already being controlled by another player.");
+                        }
+                        break;
+                    }
+
                     parentCraft = testCraft;
                     break;
                 }
@@ -122,10 +131,7 @@ public class DetectionTask extends AsyncTask {
 
                 if (!parentCraft.isCrewMember(player.getUniqueId())) {
                     // Player is already controlling a craft
-                    fail("You are not in the crew of this craft.");
-
-                } else if (parentCraft.getType() == craft.getType() || parentCraft.getHitBox().size() <= getHitBox().size()) {
-                    fail("Craft is already being controlled by another player.");
+                    fail("You are not in the crew of the parent craft.");
 
                 } else {
                     // if this is a different type than the overlapping craft, and is smaller, this must be a child craft, like a fighter on a carrier
@@ -300,22 +306,21 @@ public class DetectionTask extends AsyncTask {
                     fail(String.format("Not enough flyblock" + ": %s %.2f%% < %.2f%%", i.get(0).getName(), blockPercentage, minPercentage));
                     return false;
                 }
-            } else {
-                if (numberOfBlocks < flyBlocks.get(i).get(0) - 10000.0) {
-                    fail(String.format("Not enough flyblock" + ": %s %d < %d", i.get(0).getName(), numberOfBlocks, flyBlocks.get(i).get(0).intValue() - 10000));
-                    return false;
-                }
+            } else if (numberOfBlocks < flyBlocks.get(i).get(0) - 10000.0) {
+                fail(String.format("Not enough flyblock" + ": %s %d < %d", i.get(0).getName(), numberOfBlocks, flyBlocks.get(i).get(0).intValue() - 10000));
+                return false;
+
             }
+
             if (maxPercentage < 10000.0) {
                 if (blockPercentage > maxPercentage) {
                     fail(String.format("Too much flyblock" + ": %s %.2f%% > %.2f%%", i.get(0).getName(), blockPercentage, maxPercentage));
                     return false;
                 }
-            } else {
-                if (numberOfBlocks > flyBlocks.get(i).get(1) - 10000.0) {
-                    fail(String.format("Too much flyblock" + ": %s %d > %d", i.get(0).getName(), numberOfBlocks, flyBlocks.get(i).get(1).intValue() - 10000));
-                    return false;
-                }
+            } else if (numberOfBlocks > flyBlocks.get(i).get(1) - 10000.0) {
+                fail(String.format("Too much flyblock" + ": %s %d > %d", i.get(0).getName(), numberOfBlocks, flyBlocks.get(i).get(1).intValue() - 10000));
+                return false;
+
             }
         }
 

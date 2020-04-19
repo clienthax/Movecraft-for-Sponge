@@ -11,13 +11,11 @@ import org.spongepowered.api.text.Text;
 import org.spongepowered.api.world.World;
 
 /**
- * Add Permissions:
- * - Create Sign
- *
+ * Permissions checked
  * Code to be reviewed
  *
  * @author BernardisGood
- * @version 1.2 - 17 Apr 2020
+ * @version 1.3 - 17 Apr 2020
  */
 public class PilotSign {
     private static final String HEADER = "Pilot";

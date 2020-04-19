@@ -2,7 +2,6 @@ package io.github.pulverizer.movecraft.async;
 
 import com.flowpowered.math.vector.Vector3d;
 import com.flowpowered.math.vector.Vector3i;
-import io.github.pulverizer.movecraft.enums.CraftState;
 import io.github.pulverizer.movecraft.Movecraft;
 import io.github.pulverizer.movecraft.enums.Rotation;
 import io.github.pulverizer.movecraft.craft.Craft;
@@ -57,12 +56,12 @@ public class RotationTask extends AsyncTask {
     @Override
     protected void execute() throws InterruptedException {
 
-        if (oldHitBox.isEmpty() || craft.getState() == CraftState.DISABLED)
+        if (oldHitBox.isEmpty() || craft.isDisabled())
             return;
 
         // check for fuel, burn some from a furnace if needed. Blocks of coal are supported, in addition to coal and charcoal
         double fuelBurnRate = getCraft().getType().getFuelBurnRate();
-        if (fuelBurnRate != 0.0 && getCraft().getState() != CraftState.SINKING) {
+        if (fuelBurnRate != 0.0 && !getCraft().isSinking()) {
 
             boolean fuelBurned = getCraft().burnFuel(fuelBurnRate);
 
@@ -130,7 +129,7 @@ public class RotationTask extends AsyncTask {
         final Vector3d tOP = originPoint.toDouble().add(0.5, 0, 0.5);
 
         //prevents torpedo and rocket passengers
-        if (craft.getType().getMoveEntities() && craft.getState() != CraftState.SINKING) {
+        if (craft.getType().getMoveEntities() && !craft.isSinking()) {
 
             if (Settings.Debug)
                 Movecraft.getInstance().getLogger().info("Craft moves Entities.");
@@ -169,43 +168,43 @@ public class RotationTask extends AsyncTask {
             }
         }
 
-        if (getCraft().getState() == CraftState.CRUISING) {
+        if (craft.isCruising()) {
             if (rotation == Rotation.ANTICLOCKWISE) {
 
-                switch (getCraft().getCruiseDirection()) {
+                switch (getCraft().getHorizontalCruiseDirection()) {
                     case NORTH:
-                        getCraft().setCruiseDirection(Direction.WEST);
+                        getCraft().setCruising(craft.getVerticalCruiseDirection(), Direction.WEST);
                         break;
 
                     case SOUTH:
-                        getCraft().setCruiseDirection(Direction.EAST);
+                        getCraft().setCruising(craft.getVerticalCruiseDirection(), Direction.EAST);
                         break;
 
                     case EAST:
-                        getCraft().setCruiseDirection(Direction.NORTH);
+                        getCraft().setCruising(craft.getVerticalCruiseDirection(), Direction.NORTH);
                         break;
 
                     case WEST:
-                        getCraft().setCruiseDirection(Direction.SOUTH);
+                        getCraft().setCruising(craft.getVerticalCruiseDirection(), Direction.SOUTH);
                         break;
                 }
             } else if (rotation == Rotation.CLOCKWISE) {
 
-                switch (getCraft().getCruiseDirection()) {
+                switch (getCraft().getHorizontalCruiseDirection()) {
                     case NORTH:
-                        getCraft().setCruiseDirection(Direction.EAST);
+                        getCraft().setCruising(craft.getVerticalCruiseDirection(), Direction.EAST);
                         break;
 
                     case SOUTH:
-                        getCraft().setCruiseDirection(Direction.WEST);
+                        getCraft().setCruising(craft.getVerticalCruiseDirection(), Direction.WEST);
                         break;
 
                     case EAST:
-                        getCraft().setCruiseDirection(Direction.SOUTH);
+                        getCraft().setCruising(craft.getVerticalCruiseDirection(), Direction.SOUTH);
                         break;
 
                     case WEST:
-                        getCraft().setCruiseDirection(Direction.NORTH);
+                        getCraft().setCruising(craft.getVerticalCruiseDirection(), Direction.NORTH);
                         break;
                 }
             }

@@ -1,7 +1,6 @@
 package io.github.pulverizer.movecraft.sign;
 
 import com.flowpowered.math.vector.Vector3i;
-import io.github.pulverizer.movecraft.enums.CraftState;
 import io.github.pulverizer.movecraft.config.Settings;
 import io.github.pulverizer.movecraft.craft.Craft;
 import io.github.pulverizer.movecraft.craft.CraftManager;
@@ -82,9 +81,7 @@ public final class CruiseSign {
             lines.set(0, Text.of("Cruise: ON"));
             sign.offer(lines);
 
-            craft.setCruiseDirection(cruiseDirection);
-            //TODO: Add checks! Shouldn't be able to go from Disabled -> Cruising
-            craft.setState(CraftState.CRUISING);
+            craft.setCruising(craft.getVerticalCruiseDirection(), cruiseDirection);
 
             return;
         }
@@ -98,8 +95,7 @@ public final class CruiseSign {
 
             lines.set(0, Text.of("Cruise: OFF"));
             sign.offer(lines);
-            //TODO: Add checks! Shouldn't be able to go from Disabled -> Cruising
-            CraftManager.getInstance().getCraftByPlayer(player.getUniqueId()).setState(CraftState.STOPPED);
+            CraftManager.getInstance().getCraftByPlayer(player.getUniqueId()).setCruising(craft.getVerticalCruiseDirection(), Direction.NONE);
         }
     }
 

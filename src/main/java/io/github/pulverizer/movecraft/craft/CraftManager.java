@@ -1,7 +1,9 @@
 package io.github.pulverizer.movecraft.craft;
 
 import com.flowpowered.math.vector.Vector3i;
+import com.google.common.collect.ImmutableSet;
 import io.github.pulverizer.movecraft.Movecraft;
+import io.github.pulverizer.movecraft.config.ConfigManager;
 import io.github.pulverizer.movecraft.config.CraftType;
 import io.netty.util.internal.ConcurrentSet;
 import org.spongepowered.api.Sponge;
@@ -21,7 +23,7 @@ import java.util.concurrent.ConcurrentMap;
 public class CraftManager implements Iterable<Craft> {
     private static CraftManager ourInstance;
     private final Set<Craft> craftList = ConcurrentHashMap.newKeySet();
-    private Set<CraftType> craftTypes;
+    private HashSet<CraftType> craftTypes;
     private final HashSet<BlockType> transparent = new HashSet<>();
 
     @Deprecated
@@ -62,50 +64,23 @@ public class CraftManager implements Iterable<Craft> {
         transparent.add(BlockTypes.STANDING_SIGN);
 
 
-        this.craftTypes = loadCraftTypes();
+        this.craftTypes = ConfigManager.loadCraftTypes();
     }
 
     public static CraftManager getInstance() {
         return ourInstance;
     }
 
-    //TODO: Should not be able to edit the returned variable! FIX NEEDED!
     public HashSet<BlockType> getTransparentBlocks() {
-        return transparent;
+        return new HashSet<>(transparent);
     }
 
     public Set<CraftType> getCraftTypes() {
         return Collections.unmodifiableSet(craftTypes);
     }
 
-    private Set<CraftType> loadCraftTypes(){
-
-        File craftsFile = Movecraft.getInstance().getConfigDir().resolve("types").toFile();
-
-        Set<CraftType> craftTypes = new HashSet<>();
-        File[] files = craftsFile.listFiles();
-        if (files == null){
-            Movecraft.getInstance().getLogger().error("No CraftTypes Found!");
-            return craftTypes;
-        }
-
-        for (File file : files) {
-            if (file.isFile()) {
-
-                if (file.getName().contains(".craft")) {
-                    Movecraft.getInstance().getLogger().info("Loading CraftType: " + file.getName());
-                    CraftType type = new CraftType(file);
-                    craftTypes.add(type);
-                }
-            }
-        }
-
-        Movecraft.getInstance().getLogger().info("Loaded " + craftTypes.size() + " CraftTypes.");
-        return craftTypes;
-    }
-
     public void reloadCraftTypes() {
-        this.craftTypes = loadCraftTypes();
+        this.craftTypes = ConfigManager.loadCraftTypes();
     }
 
     public void addCraft(Craft craft) {

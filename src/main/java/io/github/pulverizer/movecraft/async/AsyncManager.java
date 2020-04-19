@@ -1,12 +1,10 @@
 package io.github.pulverizer.movecraft.async;
 
 import com.flowpowered.math.vector.Vector3i;
-import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import io.github.pulverizer.movecraft.config.Settings;
 import io.github.pulverizer.movecraft.craft.Craft;
 import io.github.pulverizer.movecraft.craft.CraftManager;
-import io.github.pulverizer.movecraft.enums.CraftState;
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.block.BlockType;
 import org.spongepowered.api.block.BlockTypes;
@@ -59,7 +57,7 @@ public class AsyncManager implements Runnable {
 
     private void processCruise() {
         for (Craft craft : CraftManager.getInstance()) {
-            if (craft == null || !craft.isNotProcessing() || craft.getState() != CraftState.CRUISING) {
+            if (craft == null || !craft.isNotProcessing() || craft.isCruising()) {
                 continue;
             }
 
@@ -92,14 +90,19 @@ public class AsyncManager implements Runnable {
             int dy = 0;
 
             // ascend
-            if (craft.getCruiseDirection() == Direction.UP) {
-                dy = 1 + craft.getType().getVertCruiseSkipBlocks();
+            if (craft.getVerticalCruiseDirection() == Direction.UP) {
+                if (craft.getHorizontalCruiseDirection() != Direction.NONE) {
+                    dy = (1 + craft.getType().getVertCruiseSkipBlocks()) / 2;
+                } else {
+                    dy = 1 + craft.getType().getVertCruiseSkipBlocks();
+                }
             }
             // descend
-            if (craft.getCruiseDirection() == Direction.DOWN) {
-                dy = -1 - craft.getType().getVertCruiseSkipBlocks();
-                if (craft.getHitBox().getMinY() <= world.getSeaLevel()) {
-                    dy = -1;
+            if (craft.getVerticalCruiseDirection() == Direction.DOWN) {
+                if (craft.getHorizontalCruiseDirection() != Direction.NONE) {
+                    dy = (-1 - craft.getType().getVertCruiseSkipBlocks()) / 2;
+                } else {
+                    dy = -1 - craft.getType().getVertCruiseSkipBlocks();
                 }
             } else if (dive) {
                 dy = -((craft.getType().getCruiseSkipBlocks() + 1) >> 1);
@@ -108,7 +111,7 @@ public class AsyncManager implements Runnable {
                 }
             }
             // ship faces west
-            if (craft.getCruiseDirection() == Direction.WEST) {
+            if (craft.getHorizontalCruiseDirection() == Direction.WEST) {
                 dx = 1 + craft.getType().getCruiseSkipBlocks();
                 if (bankRight) {
                     dz = (-1 - craft.getType().getCruiseSkipBlocks()) >> 1;
@@ -118,7 +121,7 @@ public class AsyncManager implements Runnable {
                 }
             }
             // ship faces east
-            if (craft.getCruiseDirection() == Direction.EAST) {
+            if (craft.getHorizontalCruiseDirection() == Direction.EAST) {
                 dx = -1 - craft.getType().getCruiseSkipBlocks();
                 if (bankLeft) {
                     dz = (-1 - craft.getType().getCruiseSkipBlocks()) >> 1;
@@ -128,7 +131,7 @@ public class AsyncManager implements Runnable {
                 }
             }
             // ship faces north
-            if (craft.getCruiseDirection() == Direction.NORTH) {
+            if (craft.getHorizontalCruiseDirection() == Direction.NORTH) {
                 dz = 1 + craft.getType().getCruiseSkipBlocks();
                 if (bankRight) {
                     dx = (-1 - craft.getType().getCruiseSkipBlocks()) >> 1;
@@ -138,7 +141,7 @@ public class AsyncManager implements Runnable {
                 }
             }
             // ship faces south
-            if (craft.getCruiseDirection() == Direction.SOUTH) {
+            if (craft.getHorizontalCruiseDirection() == Direction.SOUTH) {
                 dz = -1 - craft.getType().getCruiseSkipBlocks();
                 if (bankLeft) {
                     dx = (-1 - craft.getType().getCruiseSkipBlocks()) >> 1;
@@ -157,7 +160,7 @@ public class AsyncManager implements Runnable {
     private void detectSinking(){
         HashSet<Craft> crafts = Sets.newHashSet(CraftManager.getInstance());
         crafts.forEach(craft -> {
-            if (craft.getState() == CraftState.SINKING) {
+            if (craft.isSinking()) {
                 return;
             }
             if (craft.getType().getSinkPercent() == 0.0 || !craft.isNotProcessing()) {
@@ -169,7 +172,6 @@ public class AsyncManager implements Runnable {
                 return;
             }
 
-            final World world = craft.getWorld();
             int totalNonAirBlocks = 0;
             int totalNonAirWaterBlocks = 0;
             HashMap<List<BlockType>, Integer> foundFlyBlocks = new HashMap<>();
@@ -231,8 +233,8 @@ public class AsyncManager implements Runnable {
                 double percent = ((double) numfound / (double) totalNonAirBlocks) * 100.0;
                 double movePercent = craft.getType().getMoveBlocks().get(i).get(0);
                 double disablePercent = movePercent * craft.getType().getSinkPercent() / 100.0;
-                if (percent < disablePercent && craft.getState() != CraftState.DISABLED && craft.isNotProcessing()) {
-                    craft.setState(CraftState.DISABLED);
+                if (percent < disablePercent && !craft.isDisabled() && craft.isNotProcessing()) {
+                    craft.disable();
                     if (craft.getPilot() != null) {
                         Location<World> loc = Sponge.getServer().getPlayer(craft.getPilot()).get().getLocation();
                         craft.getWorld().playSound(SoundTypes.ENTITY_IRONGOLEM_DEATH, loc.getPosition(),  5.0f, 5.0f);
@@ -263,8 +265,7 @@ public class AsyncManager implements Runnable {
             // know and release the craft. Otherwise
             // update the time for the next check
             if (isSinking && craft.isNotProcessing()) {
-                Sponge.getServer().getPlayer(craft.getPilot()).ifPresent(notifyP -> notifyP.sendMessage(Text.of("Craft is sinking!")));
-                craft.setState(CraftState.SINKING);
+                craft.sink();
                 CraftManager.getInstance().removePlayerFromCraft(craft);
             } else {
                 craft.setLastCheckTime(Sponge.getServer().getRunningTimeTicks());
@@ -277,7 +278,7 @@ public class AsyncManager implements Runnable {
         //copy the crafts before iteration to prevent concurrent modifications
         HashSet<Craft> crafts = Sets.newHashSet(CraftManager.getInstance());
         crafts.forEach(craft -> {
-            if (craft == null || craft.getState() != CraftState.SINKING) {
+            if (craft == null || !craft.isSinking()) {
                 return;
             }
             if (craft.getHitBox().isEmpty() || craft.getHitBox().getMinY() < 5) {
@@ -404,7 +405,7 @@ public class AsyncManager implements Runnable {
             }
 
             // Stop crafts from moving if they have taken too long to process.
-            if (!craft.isNotProcessing() && craft.getState() == CraftState.CRUISING && craft.getProcessingStartTime() < Sponge.getServer().getRunningTimeTicks() - 1200) {
+            if (!craft.isNotProcessing() && craft.isCruising() && craft.getProcessingStartTime() < Sponge.getServer().getRunningTimeTicks() - 1200) {
                 craft.setProcessing(false);
             }
         }

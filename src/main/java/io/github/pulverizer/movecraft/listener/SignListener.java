@@ -137,7 +137,7 @@ public class SignListener {
                 break;
 
             default:
-                if (Settings.RequireCreateSignPerm && CraftManager.getInstance().getCraftTypeFromString(header) != null)
+                if (CraftManager.getInstance().getCraftTypeFromString(header) != null)
                     CraftSign.onSignChange(event, player, header);
 
                 break;

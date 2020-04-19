@@ -1,10 +1,8 @@
 package io.github.pulverizer.movecraft.sign;
 
-import io.github.pulverizer.movecraft.enums.CraftState;
 import io.github.pulverizer.movecraft.Movecraft;
 import io.github.pulverizer.movecraft.craft.Craft;
 import io.github.pulverizer.movecraft.config.CraftType;
-import io.github.pulverizer.movecraft.config.Settings;
 import io.github.pulverizer.movecraft.craft.CraftManager;
 import org.spongepowered.api.block.BlockSnapshot;
 import org.spongepowered.api.block.tileentity.Sign;
@@ -66,8 +64,7 @@ public final class CraftSign {
 
             final Craft craft = new Craft(type, player.getUniqueId(), loc);
 
-            craft.setCruiseDirection(cruiseDirection);
-            craft.setState(CraftState.CRUISING);
+            craft.setCruising(craft.getVerticalCruiseDirection(), cruiseDirection);
 
             //TODO: Move to Detection Task
             // And add fly time config options to CraftType
@@ -83,7 +80,8 @@ public final class CraftSign {
                 new Craft(type, player.getUniqueId(), loc);
 
             } else if (oldCraft.isNotProcessing()) {
-                oldCraft.removeCrewMember(player.getUniqueId());
+                // TODO - do this via CraftManager after detection
+                //oldCraft.removeCrewMember(player.getUniqueId());
                 new Craft(type, player.getUniqueId(), loc);
             }
         }
