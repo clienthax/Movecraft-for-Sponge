@@ -19,7 +19,7 @@ import org.spongepowered.api.util.Direction;
  * Code to be reviewed
  *
  * @author BernardisGood
- * @version 1.3 - 17 Apr 2020
+ * @version 1.34 - 20 Apr 2020
  */
 public final class RelativeMoveSign {
     private static final String HEADER = "RMove:";
@@ -126,6 +126,6 @@ public final class RelativeMoveSign {
                 break;
         }
 
-        CraftManager.getInstance().getCraftByPlayer(player.getUniqueId()).translate(new Vector3i(dx, dy, dz), false);
+        CraftManager.getInstance().getCraftByPlayer(player.getUniqueId()).translate(new Vector3i(dx, dy, dz));
     }
 }

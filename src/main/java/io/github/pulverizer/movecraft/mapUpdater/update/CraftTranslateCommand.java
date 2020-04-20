@@ -203,7 +203,7 @@ public class CraftTranslateCommand extends UpdateCommand {
             time = System.currentTimeMillis() - time;
             logger.info("Total time: " + time + " ms. Moving with cooldown of " + craft.getTickCooldown() + ". Speed of: " + String.format("%.2f", craft.getSpeed()));
         craft.addMoveTime(time);
-        craft.setLastMoveTick(Sponge.getServer().getRunningTimeTicks());
+        craft.updateLastMoveTick();
         craft.setProcessing(false);
     }
 

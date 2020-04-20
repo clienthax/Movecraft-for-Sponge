@@ -16,7 +16,7 @@ import org.spongepowered.api.text.Text;
  * Code to be reviewed
  *
  * @author BernardisGood
- * @version 1.3 - 17 Apr 2020
+ * @version 1.4 - 20 Apr 2020
  */
 public final class TeleportSign {
     private static final String HEADER = "Teleport:";
@@ -59,7 +59,7 @@ public final class TeleportSign {
             int dx = tX - block.getLocation().get().getBlockPosition().getX();
             int dy = tY - block.getLocation().get().getBlockPosition().getY();
             int dz = tZ - block.getLocation().get().getBlockPosition().getZ();
-            craft.translate(new Vector3i(dx, dy, dz), false);
+            craft.translate(new Vector3i(dx, dy, dz));
         }
     }
 }

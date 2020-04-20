@@ -142,15 +142,13 @@ public class CraftManager implements Iterable<Craft> {
         craftList.removeAll(crafts);
     }
 
-    //TODO: Replace with Craft.removeCrew()
+    //TODO: Replace with Craft.removeCrew() - Why? I forget
     public void removePlayerFromCraft(Craft c) {
-        if (c.getCrewList().isEmpty()) {
+        if (c.crewIsEmpty()) {
             return;
         }
         removeReleaseTask(c);
-        c.getCrewList().forEach(playerUUID ->
-                Sponge.getServer().getPlayer(playerUUID).ifPresent(player ->
-                        player.sendMessage(Text.of("You have released your craft."))));
+        c.notifyCrew("You have released your craft.");
 
         Movecraft.getInstance().getLogger().info(String.format(Sponge.getServer().getPlayer(c.getPilot()).orElse(null) + " has released a craft of type %s with size %d at coordinates : %d x , %d z", c.getType().getName(), c.getHitBox().size(), c.getHitBox().getMinX(), c.getHitBox().getMinZ()));
     }
@@ -158,11 +156,7 @@ public class CraftManager implements Iterable<Craft> {
 
     @Deprecated
     public final void addReleaseTask(final Craft c) {
-        if (!c.getCrewList().isEmpty()) {
-            c.getCrewList().forEach(playerUUID ->
-                    Sponge.getServer().getPlayer(playerUUID).ifPresent(player ->
-                            player.sendMessage(Text.of("You have released your craft."))));
-        }
+        c.notifyCrew("You have released your craft.");
 
         Task releaseTask = Task.builder().delayTicks(20*15).execute(() -> removeCraft(c)).submit(Movecraft.getInstance());
         releaseEvents.put(c, releaseTask);
@@ -171,7 +165,7 @@ public class CraftManager implements Iterable<Craft> {
 
     @Deprecated
     public final void removeReleaseTask(final Craft c) {
-        if (!c.getCrewList().isEmpty()) {
+        if (!c.crewIsEmpty()) {
             if (releaseEvents.containsKey(c)) {
                 if (releaseEvents.get(c) != null)
                     releaseEvents.get(c).cancel();
@@ -213,5 +207,9 @@ public class CraftManager implements Iterable<Craft> {
     @Override
     public Iterator<Craft> iterator() {
         return Collections.unmodifiableSet(this.craftList).iterator();
+    }
+
+    public void removePlayer(UUID player) {
+        craftList.forEach(craft -> craft.removeCrewMember(player));
     }
 }

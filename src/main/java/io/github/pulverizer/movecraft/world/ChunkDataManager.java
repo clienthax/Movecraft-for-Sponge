@@ -92,7 +92,7 @@ public class ChunkDataManager {
                 return;
 
             //get the nextTick to move with the tile
-            addTile(MathUtils.rotateVec(rotation, position.sub(originPoint)).add(originPoint), new TileHolder(tile, tickProvider.getNextTick((WorldServer) worldServer, position), position));
+            addTile(MathUtils.rotateVec(rotation, position.sub(originPoint)).add(originPoint), new TileHolder(tile, tickProvider.getNextTick(worldServer, position), position));
         });
     }
 

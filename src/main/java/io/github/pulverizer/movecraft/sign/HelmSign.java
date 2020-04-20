@@ -19,7 +19,7 @@ import org.spongepowered.api.text.Text;
  * Code to be reviewed
  *
  * @author BernardisGood
- * @version 1.3 - 17 Apr 2020
+ * @version 1.4 - 20 Apr 2020
  */
 public final class HelmSign {
 
@@ -76,9 +76,9 @@ public final class HelmSign {
         }
 
         if (craft.getType().rotateAtMidpoint()) {
-            craft.rotate(craft.getHitBox().getMidPoint(), rotation, false);
+            craft.rotate(craft.getHitBox().getMidPoint(), rotation);
         } else {
-            craft.rotate(sign.getLocation().getBlockPosition(), rotation, false);
+            craft.rotate(sign.getLocation().getBlockPosition(), rotation);
         }
 
         event.setCancelled(true);

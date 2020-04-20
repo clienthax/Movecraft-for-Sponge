@@ -2,15 +2,14 @@ package io.github.pulverizer.movecraft.craft;
 
 import com.flowpowered.math.vector.Vector3d;
 import com.flowpowered.math.vector.Vector3i;
-import io.github.pulverizer.movecraft.enums.Rotation;
 import io.github.pulverizer.movecraft.async.AsyncTask;
 import io.github.pulverizer.movecraft.async.DetectionTask;
 import io.github.pulverizer.movecraft.async.RotationTask;
 import io.github.pulverizer.movecraft.async.TranslationTask;
 import io.github.pulverizer.movecraft.config.CraftType;
+import io.github.pulverizer.movecraft.enums.Rotation;
 import io.github.pulverizer.movecraft.event.CraftSinkEvent;
 import io.github.pulverizer.movecraft.utils.HashHitBox;
-
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.block.BlockSnapshot;
 import org.spongepowered.api.block.BlockType;
@@ -20,6 +19,9 @@ import org.spongepowered.api.block.tileentity.TileEntity;
 import org.spongepowered.api.block.tileentity.carrier.TileEntityCarrier;
 import org.spongepowered.api.data.key.Keys;
 import org.spongepowered.api.data.value.mutable.ListValue;
+import org.spongepowered.api.entity.explosive.PrimedTNT;
+import org.spongepowered.api.entity.living.player.Player;
+import org.spongepowered.api.entity.projectile.explosive.fireball.SmallFireball;
 import org.spongepowered.api.item.ItemType;
 import org.spongepowered.api.item.inventory.Inventory;
 import org.spongepowered.api.item.inventory.query.QueryOperationTypes;
@@ -29,9 +31,18 @@ import org.spongepowered.api.util.Direction;
 import org.spongepowered.api.world.Location;
 import org.spongepowered.api.world.World;
 
-import java.util.*;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+/**
+ * Represents a player controlled craft
+ *
+ * @author BernardisGood
+ * @version 0.8 - 20 Apr 2020
+ */
 public class Craft {
 
     // Facts
@@ -39,16 +50,22 @@ public class Craft {
     private final UUID id = UUID.randomUUID();
     private final UUID commandeeredBy;
     private int initialSize;
-    private final Long originalPilotTime;
+    private final long commandeeredAt;
     private final int maxHeightLimit;
+    private boolean isSubCraft;
 
 
     // State
+    private String name;
     private final AtomicBoolean processing = new AtomicBoolean();
     private int processingStartTime = 0;
     private HashHitBox hitBox;
-    private long lastCheckTime = 0L;
-    private World world;
+    // TODO - Sinking related - Need to implement
+    //  makes it so the craft can't collapse on itself
+    //  CollapsedHitbox is to prevent the wrecks from despawning when sinking into water
+    protected final HashHitBox collapsedHitBox = new HashHitBox();
+    private long lastCheckTick = 0L;
+    private World world; //TODO - Make cross-dimension travel possible
     private boolean sinking = false;
     private boolean disabled = false;
 
@@ -57,287 +74,170 @@ public class Craft {
     private UUID commander;
     private UUID nextInCommand;
     private UUID pilot;
-    private UUID aaDirector;
-    private UUID cannonDirector;
+    private final HashSet<UUID> aaDirectors = new HashSet<>();
+    private final HashSet<UUID> cannonDirectors = new HashSet<>();
+    private final HashSet<UUID> loaders = new HashSet<>(); //TODO - Implement
+    private final HashSet<UUID> repairmen = new HashSet<>(); //TODO - Implement
     private final HashSet<UUID> crewList = new HashSet<>();
-
-
-    // Direct Control
-    private boolean directControl = false;
-    private Vector3d pilotOffset = new Vector3d(0,0,0);
 
 
     // Movement
     private Vector3i lastMoveVector = new Vector3i();
+    @Deprecated
     private HashSet<BlockSnapshot> phasedBlocks = new HashSet<>(); //TODO - move to listener database thingy
-    private double burningFuel;
+    private double movePoints;
     private int numberOfMoves = 0;
     private float meanMoveTime;
     //   Cruising
-    private int lastCruiseUpdateTick;
+    private int lastMoveTick;
     private Direction verticalCruiseDirection = Direction.NONE;
     private Direction horizontalCruiseDirection = Direction.NONE;
     //   Rotating
     private long lastRotateTime = 0;
 
 
-    // TODO - sort
-    protected final HashHitBox collapsedHitBox = new HashHitBox();
-    protected HashHitBox fluidLocations;
-
-    private long lastBlockCheck;
+    // Direct Control
+    //TODO - Needs rewriting/implementing
+    private boolean directControl = false;
+    private Vector3d pilotOffset = new Vector3d(0, 0, 0);
     private boolean pilotLocked = false;
     private double pilotLockedX = 0.0;
     private double pilotLockedY = 0.0;
     private double pilotLockedZ = 0.0;
-    private String name = "";
+
 
     /**
      * Initialises the craft and detects the craft's hitbox.
-     * @param type The type of craft to detect.
-     * @param player The player that triggered craft detection.
-     * @param startLocation Location from which to start craft detection.
+     *
+     * @param type          The type of craft to detect
+     * @param player        The player that triggered craft detection
+     * @param startLocation The location from which to start craft detection
      */
-    public Craft(CraftType type, UUID player, Location<World> startLocation) {
+    public Craft(CraftType type, UUID player, Location<World> startLocation, boolean isSubCraft) {
         this.type = type;
         world = startLocation.getExtent();
-        lastCruiseUpdateTick = Sponge.getServer().getRunningTimeTicks() - 100;
-        originalPilotTime = System.currentTimeMillis();
+        this.isSubCraft = isSubCraft;
+
+        lastMoveTick = Sponge.getServer().getRunningTimeTicks() - 100;
+        commandeeredAt = System.currentTimeMillis();
         commandeeredBy = player;
         maxHeightLimit = Math.min(type.getMaxHeightLimit(), world.getDimension().getBuildHeight() - 1);
 
         submitTask(new DetectionTask(this, startLocation));
     }
 
-    /**
-     * Fetches the type of craft this is.
-     * @return The type of craft this is.
-     */
+
+    // Facts
     public CraftType getType() {
         return type;
     }
 
-    /**
-     * Adds the player to the craft's crew.
-     * @param player The player to be added.
-     */
-    public void addCrewMember(UUID player) {
-        crewList.add(player);
+    public UUID getId() {
+        return id;
     }
 
-    /**
-     * Removes the player from the craft's crew.
-     * @param player The player to be removed.
-     */
-    public void removeCrewMember(UUID player) {
-        crewList.remove(player);
-
-        if (getPilot() == player)
-            setPilot(null);
-
-        if (getAADirector() == player)
-            setAADirector(null);
-
-        if (getCannonDirector() == player)
-            setCannonDirector(null);
-
-        if (getNextInCommand() == player)
-            setNextInCommand(null);
+    public UUID commandeeredBy() {
+        return commandeeredBy;
     }
 
-    /**
-     * Fetches the list of players that are registered as members of the craft's crew.
-     * @return The list of players that are registered as members of the craft's crew.
-     */
-    public HashSet<UUID> getCrewList() {
-        return crewList;
-    }
-
-    /**
-     * Checks if the player is a member of the craft's crew.
-     * @param player Player to look for.
-     * @return True if the player is a part of the crew.
-     */
-    public boolean isCrewMember(UUID player) {
-        return crewList.contains(player);
-    }
-
-    /**
-     * <pre>
-     *     Clears the crew list of any players it contains.
-     *     Unless the ship is sinking it will be released next time checks are performed.
-     *     Players will be unable to pilot the craft until it is released.
-     * </pre>
-     */
-    public void removeCrew() {
-        crewList.clear();
-        setPilot(null);
-        setAADirector(null);
-        setCannonDirector(null);
-        setNextInCommand(null);
-    }
-
-    /**
-     * Sets and updates the initial size of the craft.
-     * @param size The initial size of the craft.
-     */
-    public void setInitialSize(int size) {
-        initialSize = size;
-    }
-
-    /**
-     * Fetches the initial size of the craft.
-     * @return The initial size of the craft.
-     */
     public int getInitialSize() {
         return initialSize;
     }
 
-    /**
-     * Sets the current hitbox of the craft.
-     * @param newHitbox The craft's new hitbox.
-     */
-    public void setHitBox(HashHitBox newHitbox) {
-        hitBox = newHitbox;
+    public void setInitialSize(int updatedInitialSize) {
+        initialSize = updatedInitialSize;
     }
 
-    /**
-     * Fetches the craft's current hitbox.
-     * @return The craft's current hitbox.
-     */
+    public long commandeeredAt() {
+        return commandeeredAt;
+    }
+
+    public int getMaxHeightLimit() {
+        return maxHeightLimit;
+    }
+
+    public boolean isSubCraft() {
+        return isSubCraft;
+    }
+
+    public void setSubCraft(boolean isSubCraft) {
+        this.isSubCraft = isSubCraft;
+    }
+
+
+    // State
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String newName) {
+        name = newName;
+    }
+
+    public boolean isNotProcessing() {
+        return !processing.get();
+    }
+
+    public void setProcessing(boolean isProcessing) {
+        processingStartTime = Sponge.getServer().getRunningTimeTicks();
+        processing.set(isProcessing);
+    }
+
+    public int getProcessingStartTime() {
+        return processingStartTime;
+    }
+
     public HashHitBox getHitBox() {
         return hitBox;
     }
 
-    /**
-     * Fetches the craft's current size.
-     * @return The craft's current size.
-     */
+    public void setHitBox(HashHitBox newHitBox) {
+        hitBox = newHitBox;
+    }
+
     public int getSize() {
         return hitBox.size();
     }
 
-    /**
-     * Fetches the world the craft is in.
-     * @return The world the craft is in.
-     */
+    public long getLastCheckTick() {
+        return lastCheckTick;
+    }
+
+    //TODO - Replace with runChecks() and maybe use an event and listener so people can add their own checks?
+    public void updateLastCheckTick() {
+        lastCheckTick = Sponge.getServer().getRunningTimeTicks();
+    }
+
     public World getWorld() {
         return world;
     }
 
-    /**
-     * Sets the player as the craft's pilot.
-     * @param player The player to be set as the pilot. Use null to remove but not replace the existing pilot.
-     * @return FALSE - If you are attempting to set a player as the pilot but the player is not a member of the crew.
-     */
-    public boolean setPilot(UUID player) {
-        if (!isCrewMember(player) && player != null)
-            return false;
-
-        pilot = player;
-        return true;
+    public boolean isSinking() {
+        return sinking;
     }
 
-    /**
-     * Fetches the current pilot of the craft.
-     * @return The current pilot of the craft.
-     */
-    public UUID getPilot() {
-        return pilot;
+    public void sink() {
+        // Throw an event
+        CraftSinkEvent event = new CraftSinkEvent(this);
+        Sponge.getEventManager().post(event);
+
+        // Check if the event has been cancelled
+        if (event.isCancelled()) {
+            return;
+        }
+
+        // The event was not cancelled
+        // Change the craft's state
+        sinking = true;
+
+
+        // And notify the crew
+        notifyCrew("Craft is sinking!");
     }
 
-    /**
-     * Sets the player as the craft's AA director.
-     * @param player The player to be set as the AA director. Use null to remove but not replace the existing AA director.
-     * @return FALSE - If you are attempting to set a player as the AA director but the player is not a member of the crew.
-     */
-    public boolean setAADirector(UUID player) {
-        if (!isCrewMember(player) && player != null)
-            return false;
-
-        if (cannonDirector == player)
-            setCannonDirector(null);
-
-        if (pilot == player)
-            setPilot(null);
-
-        aaDirector = player;
-        return true;
-    }
-
-    /**
-     * Fetches the current AA director of the craft.
-     * @return The current AA director of the craft.
-     */
-    public UUID getAADirector() {
-        return aaDirector;
-    }
-
-    /**
-     * Sets the player as the craft's cannon director.
-     * @param player The player to be set as the cannon director. Use null to remove but not replace the existing cannon director.
-     * @return FALSE - If you are attempting to set a player as the cannon director but the player is not a member of the crew.
-     */
-    public boolean setCannonDirector(UUID player) {
-        if (!isCrewMember(player) && player != null)
-            return false;
-
-        if (aaDirector == player)
-            setAADirector(null);
-
-        if (pilot == player)
-            setPilot(null);
-
-        cannonDirector = player;
-        return true;
-    }
-
-    /**
-     * Fetches the current cannon director of the craft.
-     * @return The current cannon director of the craft.
-     */
-    public UUID getCannonDirector() {
-        return cannonDirector;
-    }
-
-    /**
-     * Fetches the time of when checks were last performed.
-     * @return Time of last checks.
-     */
-    public long getLastCheckTime() {
-        return lastCheckTime;
-    }
-
-    /**
-     * Fetches the time when the craft was piloted.
-     * @return Time when craft was piloted.
-     */
-    public long getOriginalPilotTime() {
-        return originalPilotTime;
-    }
-
-    /**
-     * Fetches the time when the craft last cruised.
-     * @return Time when craft last cruised.
-     */
-    public int getLastMoveTick() {
-        return lastCruiseUpdateTick;
-    }
-
-    /**
-     * Fetches the time when the craft last cruised.
-     * @param time Time when the craft last cruised.
-     */
-    public void setLastMoveTick(int time) {
-        lastCruiseUpdateTick = time;
-    }
-
-    /**
-     * Fetches the unique id of the craft.
-     * @return Craft's unique id.
-     */
-    public UUID getID() {
-        return id;
+    public boolean isDisabled() {
+        return disabled;
     }
 
     public void disable() {
@@ -346,117 +246,245 @@ public class Craft {
     }
 
     public void enable() {
+        //TODO - Create an event for this
         disabled = false;
     }
 
-    public boolean isDisabled() {
-        return disabled;
+
+    // Crew
+
+    public UUID getCommander() {
+        return commander;
     }
 
-    /**
-     * Checks if the craft is not processing.
-     * @return FALSE - If the craft is processing.
-     */
-    public boolean isNotProcessing() {
-        return !processing.get();
+    public boolean setCommander(UUID player) {
+        if ((crewList.contains(player) || player == commandeeredBy) && player != null) {
+            commander = player;
+
+            if (player == nextInCommand || nextInCommand == null) resetNextInCommand();
+            return true;
+        }
+
+        return false;
     }
 
-    /**
-     * Sets if the craft is currently processing or not.
-     */
-    public void setProcessing(boolean processing) {
-        this.processingStartTime = Sponge.getServer().getRunningTimeTicks();
-        this.processing.set(processing);
+    public UUID getNextInCommand() {
+        return nextInCommand;
     }
 
-    /**
-     * Sets if the craft is in direct control mode.
-     * @param setting TRUE - If the craft entering direct control mode. False if exiting direct control mode.
-     */
-    public void setDirectControl(boolean setting) {
-        directControl = setting;
+    public boolean setNextInCommand(UUID player) {
+        if (crewList.contains(player) && player != null) {
+            nextInCommand = player;
+            return true;
+        }
+
+        return false;
     }
 
-    /**
-     * Fetches if the craft is in direct control mode or not.
-     * @return TRUE - If the craft is in direct control mode.
-     */
-    public boolean isUnderDirectControl() {
-        return directControl;
+    public void resetNextInCommand() {
+        nextInCommand = null;
+
+        //TODO - Notify commander that it is recommended to assign a Next-In-Command
     }
 
-    //TODO: Do we actually need these?
-    /**
-     * Used to calculate the next translation of the craft while in direct control mode.
-     * @param newPilotOffset The combined move requests made by the pilot.
-     */
-    public void setPilotOffset(Vector3d newPilotOffset) {
-        pilotOffset = newPilotOffset;
+    public UUID getPilot() {
+        return pilot;
     }
 
-    /**
-     * Fetches the current combined total of the move requests made by the pilot.
-     * @return Combined total of the move requests made by the pilot.
-     */
-    public Vector3d getPilotOffset() {
-        return pilotOffset;
+    public boolean setPilot(UUID player) {
+        if (crewList.contains(player) && player != null) {
+            resetCrewRole(player);
+
+            pilot = player;
+            return true;
+        }
+
+        return false;
     }
 
-    /**
-     * Records the craft's last move as a Vector3i.
-     * @param lastMoveVector The craft's last move.
-     */
-    public void setLastMoveVector(Vector3i lastMoveVector) {
-        this.lastMoveVector = lastMoveVector;
+    public boolean isAADirector(UUID player) {
+        return aaDirectors.contains(player);
     }
 
-    /**
-     * Fetches the craft's last move.
-     * @return The craft's last move.
-     */
+    public boolean addAADirector(UUID player) {
+        if (crewList.contains(player)) {
+            resetCrewRole(player);
+
+            aaDirectors.add(player);
+            return true;
+        }
+
+        return false;
+    }
+
+    public Player getAADirectorFor(SmallFireball fireball) {
+        Player player = null;
+        double distance = 16 * 64;
+        HashSet<UUID> testSet = new HashSet<>(aaDirectors);
+
+        for (UUID testUUID : testSet) {
+            Player testPlayer = Sponge.getServer().getPlayer(testUUID).orElse(null);
+
+            if (testPlayer == null) {
+                CraftManager.getInstance().removePlayer(testUUID);
+                continue;
+            }
+
+            //TODO - Add test for matching facing direction
+            double testDistance = testPlayer.getLocation().getPosition().distance(fireball.getLocation().getPosition());
+
+            if (testDistance < distance) {
+                player = testPlayer;
+                distance = testDistance;
+            }
+        }
+
+        return player;
+    }
+
+    public boolean isCannonDirector(UUID player) {
+        return cannonDirectors.contains(player);
+    }
+
+    public boolean addCannonDirector(UUID player) {
+        if (crewList.contains(player)) {
+            resetCrewRole(player);
+
+            cannonDirectors.add(player);
+            return true;
+        }
+
+        return false;
+    }
+
+    public Player getCannonDirectorFor(PrimedTNT primedTNT) {
+        Player player = null;
+        double distance = 16 * 64;
+        HashSet<UUID> testSet = new HashSet<>(aaDirectors);
+
+        for (UUID testUUID : testSet) {
+            Player testPlayer = Sponge.getServer().getPlayer(testUUID).orElse(null);
+
+            if (testPlayer == null) {
+                CraftManager.getInstance().removePlayer(testUUID);
+                continue;
+            }
+
+            //TODO - Add test for matching facing direction
+            double testDistance = testPlayer.getLocation().getPosition().distance(primedTNT.getLocation().getPosition());
+
+            if (testDistance < distance) {
+                player = testPlayer;
+                distance = testDistance;
+            }
+        }
+
+        return player;
+    }
+
+    public boolean isLoader(UUID player) {
+        return loaders.contains(player);
+    }
+
+    public boolean addLoader(UUID player) {
+        if (crewList.contains(player)) {
+            resetCrewRole(player);
+
+            loaders.add(player);
+            return true;
+        }
+
+        return false;
+    }
+
+    public boolean isRepairman(UUID player) {
+        return repairmen.contains(player);
+    }
+
+    public boolean addRepairman(UUID player) {
+        if (crewList.contains(player)) {
+            resetCrewRole(player);
+
+            repairmen.add(player);
+            return true;
+        }
+
+        return false;
+    }
+
+    public boolean crewIsEmpty() {
+        return crewList.isEmpty();
+    }
+
+    public boolean isCrewMember(UUID player) {
+        return crewList.contains(player);
+    }
+
+    public void addCrewMember(UUID player) {
+        crewList.add(player);
+    }
+
+    public void removeCrewMember(UUID player) {
+        if (player == null) return;
+
+        if (player == commander && nextInCommand != null) setCommander(nextInCommand);
+
+        if (player == nextInCommand) resetNextInCommand();
+
+        resetCrewRole(player);
+        crewList.remove(player);
+    }
+
+    public void resetCrewRole(UUID player) {
+        if (pilot == player) pilot = null;
+        aaDirectors.remove(player);
+        cannonDirectors.remove(player);
+        loaders.remove(player);
+        repairmen.remove(player);
+    }
+
+    public void removeCrew() {
+        commander = null;
+        nextInCommand = null;
+        pilot = null;
+        aaDirectors.clear();
+        cannonDirectors.clear();
+        loaders.clear();
+        repairmen.clear();
+        crewList.clear();
+    }
+
+    public void notifyCrew(String message) {
+        //TODO - Add Main Config setting to decide if the crew should be notified of such events
+        crewList.forEach(crewMember -> Sponge.getServer().getPlayer(crewMember).ifPresent(player -> player.sendMessage(Text.of(message))));
+    }
+
+
+    // Movement
+
     public Vector3i getLastMoveVector() {
         return lastMoveVector;
     }
 
-    /**
-     * <pre>
-     *     Sets the blocks that the craft is currently flying through.
-     *     These blocks will be placed back in the world after the craft has flown through them.
-     * </pre>
-     * @param phasedBlocks The blocks currently being flown through.
-     */
-    public void setPhasedBlocks(HashSet<BlockSnapshot> phasedBlocks) {
-        this.phasedBlocks = phasedBlocks;
+    public void setLastMoveVector(Vector3i vector) {
+        lastMoveVector = vector;
     }
 
-    /**
-     * Fetches the blocks that the craft is currently flying through.
-     * @return The blocks currently being flown through.
-     */
+    @Deprecated
     public HashSet<BlockSnapshot> getPhasedBlocks() {
         return phasedBlocks;
     }
 
-    /**
-     * Fetches the number of move points the craft currently has.
-     * @return The craft's move points.
-     */
-    public double getBurningFuel() {
-        return burningFuel;
+    public double getMovePoints() {
+        return movePoints;
     }
 
-    /**
-     * Deducts move points as requested. Used to represent fuel consumption.
-     * Will burn fuel from inventories specified in the craft config.
-     * @param movePoints The number of move points to deduct.
-     * @return TRUE if the operation was successful.
-     */
-    public boolean burnFuel(double movePoints) {
+    public boolean useFuel(double requiredPoints) {
 
-        if (movePoints < 0)
+        if (requiredPoints < 0)
             return false;
 
-        if (burningFuel < movePoints) {
+        if (movePoints < requiredPoints) {
 
             HashSet<Vector3i> furnaceBlocks = new HashSet<>();
             Map<BlockType, Set<Vector3i>> blockMap = hitBox.map(world);
@@ -480,35 +508,31 @@ public class Craft {
 
                             double fuelItemValue = getType().getFuelItems().get(fuelItem);
 
-                            int oldValue = (int) Math.ceil((movePoints - burningFuel) / fuelItemValue);
+                            int oldValue = (int) Math.ceil((requiredPoints - movePoints) / fuelItemValue);
                             int newValue = inventory.query(QueryOperationTypes.ITEM_TYPE.of(fuelItem)).poll(oldValue).get().getQuantity();
 
-                            burningFuel += newValue * fuelItemValue;
+                            movePoints += newValue * fuelItemValue;
                         }
 
-                        if (burningFuel >= movePoints)
+                        if (movePoints >= requiredPoints)
                             break;
                     }
                 }
 
-                if (burningFuel >= movePoints)
+                if (movePoints >= requiredPoints)
                     break;
 
             }
         }
 
-        if (burningFuel >= movePoints) {
-            burningFuel -= movePoints;
+        if (movePoints >= requiredPoints) {
+            movePoints -= requiredPoints;
             return true;
         }
 
         return false;
     }
 
-    /**
-     * Calculates the fuel that has not yet been burned.
-     * @return The total unburned move points currently aboard the craft.
-     */
     public int checkFuelStored() {
 
         int fuelStored = 0;
@@ -542,73 +566,65 @@ public class Craft {
         return fuelStored;
     }
 
-    /**
-     * Fetches the number of moves the craft has made so far.
-     * @return Number of times the craft has moved.
-     */
     public int getNumberOfMoves() {
         return numberOfMoves;
     }
 
-    /**
-     * Fetches the UUID of the player currently commanding the craft.
-     * @return UUID of the player currently commanding the craft.
-     */
-    public UUID getCommander() {
-        return commander;
+    public float getMeanMoveTime() {
+        return meanMoveTime;
     }
 
-    /**
-     * Sets the player as the craft's Commander.
-     */
-    public void setCommander(UUID player) {
-        if (!crewList.contains(player))
-            addCrewMember(player);
-
-        commander = player;
+    public void addMoveTime(float moveTime) {
+        meanMoveTime = (meanMoveTime * numberOfMoves + moveTime) / (++numberOfMoves);
     }
 
-    /**
-     * Fetches the UUID of the player that commandeered the craft.
-     *
-     * @return The UUID of the player that commandeered the craft
-     */
-    public UUID commandeeredBy() {
-        return commandeeredBy;
+    public int getLastMoveTick() {
+        return lastMoveTick;
     }
 
-    /**
-     * Sets the player as the craft's Next-In-Command.
-     * @param player The player to be set as the Next-In-Command. Use null to remove but not replace the existing Next-In-Command.
-     * @return FALSE - If you are attempting to set a player as the Next-In-Command but the player is not a member of the crew.
-     */
-    public boolean setNextInCommand(UUID player) {
-        if (!isCrewMember(player) && player != null)
-            return false;
-
-        nextInCommand = player;
-        return true;
+    public void updateLastMoveTick() {
+        lastMoveTick = Sponge.getServer().getRunningTimeTicks();
     }
 
-    /**
-     * Fetches the current Next-In-Command of the craft.
-     * @return The current Next-In-Command of the craft.
-     */
-    public UUID getNextInCommand() {
-        return nextInCommand;
+    public void setCruising(Direction vertical, Direction horizontal) {
+
+        if (vertical != Direction.UP
+                && vertical != Direction.NONE
+                && vertical != Direction.DOWN) {
+            return;
+        }
+        if (horizontal != Direction.NONE
+                && horizontal != Direction.NORTH
+                && horizontal != Direction.WEST
+                && horizontal != Direction.SOUTH
+                && horizontal != Direction.EAST) {
+            return;
+        }
+
+        if (pilot != null) {
+            Sponge.getServer().getPlayer(pilot).ifPresent(player -> player.sendMessage(ChatTypes.ACTION_BAR, Text.of("Cruising " + ((vertical != Direction.NONE || horizontal != Direction.NONE) ? "Enabled" : "Disabled"))));
+        }
+
+        horizontalCruiseDirection = horizontal;
+        verticalCruiseDirection = vertical;
+
+        // Change signs aboard the craft to reflect new cruising state
+        resetSigns();
     }
 
-
-
-    //--------------------------//
-
-
-
-    public void setLastCheckTime(long time) {
-        lastCheckTime = time;
+    public Direction getVerticalCruiseDirection() {
+        return verticalCruiseDirection;
     }
 
-    public void resetSigns(Sign clicked) {
+    public Direction getHorizontalCruiseDirection() {
+        return horizontalCruiseDirection;
+    }
+
+    public boolean isCruising() {
+        return verticalCruiseDirection != Direction.NONE || horizontalCruiseDirection != Direction.NONE;
+    }
+
+    private void resetSigns() {
         hitBox.forEach(loc -> {
             final TileEntity tileEntity = world.getTileEntity(loc).orElse(null);
 
@@ -617,88 +633,37 @@ public class Craft {
             }
 
             final Sign sign = (Sign) tileEntity;
-            if (sign.equals(clicked)) {
-                return;
-            }
 
             ListValue<Text> signLines = sign.lines();
-            ListValue<Text> clickedLines = clicked.lines();
 
-            if (signLines.get(0).toPlain().equalsIgnoreCase("Cruise: ON")) {
-                signLines.set(0, Text.of("Cruise: OFF"));
-
-            } else if (signLines.get(0).toPlain().equalsIgnoreCase("Cruise: OFF")
-                    && clickedLines.get(0).toPlain().equalsIgnoreCase("Cruise: ON")
-                    && sign.getBlock().get(Keys.DIRECTION).get() == clicked.getBlock().get(Keys.DIRECTION).get()) {
-                signLines.set(0, Text.of("Cruise: ON"));
-
-            } else if (signLines.get(0).toPlain().equalsIgnoreCase("Ascend: ON")) {
+            // Reset ALL signs
+            // Do Vertical first
+            if (signLines.get(0).toPlain().equalsIgnoreCase("Ascend: ON") && verticalCruiseDirection != Direction.UP) {
                 signLines.set(0, Text.of("Ascend: OFF"));
 
-            } else if (signLines.get(0).toPlain().equalsIgnoreCase("Ascend: OFF")
-                    && clickedLines.get(0).toPlain().equalsIgnoreCase("Ascend: ON")) {
+            } else if (signLines.get(0).toPlain().equalsIgnoreCase("Ascend: OFF") && verticalCruiseDirection == Direction.UP) {
                 signLines.set(0, Text.of("Ascend: ON"));
 
-            } else if (signLines.get(0).toPlain().equalsIgnoreCase("Descend: ON")) {
+            } else if (signLines.get(0).toPlain().equalsIgnoreCase("Descend: ON") && verticalCruiseDirection != Direction.DOWN) {
                 signLines.set(0, Text.of("Descend: OFF"));
 
-            } else if (signLines.get(0).toPlain().equalsIgnoreCase("Descend: OFF")
-                    && clickedLines.get(0).toPlain().equalsIgnoreCase("Descend: ON")) {
+            } else if (signLines.get(0).toPlain().equalsIgnoreCase("Descend: OFF") && verticalCruiseDirection == Direction.DOWN) {
                 signLines.set(0, Text.of("Descend: ON"));
+
+                // Then do Horizontal
+            } else if (signLines.get(0).toPlain().equalsIgnoreCase("Cruise: ON") && sign.getBlock().get(Keys.DIRECTION).get() != horizontalCruiseDirection) {
+                signLines.set(0, Text.of("Cruise: OFF"));
+
+            } else if (signLines.get(0).toPlain().equalsIgnoreCase("Cruise: OFF") && sign.getBlock().get(Keys.DIRECTION).get() == horizontalCruiseDirection) {
+                signLines.set(0, Text.of("Cruise: ON"));
             }
+
             sign.offer(signLines);
         });
     }
 
-    public void sink() {
-        // Throw an event
-        CraftSinkEvent event = new CraftSinkEvent(this);
-        Sponge.getEventManager().post(event);
-
-        // Check if the event has been cancelled
-        if (event.isCancelled()) {
-            return;
-        }
-
-        // The event was not cancelled
-        // Change the craft's state
-        sinking = true;
-
-
-        // And notify the crew
-        crewList.forEach(crewMember -> Sponge.getServer().getPlayer(crewMember).ifPresent(player -> player.sendMessage(Text.of("Craft is sinking!"))));
-    }
-
-    public boolean isSinking() {
-        return sinking;
-    }
-
-    /**
-     * gets the speed of a craft in blocks per second.
-     * @return the speed of the craft
-     */
-    public double getSpeed(){
-        return Sponge.getServer().getTicksPerSecond() * type.getCruiseSkipBlocks()/(double)getTickCooldown();
-    }
-
-    public long getLastRotateTime() {
-        return lastRotateTime;
-    }
-
-    public void setLastRotateTime(long lastRotateTime) {
-        this.lastRotateTime = lastRotateTime;
-    }
-
-    public void addMoveTime(float moveTime){
-        meanMoveTime = (meanMoveTime * numberOfMoves + moveTime)/(++numberOfMoves);
-    }
-
-    public float getMeanMoveTime() {
-        return meanMoveTime;
-    }
-
     //TODO - Add code to handle SubCrafts
-    public void translate(Vector3i displacement, boolean isSubcraft) {
+    public void translate(Vector3i displacement) {
         // check to see if the craft is trying to move in a direction not permitted by the type
         if (!this.getType().allowHorizontalMovement() && !sinking) {
             displacement = new Vector3i(0, displacement.getY(), 0);
@@ -721,15 +686,42 @@ public class Craft {
         submitTask(new TranslationTask(this, new Vector3i(displacement.getX(), displacement.getY(), displacement.getZ())));
     }
 
-    public void rotate(Vector3i originPoint, Rotation rotation, boolean isSubCraft) {
-        if (getLastRotateTime() + 1e9 > System.nanoTime() && !isSubCraft) {
+    public void rotate(Vector3i originPoint, Rotation rotation) {
+        if (lastRotateTime + 1e9 > System.nanoTime() && !isSubCraft) {
             if (pilot != null)
                 Sponge.getServer().getPlayer(pilot).ifPresent(player -> player.sendMessage(Text.of("Rotation - Turning Too Quickly")));
             return;
         }
 
-        setLastRotateTime(System.nanoTime());
-        submitTask(new RotationTask(this, originPoint, rotation, world, isSubCraft));
+        lastRotateTime = System.nanoTime();
+        submitTask(new RotationTask(this, originPoint, rotation, world));
+    }
+
+
+    // Direct Control
+
+    /**
+     * Sets if the craft is in direct control mode.
+     *
+     * @param setting TRUE - If the craft entering direct control mode. False if exiting direct control mode.
+     */
+    public void setDirectControl(boolean setting) {
+        directControl = setting;
+    }
+
+    /**
+     * Fetches if the craft is in direct control mode or not.
+     *
+     * @return TRUE - If the craft is in direct control mode.
+     */
+    public boolean isUnderDirectControl() {
+        return directControl;
+    }
+
+    // OLD STUFF -------------------------------------------------------------------------
+    //TODO - Sort these methods
+    public double getSpeed() {
+        return Sponge.getServer().getTicksPerSecond() * type.getCruiseSkipBlocks() / (double) getTickCooldown();
     }
 
     public int getTickCooldown() {
@@ -771,42 +763,6 @@ public class Craft {
          */
     }
 
-
-    public void setCruising(Direction vertical, Direction horizontal) {
-
-        if (vertical != Direction.UP
-                && vertical != Direction.NONE
-                && vertical != Direction.DOWN) {
-            return;
-        }
-        if (horizontal != Direction.NONE
-                && horizontal != Direction.NORTH
-                && horizontal != Direction.WEST
-                && horizontal != Direction.SOUTH
-                && horizontal != Direction.EAST) {
-            return;
-        }
-
-        if (pilot != null) {
-            Sponge.getServer().getPlayer(pilot).ifPresent(player -> player.sendMessage(ChatTypes.ACTION_BAR, Text.of("Cruising " + ((vertical != Direction.NONE || horizontal != Direction.NONE) ? "Enabled" : "Disabled"))));
-        }
-
-        horizontalCruiseDirection = horizontal;
-        verticalCruiseDirection = vertical;
-    }
-
-    public Direction getVerticalCruiseDirection() {
-        return verticalCruiseDirection;
-    }
-
-    public Direction getHorizontalCruiseDirection() {
-        return horizontalCruiseDirection;
-    }
-
-    public boolean isCruising() {
-        return verticalCruiseDirection != Direction.NONE || horizontalCruiseDirection != Direction.NONE;
-    }
-
     public Set<Craft> getContacts() {
         final Set<Craft> contacts = new HashSet<>();
         for (Craft contact : CraftManager.getInstance().getCraftsInWorld(world)) {
@@ -823,7 +779,7 @@ public class Craft {
         return contacts;
     }
 
-    public int getWaterLine(){
+    public int getWaterLine() {
         //TODO: Remove this temporary system in favor of passthrough blocks. How tho???
         // Find the waterline from the surrounding terrain or from the static level in the craft type
         int waterLine = 0;
@@ -875,14 +831,6 @@ public class Craft {
         return waterLine;
     }
 
-    public int getProcessingStartTime() {
-        return processingStartTime;
-    }
-
-    public int getMaxHeightLimit() {
-        return maxHeightLimit;
-    }
-
     public void submitTask(AsyncTask task) {
         if (isNotProcessing()) {
             setProcessing(true);
@@ -892,7 +840,7 @@ public class Craft {
 
     @Override
     public boolean equals(Object obj) {
-        if(!(obj instanceof Craft)){
+        if (!(obj instanceof Craft)) {
             return false;
         }
         return this.id.equals(((Craft) obj).id);
@@ -902,5 +850,4 @@ public class Craft {
     public int hashCode() {
         return id.hashCode();
     }
-
 }

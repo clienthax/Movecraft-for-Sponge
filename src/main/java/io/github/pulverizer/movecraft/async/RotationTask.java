@@ -43,12 +43,12 @@ public class RotationTask extends AsyncTask {
     private final HashHitBox oldHitBox;
     private final HashHitBox newHitBox;
 
-    public RotationTask(Craft craft, Vector3i originPoint, Rotation rotation, World world, boolean isSubCraft) {
+    public RotationTask(Craft craft, Vector3i originPoint, Rotation rotation, World world) {
         super(craft, "Rotation");
         this.originPoint = originPoint;
         this.rotation = rotation;
         this.world = world;
-        this.isSubCraft = isSubCraft;
+        this.isSubCraft = craft.isSubCraft();
         this.newHitBox = new HashHitBox();
         this.oldHitBox = new HashHitBox(craft.getHitBox());
     }
@@ -63,7 +63,7 @@ public class RotationTask extends AsyncTask {
         double fuelBurnRate = getCraft().getType().getFuelBurnRate();
         if (fuelBurnRate != 0.0 && !getCraft().isSinking()) {
 
-            boolean fuelBurned = getCraft().burnFuel(fuelBurnRate);
+            boolean fuelBurned = getCraft().useFuel(fuelBurnRate);
 
             if (!fuelBurned) {
                 failed = true;

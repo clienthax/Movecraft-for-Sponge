@@ -23,7 +23,7 @@ import java.util.*;
  * Code to be reviewed
  *
  * @author BernardisGood
- * @version 1.3 - 17 Apr 2020
+ * @version 1.4 - 20 Apr 2020
  */
 public final class StatusSign {
 
@@ -59,7 +59,7 @@ public final class StatusSign {
 
         ListValue<Text> lines = sign.lines();
 
-        double fuel = craft.checkFuelStored() + craft.getBurningFuel();
+        double fuel = craft.checkFuelStored() + craft.getMovePoints();
         double totalBlocks = craft.getSize();
 
         Map<BlockType, Set<Vector3i>> blockMap = craft.getHitBox().map(craft.getWorld());

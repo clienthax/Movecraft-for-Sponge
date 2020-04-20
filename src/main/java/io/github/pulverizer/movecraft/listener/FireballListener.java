@@ -35,24 +35,13 @@ public class FireballListener {
 
             Craft craft = CraftManager.getInstance().fastNearestCraftToLoc(fireball.getLocation());
 
-            if (craft != null && craft.getAADirector() != null) {
+            if (craft != null) {
 
-                Player player = Sponge.getServer().getPlayer(craft.getAADirector()).orElse(null);
+                Player player = craft.getAADirectorFor(fireball);
 
                 if (player != null && player.getItemInHand(HandTypes.MAIN_HAND).isPresent() && player.getItemInHand(HandTypes.MAIN_HAND).get().getType() == Settings.PilotTool) {
 
-                    int distX = craft.getHitBox().getMinX() + craft.getHitBox().getMaxX();
-                    distX = distX >> 1;
-                    distX = Math.abs(distX - fireball.getLocation().getBlockX());
-                    int distY = craft.getHitBox().getMinY() + craft.getHitBox().getMaxY();
-                    distY = distY >> 1;
-                    distY = Math.abs(distY - fireball.getLocation().getBlockY());
-                    int distZ = craft.getHitBox().getMinZ() + craft.getHitBox().getMaxZ();
-                    distZ = distZ >> 1;
-                    distZ = Math.abs(distZ - fireball.getLocation().getBlockZ());
-                    boolean inRange = (distX < 50) && (distY < 50) && (distZ < 50);
-
-                    if (inRange) {
+                    if (craft.getHitBox().contains(((Dispenser) fireball.getShooter()).getLocation().getBlockPosition())) {
                         Vector3d fireballVelocity = fireball.getVelocity();
                         double speed = fireballVelocity.length(); // store the speed to add it back in later, since all the values we will be using are "normalized", IE: have a speed of 1
                         fireballVelocity = fireballVelocity.normalize(); // you normalize it for comparison with the new direction to see if we are trying to steer too far

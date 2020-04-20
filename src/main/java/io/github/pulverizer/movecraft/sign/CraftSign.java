@@ -22,7 +22,7 @@ import org.spongepowered.api.world.World;
  * Code complete EXCEPT: TODOs and code clean up related to SignListener
  *
  * @author BernardisGood
- * @version 1.3 - 12 Apr 2020
+ * @version 1.4 - 20 Apr 2020
  */
 public final class CraftSign {
 
@@ -62,7 +62,7 @@ public final class CraftSign {
                 return;
             }
 
-            final Craft craft = new Craft(type, player.getUniqueId(), loc);
+            final Craft craft = new Craft(type, player.getUniqueId(), loc, false);
 
             craft.setCruising(craft.getVerticalCruiseDirection(), cruiseDirection);
 
@@ -77,12 +77,12 @@ public final class CraftSign {
             final Craft oldCraft = CraftManager.getInstance().getCraftByPlayer(player.getUniqueId());
 
             if (oldCraft == null) {
-                new Craft(type, player.getUniqueId(), loc);
+                new Craft(type, player.getUniqueId(), loc, false);
 
             } else if (oldCraft.isNotProcessing()) {
                 // TODO - do this via CraftManager after detection
                 //oldCraft.removeCrewMember(player.getUniqueId());
-                new Craft(type, player.getUniqueId(), loc);
+                new Craft(type, player.getUniqueId(), loc, false);
             }
         }
         event.setCancelled(true);

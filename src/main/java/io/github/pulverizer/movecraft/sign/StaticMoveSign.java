@@ -17,7 +17,7 @@ import org.spongepowered.api.text.Text;
  * Code to be reviewed
  *
  * @author BernardisGood
- * @version 1.3 - 17 Apr 2020
+ * @version 1.4 - 20 Apr 2020
  */
 public final class StaticMoveSign {
     private static final String HEADER = "Move:";
@@ -71,7 +71,7 @@ public final class StaticMoveSign {
         }
 
         if (craft.getType().getCanStaticMove()) {
-            craft.translate(new Vector3i(dx, dy, dz), false);
+            craft.translate(new Vector3i(dx, dy, dz));
         }
     }
 }

@@ -26,7 +26,7 @@ import java.util.LinkedList;
  * Code needs review
  *
  * @author BernardisGood
- * @version 1.3 - 17 Apr 2020
+ * @version 1.4 - 20 Apr 2020
  */
 public final class RemoteSign {
     private static final String HEADER = "Remote Sign";
@@ -54,7 +54,7 @@ public final class RemoteSign {
         for (Craft tcraft : CraftManager.getInstance().getCraftsInWorld(blockWorld)) {
             if (MathUtils.locationInHitbox(tcraft.getHitBox(), block.getLocation().get())) {
                 // don't use a craft with a null player. This is mostly to avoid trying to use subcrafts
-                if (!tcraft.getCrewList().isEmpty()) {
+                if (!tcraft.crewIsEmpty()) {
                     foundCraft = tcraft;
                     break;
                 }

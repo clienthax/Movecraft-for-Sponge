@@ -15,7 +15,7 @@ import org.spongepowered.api.text.Text;
  * Code to be reviewed
  *
  * @author BernardisGood
- * @version 1.3 - 17 Apr 2020
+ * @version 1.4 - 20 Apr 2020
  */
 public class AntiAircraftDirectorSign {
     private static final String HEADER = "AA Director";
@@ -44,8 +44,8 @@ public class AntiAircraftDirectorSign {
             return;
         }
 
-        if (event instanceof InteractBlockEvent.Primary && player.getUniqueId() == craft.getAADirector()) {
-            craft.setAADirector(null);
+        if (event instanceof InteractBlockEvent.Primary && craft.isAADirector(player.getUniqueId())) {
+            craft.resetCrewRole(player.getUniqueId());
             player.sendMessage(Text.of("You are no longer directing the AA of this craft."));
             return;
         }
@@ -55,8 +55,10 @@ public class AntiAircraftDirectorSign {
             return;
         }
 
-        if (craft.setAADirector(player.getUniqueId())) {
-            player.sendMessage(Text.of("You are now directing the AA of this craft."));
+        if (craft.addAADirector(player.getUniqueId())) {
+            player.sendMessage(Text.of("You can now direct the AA of this craft."));
+        } else {
+            player.sendMessage(Text.of("You are not in the crew of this craft."));
         }
     }
 }

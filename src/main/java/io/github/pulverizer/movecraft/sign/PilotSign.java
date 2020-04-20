@@ -1,5 +1,6 @@
 package io.github.pulverizer.movecraft.sign;
 
+import com.flowpowered.math.vector.Vector3i;
 import io.github.pulverizer.movecraft.craft.Craft;
 import io.github.pulverizer.movecraft.craft.CraftManager;
 import io.github.pulverizer.movecraft.utils.MathUtils;
@@ -15,7 +16,7 @@ import org.spongepowered.api.world.World;
  * Code to be reviewed
  *
  * @author BernardisGood
- * @version 1.3 - 17 Apr 2020
+ * @version 1.4 - 20 Apr 2020
  */
 public class PilotSign {
     private static final String HEADER = "Pilot";
@@ -32,8 +33,10 @@ public class PilotSign {
 
         Craft foundCraft = null;
         World blockWorld = block.getLocation().get().getExtent();
+        Vector3i blockPosition = block.getLocation().get().getBlockPosition();
+        //TODO - Add compatibility for being the pilot of a subcraft
         for (Craft tcraft : CraftManager.getInstance().getCraftsInWorld(blockWorld)) {
-            if (MathUtils.locationInHitbox(tcraft.getHitBox(), block.getLocation().get()) && !tcraft.getCrewList().isEmpty()) {
+            if (tcraft.getHitBox().contains(blockPosition)) {
                 foundCraft = tcraft;
                 break;
             }
@@ -46,7 +49,7 @@ public class PilotSign {
         }
 
         if(event instanceof InteractBlockEvent.Primary && player.getUniqueId() == foundCraft.getPilot()){
-            foundCraft.setPilot(null);
+            foundCraft.resetCrewRole(player.getUniqueId());
             player.sendMessage(Text.of("You are no longer the pilot of this craft."));
             event.setCancelled(true);
             return;
@@ -57,16 +60,11 @@ public class PilotSign {
             return;
         }
 
-        if(foundCraft.isCrewMember(player.getUniqueId())) {
-            foundCraft.setPilot(player.getUniqueId());
-            player.sendMessage(Text.of("You are now the pilot of this craft."));
+        if(foundCraft.setPilot(player.getUniqueId())) {
+            player.sendMessage(Text.of("You are now the pilot."));
+        } else {
+            player.sendMessage(Text.of("You are not in a crew!"));
         }
-
-        if (foundCraft.getCannonDirector() == player.getUniqueId())
-            foundCraft.setCannonDirector(null);
-
-        if (foundCraft.getAADirector() == player.getUniqueId())
-            foundCraft.setAADirector(null);
 
         event.setCancelled(true);
     }

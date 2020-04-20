@@ -69,7 +69,7 @@ public class TranslationTask extends AsyncTask {
         double fuelBurnRate = getCraft().getType().getFuelBurnRate();
         if (fuelBurnRate != 0.0 && !getCraft().isSinking()) {
 
-            boolean fuelBurned = getCraft().burnFuel(fuelBurnRate);
+            boolean fuelBurned = getCraft().useFuel(fuelBurnRate);
 
             if (!fuelBurned) {
                 fail("Translation Failed - Craft out of fuel");
@@ -113,7 +113,8 @@ public class TranslationTask extends AsyncTask {
 
         }else{
             for(Vector3i location : collisionBox){
-                if (!(craft.getType().getCollisionExplosion() != 0.0F) || System.currentTimeMillis() - craft.getOriginalPilotTime() <= 1000) {
+                //TODO - Make arming time/distance a craft config setting
+                if (!(craft.getType().getCollisionExplosion() != 0.0F) || System.currentTimeMillis() - craft.commandeeredAt() <= 1000) {
                     continue;
                 }
                 float explosionKey;

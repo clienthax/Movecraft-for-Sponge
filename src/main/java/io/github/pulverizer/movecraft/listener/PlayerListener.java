@@ -27,7 +27,7 @@ public class PlayerListener {
         if (craft != null) {
             craft.removeCrewMember(playerID);
 
-            if (craft.getCrewList().isEmpty())
+            if (craft.crewIsEmpty())
                 CraftManager.getInstance().removeCraft(craft);
         }
     }
@@ -48,7 +48,7 @@ public class PlayerListener {
         craft.removeCrewMember(player.getUniqueId());
 
         //TODO: Change to not release but allow the ship to keep cruising and be sunk or claimed.
-        if (craft.getCrewList().isEmpty())
+        if (craft.crewIsEmpty())
             CraftManager.getInstance().removeCraft(craft);
     }
 

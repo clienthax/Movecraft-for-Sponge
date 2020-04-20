@@ -24,7 +24,7 @@ import org.spongepowered.api.world.World;
  * Code to be reviewed
  *
  * @author BernardisGood
- * @version 1.3 - 17 Apr 2020
+ * @version 1.4 - 20 Apr 2020
  */
 public final class SubcraftRotateSign {
     private static final String HEADER = "Subcraft Rotate";
@@ -109,13 +109,13 @@ public final class SubcraftRotateSign {
         }
 
         final Location<World> loc = event.getTargetBlock().getLocation().get();
-        final Craft subCraft = new Craft(type, player.getUniqueId(), loc);
+        final Craft subCraft = new Craft(type, player.getUniqueId(), loc, true);
         Vector3i startPoint = new Vector3i(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
 
         Task.builder()
                 .delayTicks(3)
                 .execute(() -> {
-                    subCraft.rotate(startPoint, rotation, true);
+                    subCraft.rotate(startPoint, rotation);
                     Task.builder()
                             .delayTicks(3)
                             .execute(() -> CraftManager.getInstance().removeCraft(subCraft))

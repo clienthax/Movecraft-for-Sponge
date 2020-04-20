@@ -153,7 +153,7 @@ public class AsyncManager implements Runnable {
             if (craft.getType().getCruiseOnPilot()) {
                 dy = craft.getType().getCruiseOnPilotVertMove();
             }
-            craft.translate(new Vector3i(dx, dy, dz), false);
+            craft.translate(new Vector3i(dx, dy, dz));
         }
     }
 
@@ -166,7 +166,7 @@ public class AsyncManager implements Runnable {
             if (craft.getType().getSinkPercent() == 0.0 || !craft.isNotProcessing()) {
                 return;
             }
-            long ticksElapsed = Sponge.getServer().getRunningTimeTicks() - craft.getLastCheckTime();
+            long ticksElapsed = Sponge.getServer().getRunningTimeTicks() - craft.getLastCheckTick();
 
             if (ticksElapsed <= Settings.SinkCheckTicks) {
                 return;
@@ -268,7 +268,7 @@ public class AsyncManager implements Runnable {
                 craft.sink();
                 CraftManager.getInstance().removePlayerFromCraft(craft);
             } else {
-                craft.setLastCheckTime(Sponge.getServer().getRunningTimeTicks());
+                craft.updateLastCheckTick();
             }
         });
     }
@@ -295,7 +295,7 @@ public class AsyncManager implements Runnable {
                 dx = craft.getLastMoveVector().getX();
                 dz = craft.getLastMoveVector().getZ();
             }
-            craft.translate(new Vector3i(dx, -1, dz), false);
+            craft.translate(new Vector3i(dx, -1, dz));
         });
     }
 
@@ -305,7 +305,7 @@ public class AsyncManager implements Runnable {
             for (World world : Sponge.getServer().getWorlds()) {
                 if (world != null) {
                     for (Craft ccraft : CraftManager.getInstance().getCraftsInWorld(world)) {
-                        if (!ccraft.getCrewList().isEmpty()) {
+                        if (!ccraft.crewIsEmpty()) {
                             if (!recentContactTracking.containsKey(ccraft)) {
                                 recentContactTracking.put(ccraft, new HashMap<>());
                             }
@@ -400,7 +400,7 @@ public class AsyncManager implements Runnable {
         // Cleanup crafts that are bugged and have not moved in the past 60 seconds, but have no crew or are still processing.
         for (Craft craft : CraftManager.getInstance()) {
 
-            if (craft.getCrewList().isEmpty() && craft.getLastMoveTick() < Sponge.getServer().getRunningTimeTicks() - 1200) {
+            if (craft.crewIsEmpty() && craft.getLastMoveTick() < Sponge.getServer().getRunningTimeTicks() - 1200) {
                 CraftManager.getInstance().forceRemoveCraft(craft);
             }
 

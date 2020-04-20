@@ -17,7 +17,7 @@ import org.spongepowered.api.world.World;
  * Code to be reviewed
  *
  * @author BernardisGood
- * @version 1.3 - 17 Apr 2020
+ * @version 1.4 - 20 Apr 2020
  */
 public final class CannonDirectorSign {
     private static final String HEADER = "Cannon Director";
@@ -48,8 +48,8 @@ public final class CannonDirectorSign {
             return;
         }
 
-        if(event instanceof InteractBlockEvent.Primary && player.getUniqueId() == craft.getCannonDirector()){
-            craft.setCannonDirector(null);
+        if(event instanceof InteractBlockEvent.Primary && craft.isCannonDirector(player.getUniqueId())){
+            craft.resetCrewRole(player.getUniqueId());
             player.sendMessage(Text.of("You are no longer directing the cannons of this craft."));
             return;
         }
@@ -59,7 +59,10 @@ public final class CannonDirectorSign {
             return;
         }
 
-        craft.setCannonDirector(player.getUniqueId());
-        player.sendMessage(Text.of("You are now directing the cannons of this craft."));
+        if (craft.addCannonDirector(player.getUniqueId())) {
+            player.sendMessage(Text.of("You can now direct the cannons of this craft."));
+        } else {
+            player.sendMessage(Text.of("You are not in the crew of this craft."));
+        }
     }
 }
