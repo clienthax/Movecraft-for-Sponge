@@ -1,16 +1,9 @@
 package io.github.pulverizer.movecraft.config;
 
 import com.google.common.reflect.TypeToken;
-import io.github.pulverizer.movecraft.Movecraft;
 import ninja.leaping.configurate.ConfigurationNode;
-import ninja.leaping.configurate.ConfigurationOptions;
-import ninja.leaping.configurate.commented.CommentedConfigurationNode;
-import ninja.leaping.configurate.hocon.HoconConfigurationLoader;
 import ninja.leaping.configurate.loader.ConfigurationLoader;
 import ninja.leaping.configurate.objectmapping.ObjectMappingException;
-import ninja.leaping.configurate.yaml.YAMLConfigurationLoader;
-import org.spongepowered.api.CatalogType;
-import org.spongepowered.api.Sponge;
 import org.spongepowered.api.block.BlockType;
 import org.spongepowered.api.block.BlockTypes;
 import org.spongepowered.api.item.ItemType;
@@ -19,7 +12,6 @@ import org.spongepowered.api.item.ItemTypes;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
-import java.util.function.Consumer;
 
 final public class CraftType {
     private final boolean requireWaterContact;
@@ -61,15 +53,11 @@ final public class CraftType {
     private final int smokeOnSink;
     private final int tickCooldown;
     private final int hoverLimit;
-    private final BlockType dynamicFlyBlock;
     private final double fuelBurnRate;
     private final double sinkPercent;
     private final double overallSinkPercent;
     private final double detectionMultiplier;
     private final double underwaterDetectionMultiplier;
-    private final double dynamicLagSpeedFactor;
-    private final double dynamicFlyBlockSpeedFactor;
-    private final double chestPenalty;
     private final float explodeOnCrash;
     private final float collisionExplosion;
     private final String name;
@@ -83,6 +71,10 @@ final public class CraftType {
     private final Set<BlockType> passthroughBlocks;
     private final Set<BlockType> furnaceBlocks;
     private final Map<ItemType, Double> fuelItems;
+    private final Map<Set<BlockType>, Double> speedBlocks;
+    private final Map<Set<BlockType>, List<Double>> exposedSpeedBlocks;
+    private final boolean ignoreMapUpdateTime;
+    private final float targetMoveTime;
 
     public CraftType(File file) throws NullPointerException, IOException, ObjectMappingException {
 
@@ -151,7 +143,7 @@ final public class CraftType {
         explodeOnCrash = configNode.getNode("explodeOnCrash").getFloat(0);
         collisionExplosion = configNode.getNode("collisionExplosion").getFloat(0);
         minHeightLimit = configNode.getNode("minHeightLimit").getInt(0);
-        maxHeightLimit = configNode.getNode("minHeightLimit").getInt(255);
+        maxHeightLimit = configNode.getNode("maxHeightLimit").getInt(255);
         maxHeightAboveGround = configNode.getNode("maxHeightAboveGround").getInt(-1);
         canDirectControl = configNode.getNode("canDirectControl").getBoolean(true);
         canHover = configNode.getNode("canHover").getBoolean(false);
@@ -168,10 +160,10 @@ final public class CraftType {
         passthroughBlocks = configNode.getNode("passthroughBlocks").getValue(new TypeToken<Set<BlockType>>() {}, new HashSet<>());
         allowVerticalTakeoffAndLanding = configNode.getNode("allowVerticalTakeoffAndLanding").getBoolean(true);
 
-        dynamicLagSpeedFactor = configNode.getNode("dynamicLagSpeedFactor").getDouble(0);
-        dynamicFlyBlockSpeedFactor = configNode.getNode("dynamicFlyBlockSpeedFactor").getDouble(0);
-        dynamicFlyBlock = configNode.getNode("dynamicFlyBlock").getValue(TypeToken.of(BlockType.class), BlockTypes.AIR);
-        chestPenalty = configNode.getNode("chestPenalty").getDouble(0);
+        speedBlocks = configNode.getNode("speedBlocks").getValue(new TypeToken<Map<Set<BlockType>, Double>>() {}, new HashMap<>());
+        exposedSpeedBlocks = configNode.getNode("exposedSpeedBlocks").getValue(new TypeToken<Map<Set<BlockType>, List<Double>>>() {}, new HashMap<>());
+        ignoreMapUpdateTime = configNode.getNode("ignoreMapUpdateTime").getBoolean(false);
+        targetMoveTime = configNode.getNode("targetMoveTime").getFloat((float) maxSize / 1000);
 
         // Save config file
         //TODO - When I've got it to stop destroying tidy configs
@@ -291,11 +283,11 @@ final public class CraftType {
         return allowRemoteSign;
     }
 
-    public boolean allowCannonDirectorSign() {
+    public boolean allowCannonDirectors() {
         return allowCannonDirectorSign;
     }
 
-    public boolean allowAADirectorSign() {
+    public boolean allowAADirectors() {
         return allowAADirectorSign;
     }
 
@@ -427,28 +419,49 @@ final public class CraftType {
         return allowVerticalTakeoffAndLanding;
     }
 
-    public double getDynamicLagSpeedFactor() {
-        return dynamicLagSpeedFactor;
-    }
-
-    public double getDynamicFlyBlockSpeedFactor() {
-        return dynamicFlyBlockSpeedFactor;
-    }
-
-    public BlockType getDynamicFlyBlock() {
-        return dynamicFlyBlock;
-    }
-
-    public double getChestPenalty() {
-        return chestPenalty;
-    }
-
     public Set<BlockType> getPassthroughBlocks() {
         return passthroughBlocks;
     }
 
     public boolean onlyMovePlayers() {
         return onlyMovePlayers;
+    }
+
+    public Map<Set<BlockType>, Double> getSpeedBlocks() {
+        return speedBlocks;
+    }
+
+    public Map<Set<BlockType>, List<Double>> getExposedSpeedBlocks() {
+        return exposedSpeedBlocks;
+    }
+
+    public boolean ignoreMapUpdateTime() {
+        return ignoreMapUpdateTime;
+    }
+
+    public float getTargetMoveTime() {
+        return targetMoveTime;
+    }
+
+    //TODO - Implement Correctly
+    public float getSpottingMultiplier() {
+        return 0.05f;
+    }
+
+    public boolean informParentOfContacts() {
+        return true;
+    }
+
+    public boolean limitToParentHitBox() {
+        return false;
+    }
+
+    public boolean allowLoaders() {
+        return true;
+    }
+
+    public boolean allowRepairmen() {
+        return true;
     }
 
     @Override

@@ -62,14 +62,14 @@ public final class CraftSign {
                 return;
             }
 
-            final Craft craft = new Craft(type, player.getUniqueId(), loc, false);
+            final Craft craft = new Craft(type, player.getUniqueId(), loc);
 
             craft.setCruising(craft.getVerticalCruiseDirection(), cruiseDirection);
 
             //TODO: Move to Detection Task
             // And add fly time config options to CraftType
             Task.builder()
-                    .execute(() -> CraftManager.getInstance().removeCraft(craft))
+                    .execute(() -> craft.release(player))
                     .delayTicks(20*15)
                     .submit(Movecraft.getInstance());
 
@@ -77,12 +77,12 @@ public final class CraftSign {
             final Craft oldCraft = CraftManager.getInstance().getCraftByPlayer(player.getUniqueId());
 
             if (oldCraft == null) {
-                new Craft(type, player.getUniqueId(), loc, false);
+                new Craft(type, player.getUniqueId(), loc);
 
             } else if (oldCraft.isNotProcessing()) {
                 // TODO - do this via CraftManager after detection
                 //oldCraft.removeCrewMember(player.getUniqueId());
-                new Craft(type, player.getUniqueId(), loc, false);
+                new Craft(type, player.getUniqueId(), loc);
             }
         }
         event.setCancelled(true);

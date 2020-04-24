@@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableSet;
 import io.github.pulverizer.movecraft.Movecraft;
 import io.github.pulverizer.movecraft.config.ConfigManager;
 import io.github.pulverizer.movecraft.config.CraftType;
+import io.github.pulverizer.movecraft.utils.MathUtils;
 import io.netty.util.internal.ConcurrentSet;
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.block.BlockType;
@@ -87,15 +88,13 @@ public class CraftManager implements Iterable<Craft> {
         this.craftList.add(craft);
     }
 
-    public void removeCraft(Craft c) {
+    public void removeCraft(Craft c, Player player) {
         removeReleaseTask(c);
-        Player player = Sponge.getServer().getPlayer(c.getPilot()).orElse(null);
 
         // if its sinking, just remove the craft without notifying or checking
         this.craftList.remove(c);
         if(c.getHitBox() != null && !c.getHitBox().isEmpty()) {
             if (player != null) {
-                player.sendMessage(Text.of("You have released your craft."));
                 Movecraft.getInstance().getLogger().info(String.format(player.getName() + " has released a craft of type %s with size %d at coordinates : %d x , %d z", c.getType().getName(), c.getHitBox().size(), c.getHitBox().getMinX(), c.getHitBox().getMinZ()));
             } else {
                 Movecraft.getInstance().getLogger().info(String.format("NULL Player has released a craft of type %s with size %d at coordinates : %d x , %d z", c.getType().getName(), c.getHitBox().size(), c.getHitBox().getMinX(), c.getHitBox().getMinZ()));
@@ -131,34 +130,18 @@ public class CraftManager implements Iterable<Craft> {
         return null;
     }
 
-    public void removeCraftByPlayer(UUID player){
-        HashSet<Craft> crafts = new HashSet<>();
-        for(Craft c : craftList){
-            if(c.getPilot() != null && c.getPilot().equals(player)){
-                releaseEvents.remove(c);
-                crafts.add(c);
-            }
+    public Craft getCraftByUUID(UUID id) {
+        for (Craft craft : craftList) {
+            if (craft.getId().equals(id))
+                return craft;
         }
-        craftList.removeAll(crafts);
+
+        return null;
     }
-
-    //TODO: Replace with Craft.removeCrew() - Why? I forget
-    public void removePlayerFromCraft(Craft c) {
-        if (c.crewIsEmpty()) {
-            return;
-        }
-        removeReleaseTask(c);
-        c.notifyCrew("You have released your craft.");
-
-        Movecraft.getInstance().getLogger().info(String.format(Sponge.getServer().getPlayer(c.getPilot()).orElse(null) + " has released a craft of type %s with size %d at coordinates : %d x , %d z", c.getType().getName(), c.getHitBox().size(), c.getHitBox().getMinX(), c.getHitBox().getMinZ()));
-    }
-
 
     @Deprecated
     public final void addReleaseTask(final Craft c) {
-        c.notifyCrew("You have released your craft.");
-
-        Task releaseTask = Task.builder().delayTicks(20*15).execute(() -> removeCraft(c)).submit(Movecraft.getInstance());
+        Task releaseTask = Task.builder().delayTicks(20*15).execute(player -> c.release(null)).submit(Movecraft.getInstance());
         releaseEvents.put(c, releaseTask);
 
     }
@@ -211,5 +194,18 @@ public class CraftManager implements Iterable<Craft> {
 
     public void removePlayer(UUID player) {
         craftList.forEach(craft -> craft.removeCrewMember(player));
+    }
+
+    public HashSet<Craft> getCraftsFromLocation(Location<World> location) {
+        HashSet<Craft> foundCraft = new HashSet<>();
+
+        for (Craft testCraft : CraftManager.getInstance().getCraftsInWorld(location.getExtent())) {
+            if (testCraft.getHitBox().contains(location.getBlockPosition())) {
+                foundCraft.add(testCraft);
+                break;
+            }
+        }
+
+        return foundCraft;
     }
 }

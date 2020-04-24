@@ -14,7 +14,7 @@ import org.spongepowered.api.text.Text;
  * Code to be reviewed
  *
  * @author BernardisGood
- * @version 1.0 - 12 Apr 2020
+ * @version 1.4 - 23 Apr 2020
  */
 public final class ReleaseSign {
     private static final String HEADER = "Release";
@@ -23,7 +23,6 @@ public final class ReleaseSign {
 
         if (!block.getLocation().isPresent() || !block.getLocation().get().getTileEntity().isPresent())
             return;
-        //TODO - Bug - Not informing player
 
         Sign sign = (Sign) block.getLocation().get().getTileEntity().get();
         ListValue<Text> lines = sign.lines();
@@ -33,8 +32,15 @@ public final class ReleaseSign {
         }
         Craft craft = CraftManager.getInstance().getCraftByPlayer(player.getUniqueId());
         if (craft == null) {
+            player.sendMessage(Text.of("You are not in command of a craft."));
             return;
         }
-        CraftManager.getInstance().removeCraft(craft);
+
+        if (craft.getCommander() == player.getUniqueId()) {
+            craft.release(player);
+            player.sendMessage(Text.of("You have released your craft."));
+        } else {
+            player.sendMessage(Text.of("You are not the commander of this craft."));
+        }
     }
 }

@@ -11,7 +11,9 @@ import org.spongepowered.api.Sponge;
 import org.spongepowered.api.block.BlockSnapshot;
 import org.spongepowered.api.block.BlockType;
 import org.spongepowered.api.block.BlockTypes;
+import org.spongepowered.api.block.tileentity.TileEntity;
 import org.spongepowered.api.block.tileentity.carrier.Dispenser;
+import org.spongepowered.api.block.tileentity.carrier.TileEntityCarrier;
 import org.spongepowered.api.data.key.Keys;
 import org.spongepowered.api.data.property.block.MatterProperty;
 import org.spongepowered.api.data.type.HandTypes;
@@ -23,6 +25,9 @@ import org.spongepowered.api.event.Listener;
 import org.spongepowered.api.event.entity.MoveEntityEvent;
 import org.spongepowered.api.event.filter.Getter;
 import org.spongepowered.api.event.world.ExplosionEvent;
+import org.spongepowered.api.item.ItemTypes;
+import org.spongepowered.api.item.inventory.Inventory;
+import org.spongepowered.api.item.inventory.query.QueryOperationTypes;
 import org.spongepowered.api.scheduler.Task;
 import org.spongepowered.api.util.AABB;
 import org.spongepowered.api.util.Direction;
@@ -43,6 +48,8 @@ public class TNTListener {
     private final HashMap<PrimedTNT, Integer> TNTTracers = new HashMap<>();
     private final HashSet<PrimedTNT> tntControlList = new HashSet<>();
     private int tntControlTimer = 0;
+
+    private final HashMap<Explosion, HashSet<Explosion>> ammoDetonation = new HashMap<>();
 
     public TNTListener() {
         Task.builder()
@@ -86,15 +93,10 @@ public class TNTListener {
         //TODO - Check that craft type allows cannon directors
         if (velocity > 0.25 && !TNTTracers.containsKey(primedTNT)) {
             Craft c = CraftManager.getInstance().fastNearestCraftToLoc(primedTNT.getLocation());
-            Living living = primedTNT.getDetonator().orElse(null);
 
-            if (c == null || !(living instanceof Dispenser)) {
-                return;
-            }
+            //TODO - make it use the spawning Dispenser location to check against craft hitbox
 
-            Dispenser dispenser = (Dispenser) living;
-
-            if (!c.getHitBox().contains(dispenser.getLocation().getBlockPosition())) {
+            if (c == null) {
                 return;
             }
 
@@ -278,7 +280,7 @@ public class TNTListener {
     }
     */
 
-    @Listener
+    @Listener(order = LAST)
     public void explodeEvent(ExplosionEvent.Detonate event) {
 
         // Remove any blocks from the list that were adjacent to water, to prevent spillage
@@ -359,6 +361,50 @@ public class TNTListener {
             }
         }
 
+
+        if (Settings.AmmoDetonationMultiplier > 0) {
+
+            HashSet<Explosion> explosions = new HashSet<>();
+
+            for (Location<World> location : event.getAffectedLocations()) {
+
+                Optional<TileEntity> tileEntity = location.getTileEntity();
+
+                if (!tileEntity.isPresent() || !(tileEntity.get() instanceof TileEntityCarrier)) {
+                    continue;
+                }
+
+                Inventory inventory = ((TileEntityCarrier) tileEntity.get()).getInventory();
+
+                float tntCount = inventory.query(QueryOperationTypes.ITEM_TYPE.of(ItemTypes.TNT), QueryOperationTypes.ITEM_TYPE.of(ItemTypes.TNT_MINECART)).totalItems();
+                float fireChargeCount = inventory.query(QueryOperationTypes.ITEM_TYPE.of(ItemTypes.FIRE_CHARGE)).totalItems();
+                float otherCount = inventory.query(QueryOperationTypes.ITEM_TYPE.of(ItemTypes.FIREWORK_CHARGE), QueryOperationTypes.ITEM_TYPE.of(ItemTypes.FIREWORKS), QueryOperationTypes.ITEM_TYPE.of(ItemTypes.GUNPOWDER)).totalItems();
+
+                float chance = ((tntCount / (Settings.AmmoDetonationMultiplier * 32)) + (fireChargeCount / (Settings.AmmoDetonationMultiplier * 128)) + (otherCount / (Settings.AmmoDetonationMultiplier * 256)));
+
+                int diceRolled = new Random().nextInt(100);
+
+                if (diceRolled <= chance) {
+                    float size = Math.min(chance, 16);
+
+                    Explosion explosion = Explosion.builder()
+                            .location(location.add(0.5, 0.5, 0.5))
+                            .shouldBreakBlocks(true)
+                            .shouldDamageEntities(true)
+                            .shouldPlaySmoke(true)
+                            .radius(size)
+                            .resolution((int) (size * 2))
+                            .knockback(1)
+                            .canCauseFire(fireChargeCount > 0)
+                            .build();
+
+                    explosions.add(explosion);
+                }
+            }
+
+            ammoDetonation.put(event.getExplosion(), explosions);
+        }
+
         if (!event.getExplosion().getSourceExplosive().isPresent() || !(event.getExplosion().getSourceExplosive().get() instanceof PrimedTNT) || Settings.TracerRateTicks == 0)
             return;
 
@@ -385,6 +431,14 @@ public class TNTListener {
                         .execute(() -> finalisedPlayer.resetBlockChange(location.getBlockPosition()))
                         .submit(Movecraft.getInstance());
             }
+        }
+    }
+
+    @Listener(order = LAST)
+    public void explosionPOST(ExplosionEvent.Post event, @Getter("getExplosion") Explosion explosion) {
+        if (ammoDetonation.containsKey(explosion)) {
+            ammoDetonation.get(explosion).forEach(ammoExplosion -> ammoExplosion.getLocation().getExtent().triggerExplosion(ammoExplosion));
+            ammoDetonation.clear();
         }
     }
 }

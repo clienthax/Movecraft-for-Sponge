@@ -14,6 +14,7 @@ import org.spongepowered.api.Sponge;
 import org.spongepowered.api.block.BlockSnapshot;
 import org.spongepowered.api.block.BlockType;
 import org.spongepowered.api.block.BlockTypes;
+import org.spongepowered.api.util.Direction;
 import org.spongepowered.api.world.BlockChangeFlags;
 import org.spongepowered.api.world.Location;
 
@@ -39,7 +40,7 @@ public class CraftRotateCommand extends UpdateCommand {
         final Logger logger = Movecraft.getInstance().getLogger();
         if (craft.getHitBox().isEmpty()) {
             logger.warn("Attempted to move craft with empty HashHitBox!");
-            CraftManager.getInstance().removeCraft(craft);
+            craft.release(null);
             return;
         }
 
@@ -172,12 +173,54 @@ public class CraftRotateCommand extends UpdateCommand {
             }
         }
 
+        if (craft.isCruising()) {
+            if (rotation == Rotation.ANTICLOCKWISE) {
+
+                switch (getCraft().getHorizontalCruiseDirection()) {
+                    case NORTH:
+                        getCraft().setCruising(craft.getVerticalCruiseDirection(), Direction.WEST);
+                        break;
+
+                    case SOUTH:
+                        getCraft().setCruising(craft.getVerticalCruiseDirection(), Direction.EAST);
+                        break;
+
+                    case EAST:
+                        getCraft().setCruising(craft.getVerticalCruiseDirection(), Direction.NORTH);
+                        break;
+
+                    case WEST:
+                        getCraft().setCruising(craft.getVerticalCruiseDirection(), Direction.SOUTH);
+                        break;
+                }
+            } else if (rotation == Rotation.CLOCKWISE) {
+
+                switch (getCraft().getHorizontalCruiseDirection()) {
+                    case NORTH:
+                        getCraft().setCruising(craft.getVerticalCruiseDirection(), Direction.EAST);
+                        break;
+
+                    case SOUTH:
+                        getCraft().setCruising(craft.getVerticalCruiseDirection(), Direction.WEST);
+                        break;
+
+                    case EAST:
+                        getCraft().setCruising(craft.getVerticalCruiseDirection(), Direction.SOUTH);
+                        break;
+
+                    case WEST:
+                        getCraft().setCruising(craft.getVerticalCruiseDirection(), Direction.NORTH);
+                        break;
+                }
+            }
+        }
+
         time = System.currentTimeMillis() - time;
-        if (Settings.Debug)
-            logger.info("Total time: " + time + " ms. Moving with cooldown of " + craft.getTickCooldown() + ". Speed of: " + String.format("%.2f", craft.getSpeed()));
         craft.addMoveTime(time);
         craft.updateLastMoveTick();
         craft.setProcessing(false);
+
+        if (Settings.Debug) logger.info("Total time: " + time + " ms. Moving with cooldown of " + craft.getTickCooldown() + ". Speed of: " + String.format("%.2f", craft.getActualSpeed()));
     }
 
     private void rotateCraft() {

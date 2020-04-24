@@ -27,7 +27,7 @@ import java.util.*;
  * Code to be reviewed
  *
  * @author BernardisGood
- * @version 1.0 - 12 Apr 2020
+ * @version 1.1 - 20 Apr 2020
  */
 public class DetectionTask extends AsyncTask {
     private final World world;
@@ -124,6 +124,10 @@ public class DetectionTask extends AsyncTask {
                 }
             }
 
+            if (craft.getType().limitToParentHitBox()) {
+                craft.setParentCraft(parentCraft);
+            }
+
             Movecraft.getInstance().getLogger().info("Subcraft: " + (parentCraft != null));
             Movecraft.getInstance().getLogger().info("Size: " + getHitBox().size());
             if (parentCraft != null && player != null) {
@@ -135,7 +139,7 @@ public class DetectionTask extends AsyncTask {
 
                 } else {
                     // if this is a different type than the overlapping craft, and is smaller, this must be a child craft, like a fighter on a carrier
-                    if (!parentCraft.isNotProcessing()) {
+                    if (parentCraft.isProcessing()) {
                         fail("Parent Craft is busy.");
                     }
 
@@ -167,6 +171,7 @@ public class DetectionTask extends AsyncTask {
                         //TODO We need a better way of doing this
                         // Maybe "CraftType#canHaveCrew"?
                         if (!craft.getType().mustBeSubcraft() || !craft.getType().getCruiseOnPilot()) {
+                            craft.addCrewMember(craft.commandeeredBy());
                             craft.setCommander(craft.commandeeredBy());
                         }
 

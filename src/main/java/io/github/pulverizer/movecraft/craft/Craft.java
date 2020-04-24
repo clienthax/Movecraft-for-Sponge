@@ -2,11 +2,13 @@ package io.github.pulverizer.movecraft.craft;
 
 import com.flowpowered.math.vector.Vector3d;
 import com.flowpowered.math.vector.Vector3i;
+import io.github.pulverizer.movecraft.Movecraft;
 import io.github.pulverizer.movecraft.async.AsyncTask;
 import io.github.pulverizer.movecraft.async.DetectionTask;
 import io.github.pulverizer.movecraft.async.RotationTask;
 import io.github.pulverizer.movecraft.async.TranslationTask;
 import io.github.pulverizer.movecraft.config.CraftType;
+import io.github.pulverizer.movecraft.enums.DirectControlMode;
 import io.github.pulverizer.movecraft.enums.Rotation;
 import io.github.pulverizer.movecraft.event.CraftSinkEvent;
 import io.github.pulverizer.movecraft.utils.HashHitBox;
@@ -19,9 +21,11 @@ import org.spongepowered.api.block.tileentity.TileEntity;
 import org.spongepowered.api.block.tileentity.carrier.TileEntityCarrier;
 import org.spongepowered.api.data.key.Keys;
 import org.spongepowered.api.data.value.mutable.ListValue;
+import org.spongepowered.api.effect.sound.SoundTypes;
 import org.spongepowered.api.entity.explosive.PrimedTNT;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.entity.projectile.explosive.fireball.SmallFireball;
+import org.spongepowered.api.event.filter.data.Has;
 import org.spongepowered.api.item.ItemType;
 import org.spongepowered.api.item.inventory.Inventory;
 import org.spongepowered.api.item.inventory.query.QueryOperationTypes;
@@ -31,17 +35,15 @@ import org.spongepowered.api.util.Direction;
 import org.spongepowered.api.world.Location;
 import org.spongepowered.api.world.World;
 
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Represents a player controlled craft
+ * Needs JavaDocs
  *
  * @author BernardisGood
- * @version 0.8 - 20 Apr 2020
+ * @version 1.0 - 23 Apr 2020
  */
 public class Craft {
 
@@ -52,7 +54,7 @@ public class Craft {
     private int initialSize;
     private final long commandeeredAt;
     private final int maxHeightLimit;
-    private boolean isSubCraft;
+    private Craft parentCraft;
 
 
     // State
@@ -60,14 +62,15 @@ public class Craft {
     private final AtomicBoolean processing = new AtomicBoolean();
     private int processingStartTime = 0;
     private HashHitBox hitBox;
-    // TODO - Sinking related - Need to implement
+    // TODO - Sinking related - Use Implementation
     //  makes it so the craft can't collapse on itself
     //  CollapsedHitbox is to prevent the wrecks from despawning when sinking into water
-    protected final HashHitBox collapsedHitBox = new HashHitBox();
+    protected HashHitBox collapsedHitBox = new HashHitBox();
     private long lastCheckTick = 0L;
     private World world; //TODO - Make cross-dimension travel possible
     private boolean sinking = false;
     private boolean disabled = false;
+    private final HashSet<Craft> subcrafts = new HashSet<>();
 
 
     // Crew
@@ -76,8 +79,8 @@ public class Craft {
     private UUID pilot;
     private final HashSet<UUID> aaDirectors = new HashSet<>();
     private final HashSet<UUID> cannonDirectors = new HashSet<>();
-    private final HashSet<UUID> loaders = new HashSet<>(); //TODO - Implement
-    private final HashSet<UUID> repairmen = new HashSet<>(); //TODO - Implement
+    private final HashSet<UUID> loaders = new HashSet<>();
+    private final HashSet<UUID> repairmen = new HashSet<>();
     private final HashSet<UUID> crewList = new HashSet<>();
 
 
@@ -86,24 +89,22 @@ public class Craft {
     @Deprecated
     private HashSet<BlockSnapshot> phasedBlocks = new HashSet<>(); //TODO - move to listener database thingy
     private double movePoints;
-    private int numberOfMoves = 0;
-    private float meanMoveTime;
-    //   Cruising
-    private int lastMoveTick;
+    //   Cruise
     private Direction verticalCruiseDirection = Direction.NONE;
     private Direction horizontalCruiseDirection = Direction.NONE;
-    //   Rotating
+    //   Speed
+    private int numberOfMoves = 0;
+    // Init with value > 0 or else getTickCooldown() will silently fail
+    private float meanMoveTime = 1;
     private long lastRotateTime = 0;
+    private int lastMoveTick;
+    private float speedBlockEffect = 1;
 
 
     // Direct Control
-    //TODO - Needs rewriting/implementing
-    private boolean directControl = false;
+    //TODO - Use Implementation
+    private DirectControlMode directControl = DirectControlMode.OFF;
     private Vector3d pilotOffset = new Vector3d(0, 0, 0);
-    private boolean pilotLocked = false;
-    private double pilotLockedX = 0.0;
-    private double pilotLockedY = 0.0;
-    private double pilotLockedZ = 0.0;
 
 
     /**
@@ -113,10 +114,9 @@ public class Craft {
      * @param player        The player that triggered craft detection
      * @param startLocation The location from which to start craft detection
      */
-    public Craft(CraftType type, UUID player, Location<World> startLocation, boolean isSubCraft) {
+    public Craft(CraftType type, UUID player, Location<World> startLocation) {
         this.type = type;
         world = startLocation.getExtent();
-        this.isSubCraft = isSubCraft;
 
         lastMoveTick = Sponge.getServer().getRunningTimeTicks() - 100;
         commandeeredAt = System.currentTimeMillis();
@@ -157,11 +157,7 @@ public class Craft {
     }
 
     public boolean isSubCraft() {
-        return isSubCraft;
-    }
-
-    public void setSubCraft(boolean isSubCraft) {
-        this.isSubCraft = isSubCraft;
+        return parentCraft != null;
     }
 
 
@@ -175,8 +171,13 @@ public class Craft {
         name = newName;
     }
 
+    @Deprecated
     public boolean isNotProcessing() {
-        return !processing.get();
+        return !processing.get() || subcrafts.isEmpty();
+    }
+
+    public boolean isProcessing() {
+        return processing.get() || !subcrafts.isEmpty();
     }
 
     public void setProcessing(boolean isProcessing) {
@@ -196,6 +197,14 @@ public class Craft {
         hitBox = newHitBox;
     }
 
+    public HashHitBox getCollapsedHitBox() {
+        return collapsedHitBox;
+    }
+
+    public void setCollapsedHitBox(HashHitBox hitBox) {
+        collapsedHitBox = hitBox;
+    }
+
     public int getSize() {
         return hitBox.size();
     }
@@ -204,9 +213,140 @@ public class Craft {
         return lastCheckTick;
     }
 
-    //TODO - Replace with runChecks() and maybe use an event and listener so people can add their own checks?
-    public void updateLastCheckTick() {
-        lastCheckTick = Sponge.getServer().getRunningTimeTicks();
+    public void runChecks() {
+
+        // map the blocks in the hitbox
+        Map<BlockType, Set<Vector3i>> blockMap = hitBox.map(world);
+
+        // Update hitbox by removing blocks that are not on the allowed list
+        HashSet<BlockType> toRemove = new HashSet<>();
+        blockMap.forEach((blockType, positions) -> {
+            if (!type.getAllowedBlocks().contains(blockType)) {
+                hitBox.removeAll(positions);
+                toRemove.add(blockType);
+            }
+        });
+        toRemove.forEach(blockMap::remove);
+
+        if (!type.getSpeedBlocks().isEmpty()) {
+            for (Set<BlockType> blockTypes : type.getSpeedBlocks().keySet()) {
+                int count = 0;
+
+                for (BlockType blockType : blockTypes) {
+                    count += blockMap.containsKey(blockType) ? blockMap.get(blockType).size() : 0;
+                }
+
+                speedBlockEffect = (float) ((count / hitBox.size()) * type.getSpeedBlocks().get(blockTypes));
+            }
+        }
+
+        //TODO - Implement Exposed Speed Blocks
+        /*
+        if (!type.getExposedSpeedBlocks().isEmpty()) {
+            for (Set<BlockType> blockTypes : type.getExposedSpeedBlocks().keySet()) {
+                int count = 0;
+
+                for (BlockType blockType : blockTypes) {
+                    count += blockMap.containsKey(blockType) ? blockMap.get(blockType).size() : 0;
+                }
+
+                cooldown = cooldown * (((double) count / hitBox.size()) * count);
+            }
+        }*/
+
+        if (!sinking && type.getSinkPercent() != 0.0) {
+            boolean shouldSink = false;
+
+            HashMap<List<BlockType>, Integer> foundFlyBlocks = new HashMap<>();
+            HashMap<List<BlockType>, Integer> foundMoveBlocks = new HashMap<>();
+
+            // check of the hitbox is actually empty
+            if (hitBox.isEmpty()) {
+                shouldSink = true;
+
+            } else {
+
+                // count fly blocks
+                type.getFlyBlocks().keySet().forEach(blockTypes -> {
+                    int count = 0;
+
+                    for (BlockType blockType : blockTypes) {
+                        count += blockMap.containsKey(blockType) ? blockMap.get(blockType).size() : 0;
+                    }
+
+                    foundFlyBlocks.put(blockTypes, count);
+                });
+
+                // count move blocks
+                type.getMoveBlocks().keySet().forEach(blockTypes -> {
+                    int count = 0;
+
+                    for (BlockType blockType : blockTypes) {
+                        count += blockMap.containsKey(blockType) ? blockMap.get(blockType).size() : 0;
+                    }
+
+                    foundMoveBlocks.put(blockTypes, count);
+                });
+
+                // calculate percentages
+
+                // now see if any of the resulting percentages
+                // are below the threshold specified in
+                // SinkPercent
+
+                // check we have enough of each fly block
+                for (List<BlockType> blockTypes : type.getFlyBlocks().keySet()) {
+                    int numfound = 0;
+                    if (foundFlyBlocks.get(blockTypes) != null) {
+                        numfound = foundFlyBlocks.get(blockTypes);
+                    }
+                    double percent = ((double) numfound / (double) hitBox.size()) * 100.0;
+                    double flyPercent = type.getFlyBlocks().get(blockTypes).get(0);
+                    double sinkPercent = flyPercent * type.getSinkPercent() / 100.0;
+
+                    if (percent < sinkPercent) {
+                        shouldSink = true;
+                    }
+                }
+
+                // check we have enough of each move block
+                for (List<BlockType> blockTypes : type.getMoveBlocks().keySet()) {
+                    int numfound = 0;
+                    if (foundMoveBlocks.get(blockTypes) != null) {
+                        numfound = foundMoveBlocks.get(blockTypes);
+                    }
+                    double percent = ((double) numfound / (double) hitBox.size()) * 100.0;
+                    double movePercent = type.getMoveBlocks().get(blockTypes).get(0);
+                    double disablePercent = movePercent * type.getSinkPercent() / 100.0;
+
+                    if (percent < disablePercent && !isDisabled() && isNotProcessing()) {
+                        disable();
+                        if (pilot != null) {
+                            Location<World> loc = Sponge.getServer().getPlayer(pilot).get().getLocation();
+                            world.playSound(SoundTypes.ENTITY_IRONGOLEM_DEATH, loc.getPosition(), 5.0f, 5.0f);
+                        }
+                    }
+                }
+
+                // And check the overallsinkpercent
+                if (type.getOverallSinkPercent() != 0.0) {
+                    double percent = ((double) hitBox.size() / (double) initialSize) * 100.0;
+                    if (percent < type.getOverallSinkPercent()) {
+                        shouldSink = true;
+                    }
+                }
+            }
+
+            // if the craft is sinking, let the player know and release the craft. Otherwise update the time for the next check
+            if (shouldSink) {
+                sink();
+
+                CraftManager.getInstance().removeReleaseTask(this);
+
+            } else {
+                lastCheckTick = Sponge.getServer().getRunningTimeTicks();
+            }
+        }
     }
 
     public World getWorld() {
@@ -234,6 +374,16 @@ public class Craft {
 
         // And notify the crew
         notifyCrew("Craft is sinking!");
+
+        // And log it in the console
+        Movecraft.getInstance().getLogger().info("Craft " + id + " is sinking: \r" +
+                "Originally commandeered by " + Sponge.getServer().getPlayer(commandeeredBy).orElse(null) + " at " + commandeeredAt + " ticks \r" +
+                "Currently commanded by " + Sponge.getServer().getPlayer(commander).orElse(null) + "\r" +
+                "Currently piloted by " + Sponge.getServer().getPlayer(pilot).orElse(null) + "\r" +
+                "\r" +
+                "Craft type: " + type.getName() + "\r" +
+                "Size " + hitBox.size() + " of original " + initialSize + "\r" +
+                "Position: " + hitBox.getMidPoint());
     }
 
     public boolean isDisabled() {
@@ -258,7 +408,7 @@ public class Craft {
     }
 
     public boolean setCommander(UUID player) {
-        if ((crewList.contains(player) || player == commandeeredBy) && player != null) {
+        if (crewList.contains(player) && player != null) {
             commander = player;
 
             if (player == nextInCommand || nextInCommand == null) resetNextInCommand();
@@ -360,7 +510,7 @@ public class Craft {
     public Player getCannonDirectorFor(PrimedTNT primedTNT) {
         Player player = null;
         double distance = 16 * 64;
-        HashSet<UUID> testSet = new HashSet<>(aaDirectors);
+        HashSet<UUID> testSet = new HashSet<>(cannonDirectors);
 
         for (UUID testUUID : testSet) {
             Player testPlayer = Sponge.getServer().getPlayer(testUUID).orElse(null);
@@ -609,7 +759,9 @@ public class Craft {
         verticalCruiseDirection = vertical;
 
         // Change signs aboard the craft to reflect new cruising state
-        resetSigns();
+        if (isNotProcessing()) {
+            resetSigns();
+        }
     }
 
     public Direction getVerticalCruiseDirection() {
@@ -625,11 +777,11 @@ public class Craft {
     }
 
     private void resetSigns() {
-        hitBox.forEach(loc -> {
+        for (Vector3i loc : hitBox) {
             final TileEntity tileEntity = world.getTileEntity(loc).orElse(null);
 
             if (!(tileEntity instanceof Sign)) {
-                return;
+                continue;
             }
 
             final Sign sign = (Sign) tileEntity;
@@ -659,7 +811,7 @@ public class Craft {
             }
 
             sign.offer(signLines);
-        });
+        }
     }
 
     //TODO - Add code to handle SubCrafts
@@ -687,7 +839,7 @@ public class Craft {
     }
 
     public void rotate(Vector3i originPoint, Rotation rotation) {
-        if (lastRotateTime + 1e9 > System.nanoTime() && !isSubCraft) {
+        if (lastRotateTime + 1e9 > System.nanoTime() && !isSubCraft()) {
             if (pilot != null)
                 Sponge.getServer().getPlayer(pilot).ifPresent(player -> player.sendMessage(Text.of("Rotation - Turning Too Quickly")));
             return;
@@ -697,87 +849,144 @@ public class Craft {
         submitTask(new RotationTask(this, originPoint, rotation, world));
     }
 
-
-    // Direct Control
-
-    /**
-     * Sets if the craft is in direct control mode.
-     *
-     * @param setting TRUE - If the craft entering direct control mode. False if exiting direct control mode.
-     */
-    public void setDirectControl(boolean setting) {
-        directControl = setting;
+    public float getActualSpeed() {
+        return (float) Sponge.getServer().getTicksPerSecond() * lastMoveVector.length() / getTickCooldown();
     }
 
-    /**
-     * Fetches if the craft is in direct control mode or not.
-     *
-     * @return TRUE - If the craft is in direct control mode.
-     */
-    public boolean isUnderDirectControl() {
-        return directControl;
-    }
-
-    // OLD STUFF -------------------------------------------------------------------------
-    //TODO - Sort these methods
-    public double getSpeed() {
-        return Sponge.getServer().getTicksPerSecond() * type.getCruiseSkipBlocks() / (double) getTickCooldown();
+    public float getSimulatedSpeed() {
+        return 20 * lastMoveVector.length() / getTickCooldown();
     }
 
     public int getTickCooldown() {
-        //TODO Rewrite this
-        return type.getTickCooldown();
+        float cooldown;
 
-        /*
-        Map<BlockType, Set<Vector3i>> blockMap = hitBox.map(world);
-
-        if(state == CraftState.SINKING)
-            return type.getSinkRateTicks();
-
-        double chestPenalty = 0;
-
-        chestPenalty += (blockMap.containsKey(BlockTypes.CHEST) ? blockMap.get(BlockTypes.CHEST).size() : 0)
-                + (blockMap.containsKey(BlockTypes.TRAPPED_CHEST) ? blockMap.get(BlockTypes.TRAPPED_CHEST).size() : 0);
-
-        chestPenalty *= type.getChestPenalty();
-
-        if(meanMoveTime == 0)
-            return type.getCruiseTickCooldown() + (int) chestPenalty;
-
-        if(state != CraftState.CRUISING)
-            return type.getTickCooldown() + (int) chestPenalty;
-
-        if(type.getDynamicFlyBlockSpeedFactor() != 0){
-            double count = blockMap.get(type.getDynamicFlyBlock()).size();
-
-
-            return Math.max((int) (20 / (type.getCruiseTickCooldown() * (1  + type.getDynamicFlyBlockSpeedFactor() * (count / hitBox.size() - 0.5)))), 1);
-
+        if (isCruising()) {
+            cooldown = type.getCruiseTickCooldown();
+        } else {
+            cooldown = type.getTickCooldown();
         }
 
-        if(type.getDynamicLagSpeedFactor() == 0)
-            return type.getCruiseTickCooldown() + (int) chestPenalty;
+        // Apply speed blocks
+        cooldown = cooldown * speedBlockEffect;
 
-        //TODO: modify skip blocks by an equal proportion to this, than add another modifier based on dynamic speed factor
-        return Math.max((int)(type.getCruiseTickCooldown() * meanMoveTime / 1000 * 20 / type.getDynamicLagSpeedFactor() + chestPenalty), 1);
-         */
+        // Apply map update punishment if applicable
+        if (!type.ignoreMapUpdateTime() && meanMoveTime > type.getTargetMoveTime()) {
+            cooldown = cooldown * (meanMoveTime / type.getTargetMoveTime());
+        }
+
+        return (int) cooldown;
     }
 
-    public Set<Craft> getContacts() {
-        final Set<Craft> contacts = new HashSet<>();
-        for (Craft contact : CraftManager.getInstance().getCraftsInWorld(world)) {
-            Vector3i ccenter = this.getHitBox().getMidPoint();
-            Vector3i tcenter = contact.getHitBox().getMidPoint();
-            int distsquared = ccenter.distanceSquared(tcenter);
-            int detectionRange = (int) (contact.getInitialSize() * (tcenter.getY() > 65 ? contact.getType().getDetectionMultiplier() : contact.getType().getUnderwaterDetectionMultiplier()));
-            detectionRange = detectionRange * 10;
-            if (distsquared > detectionRange || contact.getCommander() == this.getCommander()) {
-                continue;
-            }
-            contacts.add(contact);
+
+    // Direct Control
+
+    public void setDirectControl(DirectControlMode mode) {
+        directControl = mode;
+
+        if (mode == DirectControlMode.OFF) {
+            resetPilotOffset();
         }
+    }
+
+    public boolean isUnderDirectControl() {
+        return directControl != DirectControlMode.OFF;
+    }
+
+    public DirectControlMode getDirectControlMode() {
+        return directControl;
+    }
+    public void addPilotMovement(Vector3d movement) {
+        pilotOffset = new Vector3d((pilotOffset.getX() + movement.getX()) / 2, movement.getY(), (pilotOffset.getZ() + movement.getZ()) / 2);
+    }
+
+    public Vector3d getPilotOffset() {
+        return pilotOffset;
+    }
+
+    public void resetPilotOffset() {
+        pilotOffset = Vector3d.ZERO;
+    }
+
+
+
+    // MISC
+    public Craft getRootParentCraft() {
+        if (parentCraft != null) {
+            return parentCraft.getRootParentCraft();
+        }
+
+        return this;
+    }
+
+    public HashSet<Craft> getContacts() {
+        HashSet<Craft> contacts = new HashSet<>();
+
+        if (type.getSpottingMultiplier() > 0) {
+
+            Craft rootParentCraft = getRootParentCraft();
+
+            float viewRange = hitBox.size() * type.getSpottingMultiplier();
+
+            Vector3i middle = hitBox.getMidPoint();
+            int zMax = (int) (middle.getZ() + viewRange);
+            int zMin = (int) (middle.getZ() - viewRange);
+            int xMax = (int) (middle.getX() + viewRange);
+            int xMin = (int) (middle.getX() - viewRange);
+            int yMax = (int) (middle.getY() + viewRange);
+            int yMin = (int) (middle.getY() - viewRange);
+
+            float viewRangeSquared = viewRange * viewRange;
+
+            for (Craft contact : CraftManager.getInstance().getCraftsInWorld(world)) {
+                if (contact.getType().getDetectionMultiplier() > 0) {
+                    Vector3i contactMiddle = contact.getHitBox().getMidPoint();
+
+                    if (contactMiddle.getZ() <= zMax && contactMiddle.getZ() >= zMin
+                            && contactMiddle.getX() <= xMax && contactMiddle.getX() >= xMin
+                            && contactMiddle.getY() <= yMax && contactMiddle.getY() >= yMin) {
+
+                        float distanceSquared = contactMiddle.toFloat().distanceSquared(middle.toFloat());
+
+                        if (!rootParentCraft.getHitBox().intersects(contact.getHitBox()) && distanceSquared <= viewRangeSquared) {
+                            //TODO - implement Underwater Detection Multiplier
+                            float contactDetectability = (float) (contact.getHitBox().size() * contact.getType().getDetectionMultiplier());
+                            float detectableSizeAtDistanceSquared = hitBox.size() - ((distanceSquared / viewRangeSquared) * hitBox.size());
+
+                            if (contactDetectability > detectableSizeAtDistanceSquared) {
+                                contacts.add(contact);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         return contacts;
     }
+
+    public void submitTask(AsyncTask task) {
+        if (isNotProcessing()) {
+            setProcessing(true);
+            task.run();
+        }
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (!(obj instanceof Craft)) {
+            return false;
+        }
+        return this.id.equals(((Craft) obj).id);
+    }
+
+    @Override
+    public int hashCode() {
+        return id.hashCode();
+    }
+
+
+    // OLD STUFF -------------------------------------------------------------------------
+    //TODO - Sort these methods
 
     public int getWaterLine() {
         //TODO: Remove this temporary system in favor of passthrough blocks. How tho???
@@ -831,23 +1040,32 @@ public class Craft {
         return waterLine;
     }
 
-    public void submitTask(AsyncTask task) {
-        if (isNotProcessing()) {
-            setProcessing(true);
-            task.run();
-        }
+    public void setParentCraft(Craft parentCraft) {
+        this.parentCraft = parentCraft;
+
+        parentCraft.addSubcraft(this);
     }
 
-    @Override
-    public boolean equals(Object obj) {
-        if (!(obj instanceof Craft)) {
-            return false;
-        }
-        return this.id.equals(((Craft) obj).id);
+    private void addSubcraft(Craft craft) {
+        subcrafts.add(craft);
     }
 
-    @Override
-    public int hashCode() {
-        return id.hashCode();
+    private void removeSubcraft(Craft craft) {
+        subcrafts.remove(craft);
+    }
+
+    public void release(Player player) {
+        if (player == null) {
+            player = Sponge.getServer().getPlayer(commander).orElse(null);
+        }
+
+        CraftManager.getInstance().removeCraft(this, player);
+        notifyCrew("Your craft has been released.");
+
+        removeCrew();
+
+        if (parentCraft != null) {
+            parentCraft.removeSubcraft(this);
+        }
     }
 }

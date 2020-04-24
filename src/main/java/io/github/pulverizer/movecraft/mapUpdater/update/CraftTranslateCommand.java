@@ -50,7 +50,7 @@ public class CraftTranslateCommand extends UpdateCommand {
         final Logger logger = Movecraft.getInstance().getLogger();
         if(craft.getHitBox().isEmpty()){
             logger.warn("Attempted to move craft with empty HashHitBox!");
-            CraftManager.getInstance().removeCraft(craft);
+            craft.release(null);
             return;
         }
 
@@ -199,12 +199,12 @@ public class CraftTranslateCommand extends UpdateCommand {
             }
         }
 
-        if(Settings.Debug)
-            time = System.currentTimeMillis() - time;
-            logger.info("Total time: " + time + " ms. Moving with cooldown of " + craft.getTickCooldown() + ". Speed of: " + String.format("%.2f", craft.getSpeed()));
+        time = System.currentTimeMillis() - time;
         craft.addMoveTime(time);
         craft.updateLastMoveTick();
         craft.setProcessing(false);
+
+        if(Settings.Debug) logger.info("Total time: " + time + " ms. Moving with cooldown of " + craft.getTickCooldown() + ". Speed of: " + String.format("%.2f", craft.getActualSpeed()));
     }
 
     private void translateCraft() {

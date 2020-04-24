@@ -57,7 +57,7 @@ public class AsyncManager implements Runnable {
 
     private void processCruise() {
         for (Craft craft : CraftManager.getInstance()) {
-            if (craft == null || !craft.isNotProcessing() || craft.isCruising()) {
+            if (craft == null || craft.isProcessing() || !craft.isCruising()) {
                 continue;
             }
 
@@ -67,6 +67,11 @@ public class AsyncManager implements Runnable {
             //TODO: Replace world.getSeaLevel() with something better
             if (craft.getType().getHalfSpeedUnderwater() && craft.getHitBox().getMinY() < world.getSeaLevel())
                 ticksElapsed >>= 1;
+
+            if (ticksElapsed < craft.getTickCooldown()) {
+                continue;
+            }
+
             // check direct controls to modify movement
             boolean bankLeft = false;
             boolean bankRight = false;
@@ -79,10 +84,6 @@ public class AsyncManager implements Runnable {
                     bankLeft = true;
                 if (((PlayerInventory) pilot.getInventory()).getHotbar().getSelectedSlotIndex() == 5)
                     bankRight = true;
-            }
-
-            if (ticksElapsed < craft.getTickCooldown()) {
-                continue;
             }
 
             int dx = 0;
@@ -160,116 +161,12 @@ public class AsyncManager implements Runnable {
     private void detectSinking(){
         HashSet<Craft> crafts = Sets.newHashSet(CraftManager.getInstance());
         crafts.forEach(craft -> {
-            if (craft.isSinking()) {
-                return;
-            }
-            if (craft.getType().getSinkPercent() == 0.0 || !craft.isNotProcessing()) {
-                return;
-            }
-            long ticksElapsed = Sponge.getServer().getRunningTimeTicks() - craft.getLastCheckTick();
 
-            if (ticksElapsed <= Settings.SinkCheckTicks) {
+            if (Sponge.getServer().getRunningTimeTicks() - craft.getLastCheckTick() <= Settings.SinkCheckTicks || craft.isProcessing()) {
                 return;
             }
 
-            int totalNonAirBlocks = 0;
-            int totalNonAirWaterBlocks = 0;
-            HashMap<List<BlockType>, Integer> foundFlyBlocks = new HashMap<>();
-            HashMap<List<BlockType>, Integer> foundMoveBlocks = new HashMap<>();
-            // go through each block in the blocklist, and if its in the FlyBlocks, total up the number of them
-
-            Map<BlockType, Set<Vector3i>> blockMap = craft.getHitBox().map(craft.getWorld());
-
-            craft.getType().getFlyBlocks().keySet().forEach(blockTypes -> {
-                int count = 0;
-
-                for (BlockType blockType : blockTypes) {
-                        count += blockMap.containsKey(blockType) ? blockMap.get(blockType).size() : 0;
-                }
-
-                foundFlyBlocks.put(blockTypes, count);
-            });
-
-            craft.getType().getMoveBlocks().keySet().forEach(blockTypes -> {
-                int count = 0;
-
-                for (BlockType blockType : blockTypes) {
-                    count += blockMap.containsKey(blockType) ? blockMap.get(blockType).size() : 0;
-                }
-
-                foundMoveBlocks.put(blockTypes, count);
-            });
-
-            totalNonAirBlocks = craft.getHitBox().size() - (blockMap.containsKey(BlockTypes.AIR) ? blockMap.get(BlockTypes.AIR).size() : 0);
-
-            totalNonAirWaterBlocks = craft.getHitBox().size() - (
-                    (blockMap.containsKey(BlockTypes.AIR) ? blockMap.get(BlockTypes.AIR).size() : 0)
-                    + (blockMap.containsKey(BlockTypes.FLOWING_WATER) ? blockMap.get(BlockTypes.FLOWING_WATER).size() : 0)
-                    + (blockMap.containsKey(BlockTypes.WATER) ? blockMap.get(BlockTypes.WATER).size() : 0));
-
-            // now see if any of the resulting percentages
-            // are below the threshold specified in
-            // SinkPercent
-            boolean isSinking = false;
-
-            for (List<BlockType> i : craft.getType().getFlyBlocks().keySet()) {
-                int numfound = 0;
-                if (foundFlyBlocks.get(i) != null) {
-                    numfound = foundFlyBlocks.get(i);
-                }
-                double percent = ((double) numfound / (double) totalNonAirBlocks) * 100.0;
-                double flyPercent = craft.getType().getFlyBlocks().get(i).get(0);
-                double sinkPercent = flyPercent * craft.getType().getSinkPercent() / 100.0;
-                if (percent < sinkPercent) {
-                    isSinking = true;
-                }
-
-            }
-            for (List<BlockType> i : craft.getType().getMoveBlocks().keySet()) {
-                int numfound = 0;
-                if (foundMoveBlocks.get(i) != null) {
-                    numfound = foundMoveBlocks.get(i);
-                }
-                double percent = ((double) numfound / (double) totalNonAirBlocks) * 100.0;
-                double movePercent = craft.getType().getMoveBlocks().get(i).get(0);
-                double disablePercent = movePercent * craft.getType().getSinkPercent() / 100.0;
-                if (percent < disablePercent && !craft.isDisabled() && craft.isNotProcessing()) {
-                    craft.disable();
-                    if (craft.getPilot() != null) {
-                        Location<World> loc = Sponge.getServer().getPlayer(craft.getPilot()).get().getLocation();
-                        craft.getWorld().playSound(SoundTypes.ENTITY_IRONGOLEM_DEATH, loc.getPosition(),  5.0f, 5.0f);
-                    }
-                }
-            }
-
-            // And check the overallsinkpercent
-            if (craft.getType().getOverallSinkPercent() != 0.0) {
-                double percent;
-                if (craft.getType().blockedByWater()) {
-                    percent = (double) totalNonAirBlocks
-                            / (double) craft.getInitialSize();
-                } else {
-                    percent = (double) totalNonAirWaterBlocks
-                            / (double) craft.getInitialSize();
-                }
-                if (percent * 100.0 < craft.getType().getOverallSinkPercent()) {
-                    isSinking = true;
-                }
-            }
-
-            if (totalNonAirBlocks == 0) {
-                isSinking = true;
-            }
-
-            // if the craft is sinking, let the player
-            // know and release the craft. Otherwise
-            // update the time for the next check
-            if (isSinking && craft.isNotProcessing()) {
-                craft.sink();
-                CraftManager.getInstance().removePlayerFromCraft(craft);
-            } else {
-                craft.updateLastCheckTick();
-            }
+            craft.runChecks();
         });
     }
 
@@ -282,7 +179,7 @@ public class AsyncManager implements Runnable {
                 return;
             }
             if (craft.getHitBox().isEmpty() || craft.getHitBox().getMinY() < 5) {
-                CraftManager.getInstance().removeCraft(craft);
+                craft.release(null);
                 return;
             }
             long ticksElapsed = Sponge.getServer().getRunningTimeTicks() - craft.getLastMoveTick();
@@ -405,7 +302,7 @@ public class AsyncManager implements Runnable {
             }
 
             // Stop crafts from moving if they have taken too long to process.
-            if (!craft.isNotProcessing() && craft.isCruising() && craft.getProcessingStartTime() < Sponge.getServer().getRunningTimeTicks() - 1200) {
+            if (craft.isProcessing() && craft.isCruising() && craft.getProcessingStartTime() < Sponge.getServer().getRunningTimeTicks() - 1200) {
                 craft.setProcessing(false);
             }
         }

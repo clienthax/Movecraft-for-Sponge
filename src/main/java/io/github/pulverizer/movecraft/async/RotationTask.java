@@ -59,7 +59,7 @@ public class RotationTask extends AsyncTask {
         if (oldHitBox.isEmpty() || craft.isDisabled())
             return;
 
-        // check for fuel, burn some from a furnace if needed. Blocks of coal are supported, in addition to coal and charcoal
+        // check for fuel, use some if needed
         double fuelBurnRate = getCraft().getType().getFuelBurnRate();
         if (fuelBurnRate != 0.0 && !getCraft().isSinking()) {
 
@@ -165,48 +165,6 @@ public class RotationTask extends AsyncTask {
 
             synchronized (this) {
                 while (!processedEntities.get()) this.wait(1);
-            }
-        }
-
-        if (craft.isCruising()) {
-            if (rotation == Rotation.ANTICLOCKWISE) {
-
-                switch (getCraft().getHorizontalCruiseDirection()) {
-                    case NORTH:
-                        getCraft().setCruising(craft.getVerticalCruiseDirection(), Direction.WEST);
-                        break;
-
-                    case SOUTH:
-                        getCraft().setCruising(craft.getVerticalCruiseDirection(), Direction.EAST);
-                        break;
-
-                    case EAST:
-                        getCraft().setCruising(craft.getVerticalCruiseDirection(), Direction.NORTH);
-                        break;
-
-                    case WEST:
-                        getCraft().setCruising(craft.getVerticalCruiseDirection(), Direction.SOUTH);
-                        break;
-                }
-            } else if (rotation == Rotation.CLOCKWISE) {
-
-                switch (getCraft().getHorizontalCruiseDirection()) {
-                    case NORTH:
-                        getCraft().setCruising(craft.getVerticalCruiseDirection(), Direction.EAST);
-                        break;
-
-                    case SOUTH:
-                        getCraft().setCruising(craft.getVerticalCruiseDirection(), Direction.WEST);
-                        break;
-
-                    case EAST:
-                        getCraft().setCruising(craft.getVerticalCruiseDirection(), Direction.SOUTH);
-                        break;
-
-                    case WEST:
-                        getCraft().setCruising(craft.getVerticalCruiseDirection(), Direction.NORTH);
-                        break;
-                }
             }
         }
 

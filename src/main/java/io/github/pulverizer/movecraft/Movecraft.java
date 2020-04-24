@@ -1,24 +1,15 @@
 package io.github.pulverizer.movecraft;
 
-import com.google.common.reflect.TypeToken;
 import com.google.inject.Inject;
 import io.github.pulverizer.movecraft.config.ConfigManager;
+import io.github.pulverizer.movecraft.craft.crew.CrewManager;
 import io.github.pulverizer.movecraft.listener.*;
 import io.github.pulverizer.movecraft.sign.*;
-import io.github.pulverizer.movecraft.utils.WorldUtils;
-import ninja.leaping.configurate.ConfigurationNode;
-import ninja.leaping.configurate.ConfigurationOptions;
-import ninja.leaping.configurate.loader.ConfigurationLoader;
-import ninja.leaping.configurate.objectmapping.ObjectMappingException;
-import ninja.leaping.configurate.yaml.YAMLConfigurationLoader;
 import org.slf4j.Logger;
 import org.spongepowered.api.Sponge;
-import org.spongepowered.api.block.BlockType;
 import org.spongepowered.api.config.ConfigDir;
 import org.spongepowered.api.event.Listener;
 import org.spongepowered.api.event.game.state.*;
-import org.spongepowered.api.item.ItemType;
-import org.spongepowered.api.item.ItemTypes;
 import org.spongepowered.api.plugin.Plugin;
 
 import io.github.pulverizer.movecraft.async.AsyncManager;
@@ -29,13 +20,9 @@ import io.github.pulverizer.movecraft.mapUpdater.MapUpdateManager;
 import org.spongepowered.api.scheduler.Task;
 import org.spongepowered.api.service.sql.SqlService;
 
-import java.io.IOException;
 import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
 
 @Plugin(
         id = "movecraft",
@@ -152,6 +139,7 @@ public class Movecraft {
     public void initializeManagers(GameStartedServerEvent event) {
 
         CraftManager.initialize();
+        CrewManager.initialize();
         AsyncManager.initialize();
         MapUpdateManager.initialize();
         CommanderSign.initDatabase();

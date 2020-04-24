@@ -138,7 +138,7 @@ public class TranslationTask extends AsyncTask {
         }
 
         if(!collisionBox.isEmpty() && craft.getType().getCruiseOnPilot()){
-            CraftManager.getInstance().removeCraft(craft);
+            craft.release(null);
             for(Vector3i location : oldHitBox){
                 updates.add(new BlockCreateCommand(craft.getWorld(), location, BlockTypes.AIR));
             }

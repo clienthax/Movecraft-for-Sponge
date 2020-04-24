@@ -53,7 +53,8 @@ public final class SpeedSign {
 
         ListValue<Text> lines = sign.lines();
 
-        lines.set(1, Text.of(String.format("%.2f", craft.getSpeed()), " m/s"));
+        lines.set(1, Text.of(String.format("Act: %.2f", craft.getActualSpeed()), " m/s"));
+        lines.set(2, Text.of(String.format("Sim: %.2f", craft.getSimulatedSpeed()), " m/s"));
         lines.set(3, Text.of(String.format("%.2f", craft.getMeanMoveTime()), "ms"));
         sign.offer(lines);
     }

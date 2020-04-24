@@ -39,6 +39,8 @@ public class Settings {
     public static Map<BlockType, Integer> DurabilityOverride;
     public static HashSet<BlockType> DisableShadowBlocks;
     public static boolean ReleaseOnCrewDeath;
+    public static int InviteTimeout;
+    public static int AmmoDetonationMultiplier;
 
 
     static void load(ConfigurationNode mainConfigNode) {
@@ -103,6 +105,9 @@ public class Settings {
 
             Settings.DisableShadowBlocks = new HashSet<>();
         }
+
+        Settings.InviteTimeout = mainConfigNode.getNode("InviteTimeout").getInt(30*20);
+        Settings.AmmoDetonationMultiplier = mainConfigNode.getNode("AmmoDetonationMultiplier").getInt(1);
 
 
         /* TODO: Re-enable this?

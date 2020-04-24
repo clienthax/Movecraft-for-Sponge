@@ -35,6 +35,8 @@ public class SignListener {
         PilotSign.onSignClick(event, player, block);
         RemoteSign.onSignClick(event, player, block);
         SubcraftRotateSign.onSignClick(event, player, block);
+        RepairmanSign.onSignClick(event, player, block);
+        LoaderSign.onSignClick(event, player, block);
 
         if (event instanceof InteractBlockEvent.Secondary.MainHand) {
 

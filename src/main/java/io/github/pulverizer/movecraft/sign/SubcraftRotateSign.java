@@ -86,7 +86,7 @@ public final class SubcraftRotateSign {
             }
         }
         if(craft != null) {
-            if (!craft.isNotProcessing()) {
+            if (craft.isProcessing()) {
                 player.sendMessage(Text.of("Parent Craft is busy!"));
                 event.setCancelled(true);
                 return;
@@ -109,7 +109,7 @@ public final class SubcraftRotateSign {
         }
 
         final Location<World> loc = event.getTargetBlock().getLocation().get();
-        final Craft subCraft = new Craft(type, player.getUniqueId(), loc, true);
+        final Craft subCraft = new Craft(type, player.getUniqueId(), loc);
         Vector3i startPoint = new Vector3i(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
 
         Task.builder()
@@ -118,7 +118,7 @@ public final class SubcraftRotateSign {
                     subCraft.rotate(startPoint, rotation);
                     Task.builder()
                             .delayTicks(3)
-                            .execute(() -> CraftManager.getInstance().removeCraft(subCraft))
+                            .execute(() -> subCraft.release(player))
                             .submit(Movecraft.getInstance()); })
                 .submit(Movecraft.getInstance());
 

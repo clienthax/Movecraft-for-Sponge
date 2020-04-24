@@ -2,6 +2,7 @@ package io.github.pulverizer.movecraft.sign;
 
 import io.github.pulverizer.movecraft.config.Settings;
 import io.github.pulverizer.movecraft.craft.Craft;
+import io.github.pulverizer.movecraft.craft.crew.CrewManager;
 import io.github.pulverizer.movecraft.utils.MathUtils;
 import io.github.pulverizer.movecraft.craft.CraftManager;
 import org.spongepowered.api.block.BlockSnapshot;
@@ -17,7 +18,7 @@ import org.spongepowered.api.world.World;
  * Code to be reviewed
  *
  * @author BernardisGood
- * @version 1.4 - 20 Apr 2020
+ * @version 1.5 - 23 Apr 2020
  */
 public final class CannonDirectorSign {
     private static final String HEADER = "Cannon Director";
@@ -34,35 +35,11 @@ public final class CannonDirectorSign {
 
         event.setCancelled(true);
 
-
-
-        Craft craft = CraftManager.getInstance().getCraftByPlayer(player.getUniqueId());
-
-        if (craft == null) {
-            player.sendMessage(Text.of("You are not the member of a crew."));
+        if(event instanceof InteractBlockEvent.Primary) {
+            CrewManager.getInstance().resetRole(player);
             return;
         }
 
-        if (!craft.getType().allowCannonDirectorSign()) {
-            player.sendMessage(Text.of("ERROR: Cannon Director Signs not allowed on this craft!"));
-            return;
-        }
-
-        if(event instanceof InteractBlockEvent.Primary && craft.isCannonDirector(player.getUniqueId())){
-            craft.resetCrewRole(player.getUniqueId());
-            player.sendMessage(Text.of("You are no longer directing the cannons of this craft."));
-            return;
-        }
-
-        if (!player.hasPermission("movecraft." + craft.getType().getName() + ".crew.directors.cannons") && (craft.getType().requiresSpecificPerms() || !player.hasPermission("movecraft.crew.directors.cannons"))) {
-            player.sendMessage(Text.of("Insufficient Permissions"));
-            return;
-        }
-
-        if (craft.addCannonDirector(player.getUniqueId())) {
-            player.sendMessage(Text.of("You can now direct the cannons of this craft."));
-        } else {
-            player.sendMessage(Text.of("You are not in the crew of this craft."));
-        }
+        CrewManager.getInstance().addCannonDirector(player);
     }
 }
