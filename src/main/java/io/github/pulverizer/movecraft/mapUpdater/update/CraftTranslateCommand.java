@@ -205,6 +205,9 @@ public class CraftTranslateCommand extends UpdateCommand {
         craft.setProcessing(false);
 
         if(Settings.Debug) logger.info("Total time: " + time + " ms. Moving with cooldown of " + craft.getTickCooldown() + ". Speed of: " + String.format("%.2f", craft.getActualSpeed()));
+
+        // Should not be counted in processing time
+        craft.updateSubcraftWithParentTranslation(displacement);
     }
 
     private void translateCraft() {

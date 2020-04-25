@@ -3,15 +3,23 @@ package io.github.pulverizer.movecraft.async;
 import io.github.pulverizer.movecraft.Movecraft;
 import io.github.pulverizer.movecraft.config.Settings;
 import io.github.pulverizer.movecraft.craft.Craft;
+import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.scheduler.Task;
+import org.spongepowered.api.text.Text;
 
 public abstract class AsyncTask {
     protected final Craft craft;
     protected final String type;
+    protected final Player player;
 
-    public AsyncTask(Craft c, String taskType) {
-        craft = c;
+    // Task Failed?
+    private boolean failed;
+    private String failMessage;
+
+    public AsyncTask(Craft craft, String taskType, Player player) {
+        this.craft = craft;
         type = taskType;
+        this.player = player;
     }
 
     public void run() {
@@ -40,7 +48,10 @@ public abstract class AsyncTask {
                 Movecraft.getInstance().getLogger().info(type + " Task Took: " + (endTime - startTime) + "ms");
             }
 
-            AsyncManager.getInstance().submitCompletedTask(this);
+            // Only submit Task if it hasn't failed
+            if (!failed()) {
+                AsyncManager.getInstance().submitCompletedTask(this);
+            }
         } catch (Exception e) {
             Movecraft.getInstance().getLogger().error("Internal Error - Processor thread encountered an error!");
             e.printStackTrace();
@@ -50,6 +61,23 @@ public abstract class AsyncTask {
     protected abstract void execute() throws InterruptedException;
 
     protected abstract void postProcess();
+
+    void fail(String message) {
+        failed = true;
+        failMessage = message;
+
+        player.sendMessage(Text.of(type + " Failed: " + message));
+
+        Movecraft.getInstance().getLogger().info("Craft " + type + " Failed: " + getFailMessage());
+    }
+
+    public boolean failed() {
+        return failed;
+    }
+
+    public String getFailMessage() {
+        return failMessage;
+    }
 
     protected Craft getCraft() {
         return craft;

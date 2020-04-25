@@ -312,7 +312,7 @@ public class TranslationTask extends AsyncTask {
         return false;
     }
 
-    private void fail(String message) {
+    void fail(String message) {
         failed=true;
         failMessage=message;
         Player craftPilot = Sponge.getServer().getPlayer(craft.getPilot()).orElse(null);
@@ -415,14 +415,6 @@ public class TranslationTask extends AsyncTask {
         }
         return stack;
     }*/
-
-    public boolean failed(){
-        return failed;
-    }
-
-    public String getFailMessage() {
-        return failMessage;
-    }
 
     public HashHitBox getNewHitBox() {
         return newHitBox;

@@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableSet;
 import io.github.pulverizer.movecraft.Movecraft;
 import io.github.pulverizer.movecraft.config.ConfigManager;
 import io.github.pulverizer.movecraft.config.CraftType;
+import io.github.pulverizer.movecraft.utils.HashHitBox;
 import io.github.pulverizer.movecraft.utils.MathUtils;
 import io.netty.util.internal.ConcurrentSet;
 import org.spongepowered.api.Sponge;
@@ -197,15 +198,26 @@ public class CraftManager implements Iterable<Craft> {
     }
 
     public HashSet<Craft> getCraftsFromLocation(Location<World> location) {
-        HashSet<Craft> foundCraft = new HashSet<>();
+        HashSet<Craft> results = new HashSet<>();
 
-        for (Craft testCraft : CraftManager.getInstance().getCraftsInWorld(location.getExtent())) {
+        for (Craft testCraft : getCraftsInWorld(location.getExtent())) {
             if (testCraft.getHitBox().contains(location.getBlockPosition())) {
-                foundCraft.add(testCraft);
-                break;
+                results.add(testCraft);
             }
         }
 
-        return foundCraft;
+        return results;
+    }
+
+    public HashSet<Craft> getCraftsIntersectingWith(HashHitBox hitBox, World world) {
+        HashSet<Craft> results = new HashSet<>();
+
+        for (Craft testCraft : getCraftsInWorld(world)) {
+            if (testCraft.getHitBox().intersects(hitBox)) {
+                results.add(testCraft);
+            }
+        }
+
+        return results;
     }
 }

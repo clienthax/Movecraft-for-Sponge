@@ -468,4 +468,8 @@ final public class CraftType {
     public int hashCode() {
         return name.hashCode();
     }
+
+    public boolean canHaveCrew() {
+        return true;
+    }
 }

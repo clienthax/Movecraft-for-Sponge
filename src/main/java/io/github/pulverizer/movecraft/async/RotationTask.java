@@ -249,14 +249,6 @@ public class RotationTask extends AsyncTask {
         return originPoint;
     }
 
-    public boolean failed() {
-        return failed;
-    }
-
-    public String getFailMessage() {
-        return failMessage;
-    }
-
     public Set<UpdateCommand> getUpdates() {
         return updates;
     }

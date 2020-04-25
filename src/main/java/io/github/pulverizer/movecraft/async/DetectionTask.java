@@ -24,10 +24,10 @@ import java.util.*;
 
 /**
  * Permissions Checked
- * Code to be reviewed
+ * Code reviewed on 25 Apr 2020
  *
  * @author BernardisGood
- * @version 1.1 - 20 Apr 2020
+ * @version 1.2 - 25 Apr 2020
  */
 public class DetectionTask extends AsyncTask {
     private final World world;
@@ -36,40 +36,196 @@ public class DetectionTask extends AsyncTask {
     private final HashHitBox detectedHitBox = new HashHitBox();
     private HashHitBox hitBox;
     private final HashSet<Vector3i> visited = new HashSet<>();
-    private final HashMap<List<BlockType>, Integer> blockTypeCount = new HashMap<>();
-    private Map<List<BlockType>, List<Double>> dynamicFlyBlocks;
     private boolean waterContact = false;
+    private final HashMap<List<BlockType>, Integer> blockTypeCount = new HashMap<>();
 
-    private boolean foundCommanderSign = false;
-    private Date commanderSignDate;
-    private Time commanderSignTime;
+    private Map.Entry<Date, Time> commanderSignTimeStamp;
     private String commanderSignUsername;
     private int commanderSignId;
 
-    private boolean failed;
-    private String failMessage;
-
-    public DetectionTask(Craft craft, Location<World> startLocation) {
-        super(craft, "Detection");
-        this.startLocation = startLocation.getBlockPosition();
+    public DetectionTask(Craft craft, Location<World> startLocation, Player player) {
+        super(craft, "Detection", player);
         world = startLocation.getExtent();
+        this.startLocation = startLocation.getBlockPosition();
     }
 
     @Override
     public void execute() {
+        // Detect Blocks
+        detectBlocks();
 
-        // Get craft type flyblocks
-        Map<List<BlockType>, List<Double>> flyBlocks = craft.getType().getFlyBlocks();
-        dynamicFlyBlocks = flyBlocks;
+        // Return early if failed
+        if (failed()) return;
 
-        // Detect blocks
+        // Run final checks
+        confirmRequirements();
+
+        // Return early if failed
+        if (failed()) return;
+
+        // Check player is still online, if offline, cancel Detection Task
+        isPlayerStillOnline();
+
+        // Return early if failed
+        if (failed()) return;
+
+        // Set the hitBox from the detectedHitBox
+        hitBox = new HashHitBox(detectedHitBox);
+    }
+
+    private void detectBlocks() {
         blockStack.push(startLocation);
+
         do {
             detectSurrounding(blockStack.pop());
-        } while (!blockStack.isEmpty());
+        } while (!blockStack.isEmpty() && !failed());
+    }
 
-        // Check commander sign
-        if (foundCommanderSign) {
+    private void detectSurrounding(Vector3i blockPosition) {
+        // Detect blocks in surrounding locations
+        CollectionUtils.neighbors(blockPosition).forEach(this::detectBlock);
+    }
+
+    private void detectBlock(Vector3i blockPosition) {
+        // Return if we've already visited this location
+        if (!notVisited(blockPosition)) return;
+
+        // Get the BlockType
+        BlockType blockType = world.getBlockType(blockPosition);
+
+        // Return if BlockType is Air OR is forbidden on CraftType
+        if (blockType.equals(BlockTypes.AIR)) return;
+
+        if (craft.getType().getForbiddenBlocks().contains(blockType)) {
+            fail(String.format("Found forbidden block %s at %s", blockType, blockPosition));
+            return;
+        }
+
+        // Check for water contact
+        if (blockType.equals(BlockTypes.FLOWING_WATER) || blockType.equals(BlockTypes.WATER)) {
+            waterContact = true;
+        }
+
+        // Check if sign, if so, do additional processing
+        if (blockType.equals(BlockTypes.STANDING_SIGN) || blockType.equals(BlockTypes.WALL_SIGN))
+            processSign(blockPosition);
+
+        // Return if not one of the CraftType's allowed BlockTypes
+        if (!craft.getType().getAllowedBlocks().contains(blockType)) return;
+
+        // Add to blockList
+        detectedHitBox.add(blockPosition);
+
+        // Count fly block
+        countFlyBlock(blockType);
+
+        // Check if we have exceeded the max size for the CraftType
+        if (isUnderMaxSize()) {
+            blockStack.push(blockPosition);
+        }
+    }
+
+    private boolean notVisited(Vector3i blockPosition) {
+        if (visited.contains(blockPosition)) {
+            return false;
+        } else {
+            visited.add(blockPosition);
+            return true;
+        }
+    }
+
+    private void processSign(Vector3i blockPosition) {
+        if (world.getTileEntity(blockPosition).isPresent()) {
+
+            ListValue<Text> signText = ((Sign) world.getTileEntity(blockPosition).get()).lines();
+            if (signText.get(0).toPlain().equalsIgnoreCase("Commander:")) {
+
+                String testUsername = signText.get(1).toPlain();
+                int testId = Integer.parseInt(signText.get(2).toPlain());
+
+                Map.Entry<Date, Time> timestamp = CommanderSign.getCreationTimeStamp(testUsername, testId);
+
+                if (timestamp != null) {
+
+                    if (commanderSignUsername == null) {
+                        commanderSignTimeStamp = timestamp;
+                        commanderSignUsername = testUsername;
+                        commanderSignId = testId;
+
+                    } else if (timestamp.getKey().before(commanderSignTimeStamp.getKey())) {
+                        commanderSignTimeStamp = timestamp;
+                        commanderSignUsername = testUsername;
+                        commanderSignId = testId;
+
+                    } else if (timestamp.getKey().equals(commanderSignTimeStamp.getKey()) && timestamp.getValue().before(commanderSignTimeStamp.getValue())) {
+                        commanderSignTimeStamp = timestamp;
+                        commanderSignUsername = testUsername;
+                        commanderSignId = testId;
+
+                    }
+                }
+            }
+
+            for (Text line : signText) {
+                if (craft.getType().getForbiddenSignStrings().contains(line.toString())) {
+                    fail("Detection Failed - Forbidden sign string found.");
+                    break;
+                }
+            }
+        }
+    }
+
+    private void countFlyBlock(BlockType blockType) {
+        for (List<BlockType> flyBlockDef : craft.getType().getFlyBlocks().keySet()) {
+            if (flyBlockDef.contains(blockType)) {
+                blockTypeCount.merge(flyBlockDef, 1, Integer::sum);
+            } else {
+                blockTypeCount.merge(null, 1, Integer::sum);
+            }
+        }
+    }
+
+    private void confirmRequirements() {
+        if (failed()) return;
+
+        // Check Commander Sign
+        checkCommanderSign();
+
+        // Check we are within CraftType size limits
+        isWithinSizeLimits();
+
+        // Check if CraftType requires contact with water
+        if (craft.getType().getRequireWaterContact() && !waterContact) {
+            fail("Detection Failed - Water contact required but not found!");
+            return;
+        }
+
+        // Check craft meets CraftType fly block requirements
+        checkFlyBlocks();
+    }
+
+    private void isWithinSizeLimits() {
+        isOverMinSize();
+        isUnderMaxSize();
+    }
+
+    private void isOverMinSize() {
+        if (detectedHitBox.size() < craft.getType().getMinSize()) {
+            fail(String.format("Craft too small! Min Size: %d", craft.getType().getMinSize()));
+        }
+    }
+
+    private boolean isUnderMaxSize() {
+        if (detectedHitBox.size() > craft.getType().getMaxSize()) {
+            fail(String.format("Craft too large! Max Size: %d", craft.getType().getMaxSize()));
+            return false;
+        }
+
+        return true;
+    }
+
+    private void checkCommanderSign() {
+        if (commanderSignUsername != null) {
             HashMap<UUID, Boolean> commanderSignMemberMap = CommanderSign.getMembers(commanderSignUsername, commanderSignId);
 
             if (commanderSignMemberMap == null) {
@@ -81,223 +237,13 @@ public class DetectionTask extends AsyncTask {
                 fail("Not one of the registered commanders for this craft.");
             }
         }
-
-        // Run final checks
-        isWithinLimit(detectedHitBox.size(), craft.getType().getMinSize(), craft.getType().getMaxSize());
-        confirmStructureRequirements(flyBlocks, blockTypeCount);
-
-        // Check that the player is still online
-        // If they are offline we cancel the Detection Task
-        if (Sponge.getServer().getPlayer(craft.commandeeredBy()).orElse(null) == null) {
-            fail("Player went offline.");
-        }
-
-        if (!failed()) {
-            // Submit the hitbox
-            hitBox = detectedHitBox;
-        }
     }
 
-    @Override
-    public void postProcess() {
+    private void checkFlyBlocks() {
+        Map<List<BlockType>, List<Double>> flyBlocks = craft.getType().getFlyBlocks();
 
-        Player player = Sponge.getServer().getPlayer(craft.commandeeredBy()).orElse(null);
-
-        if (!failed()) {
-            boolean failed = false;
-            Craft parentCraft = null;
-
-            for (Craft testCraft : CraftManager.getInstance().getCraftsInWorld(craft.getWorld())) {
-                if (testCraft.getHitBox().intersects(getHitBox())) {
-
-                    if (testCraft.getType() == craft.getType() || testCraft.getHitBox().size() <= getHitBox().size()) {
-                        if (testCraft.isCrewMember(craft.commandeeredBy())) {
-                            fail("You are already in the crew of this craft.");
-                        } else {
-                            fail("Craft is already being controlled by another player.");
-                        }
-                        break;
-                    }
-
-                    parentCraft = testCraft;
-                    break;
-                }
-            }
-
-            if (craft.getType().limitToParentHitBox()) {
-                craft.setParentCraft(parentCraft);
-            }
-
-            Movecraft.getInstance().getLogger().info("Subcraft: " + (parentCraft != null));
-            Movecraft.getInstance().getLogger().info("Size: " + getHitBox().size());
-            if (parentCraft != null && player != null) {
-                Movecraft.getInstance().getLogger().info("Parent Craft: " + parentCraft.getHitBox().size() + "   Commander: " + player.getName());
-
-                if (!parentCraft.isCrewMember(player.getUniqueId())) {
-                    // Player is already controlling a craft
-                    fail("You are not in the crew of the parent craft.");
-
-                } else {
-                    // if this is a different type than the overlapping craft, and is smaller, this must be a child craft, like a fighter on a carrier
-                    if (parentCraft.isProcessing()) {
-                        fail("Parent Craft is busy.");
-                    }
-
-                    parentCraft.setHitBox(new HashHitBox(CollectionUtils.filter(parentCraft.getHitBox(), getHitBox())));
-                    parentCraft.setInitialSize(parentCraft.getInitialSize() - getHitBox().size());
-                }
-            }
-
-            if (craft.getType().mustBeSubcraft() && parentCraft == null) {
-                fail("Craft must be part of another craft!");
-            }
-
-            if (!failed()) {
-                craft.setInitialSize(getHitBox().size());
-                craft.setHitBox(getHitBox());
-
-                final int waterLine = craft.getWaterLine();
-                if (!craft.getType().blockedByWater() && craft.getHitBox().getMinY() <= waterLine) {
-                    for (Vector3i location : craft.getHitBox().boundingHitBox()) {
-                        if (location.getY() <= waterLine) {
-                            craft.getPhasedBlocks().add(BlockTypes.WATER.getDefaultState().snapshotFor(new Location<>(craft.getWorld(), location)));
-                        }
-                    }
-                }
-
-                if (craft.getHitBox() != null) {
-
-                    if (player != null) {
-                        //TODO We need a better way of doing this
-                        // Maybe "CraftType#canHaveCrew"?
-                        if (!craft.getType().mustBeSubcraft() || !craft.getType().getCruiseOnPilot()) {
-                            craft.addCrewMember(craft.commandeeredBy());
-                            craft.setCommander(craft.commandeeredBy());
-                        }
-
-                        player.sendMessage(Text.of("Successfully commandeered " + craft.getType().getName() + " Size: " + craft.getHitBox().size()));
-                        Movecraft.getInstance().getLogger().info("New Craft Detected! Commandeered By: " + player.getName() + " CraftType: " + craft.getType().getName() + " Size: " + craft.getHitBox().size() + " Location: " + craft.getHitBox().getMidPoint().toString());
-                    } else {
-                        Movecraft.getInstance().getLogger().info("New Craft Detected! Commandeered By: " + craft.commandeeredBy() + " CraftType: " + craft.getType().getName() + " Size: " + craft.getHitBox().size() + " Location: " + craft.getHitBox().getMidPoint().toString());
-                    }
-
-                    CraftManager.getInstance().addCraft(craft);
-                } else {
-                    fail("NULL Hitbox!");
-                }
-            }
-        }
-
-        // Check if the task failed
-        if (failed()) {
-            if (player != null) {
-                player.sendMessage(Text.of(getFailMessage()));
-            }
-
-            Movecraft.getInstance().getLogger().info("Craft " + super.type + " Failed: " + getFailMessage());
-        }
-
-        if (craft.getHitBox() != null) {
-            CraftDetectEvent event = new CraftDetectEvent(craft);
-            Sponge.getEventManager().post(event);
-        }
-
-        craft.setProcessing(false);
-    }
-
-    private void detectBlock(Vector3i workingLocation) {
-
-        if (!notVisited(workingLocation))
-            return;
-
-        BlockType testType = world.getBlockType(workingLocation);
-
-        if (testType == BlockTypes.AIR)
-            return;
-
-        if (isForbiddenBlock(testType))
-            fail("Detection Failed - Forbidden block found.");
-
-
-        if (testType == BlockTypes.FLOWING_WATER || testType == BlockTypes.WATER) {
-            waterContact = true;
-        }
-
-        if (testType == BlockTypes.STANDING_SIGN || testType == BlockTypes.WALL_SIGN && world.getTileEntity(workingLocation).isPresent()) {
-
-            ListValue<Text> signText = ((Sign) world.getTileEntity(workingLocation).get()).lines();
-            if (signText.get(0).toPlain().equalsIgnoreCase("Commander:")) {
-
-                String testUsername = signText.get(1).toPlain();
-                int testId = Integer.parseInt(signText.get(2).toPlain());
-
-                Map.Entry<Date, Time> timestamp = CommanderSign.getCreationTimeStamp(testUsername, testId);
-
-                if (timestamp != null) {
-
-                    if (!foundCommanderSign) {
-                        foundCommanderSign = true;
-                        commanderSignDate = timestamp.getKey();
-                        commanderSignTime = timestamp.getValue();
-                        commanderSignUsername = testUsername;
-                        commanderSignId = testId;
-
-                    } else if (timestamp.getKey().before(commanderSignDate)) {
-                        commanderSignDate = timestamp.getKey();
-                        commanderSignTime = timestamp.getValue();
-                        commanderSignUsername = testUsername;
-                        commanderSignId = testId;
-
-                    } else if (timestamp.getKey().equals(commanderSignDate) && timestamp.getValue().before(commanderSignTime)) {
-                        commanderSignDate = timestamp.getKey();
-                        commanderSignTime = timestamp.getValue();
-                        commanderSignUsername = testUsername;
-                        commanderSignId = testId;
-
-                    }
-                }
-            }
-
-            signText.forEach(line -> {
-                if (isForbiddenSignString(line.toString())) {
-                    fail("Detection Failed - Forbidden sign string found.");
-                }
-            });
-        }
-
-        if (!isAllowedBlock(testType))
-            return;
-
-        addToBlockList(workingLocation);
-        for (List<BlockType> flyBlockDef : dynamicFlyBlocks.keySet()) {
-            if (flyBlockDef.contains(testType)) {
-                addToBlockCount(flyBlockDef);
-            } else {
-                addToBlockCount(null);
-            }
-        }
-
-        if (isWithinLimit(detectedHitBox.size(), 0, craft.getType().getMaxSize())) {
-
-            addToDetectionStack(workingLocation);
-
-        }
-    }
-
-    private void detectSurrounding(Vector3i location) {
-        //Detect blocks in surrounding locations.
-        CollectionUtils.neighbors(location).forEach(this::detectBlock);
-    }
-
-    private boolean confirmStructureRequirements(Map<List<BlockType>, List<Double>> flyBlocks, Map<List<BlockType>, Integer> countData) {
-        if (craft.getType().getRequireWaterContact()) {
-            if (!waterContact) {
-                fail("Detection Failed - Water contact required but not found!");
-                return false;
-            }
-        }
         for (List<BlockType> i : flyBlocks.keySet()) {
-            Integer numberOfBlocks = countData.get(i);
+            Integer numberOfBlocks = blockTypeCount.get(i);
 
             if (numberOfBlocks == null) {
                 numberOfBlocks = 0;
@@ -309,98 +255,145 @@ public class DetectionTask extends AsyncTask {
             if (minPercentage < 10000.0) {
                 if (blockPercentage < minPercentage) {
                     fail(String.format("Not enough flyblock" + ": %s %.2f%% < %.2f%%", i.get(0).getName(), blockPercentage, minPercentage));
-                    return false;
+                    return;
                 }
+
             } else if (numberOfBlocks < flyBlocks.get(i).get(0) - 10000.0) {
                 fail(String.format("Not enough flyblock" + ": %s %d < %d", i.get(0).getName(), numberOfBlocks, flyBlocks.get(i).get(0).intValue() - 10000));
-                return false;
+                return;
 
             }
 
             if (maxPercentage < 10000.0) {
                 if (blockPercentage > maxPercentage) {
                     fail(String.format("Too much flyblock" + ": %s %.2f%% > %.2f%%", i.get(0).getName(), blockPercentage, maxPercentage));
-                    return false;
+                    return;
                 }
             } else if (numberOfBlocks > flyBlocks.get(i).get(1) - 10000.0) {
                 fail(String.format("Too much flyblock" + ": %s %d > %d", i.get(0).getName(), numberOfBlocks, flyBlocks.get(i).get(1).intValue() - 10000));
-                return false;
+                return;
 
             }
         }
-
-        return true;
     }
 
-    private boolean isWithinLimit(int size, int min, int max) {
-        if (size < min) {
-            fail("Detection Failed - Craft too small! Min Size: " + min);
-            return false;
-        } else if (size > max) {
-            fail("Detection Failed - Craft too large! Max Size: " + max);
-            return false;
-        } else {
-            return true;
-        }
-
-    }
-
-    private void fail(String message) {
-        failed = true;
-        failMessage = message;
-    }
-
-    private boolean notVisited(Vector3i location) {
-        if (visited.contains(location)) {
-            return false;
-        } else {
-            visited.add(location);
-            return true;
+    private void isPlayerStillOnline() {
+        if (!player.isOnline()) {
+            fail("Player has left the game!");
         }
     }
 
-    private void addToBlockList(Vector3i location) {
-        detectedHitBox.add(location);
-    }
+    @Override
+    public void postProcess() {
+        // Check if subcraft or new parent craft from existing craft
+        Craft originCraft = getParentCraft();
 
-    private void addToDetectionStack(Vector3i location) {
-        blockStack.push(location);
-    }
+        // Return early if failed
+        if (failed()) return;
 
-    private void addToBlockCount(List<BlockType> id) {
-        Integer count = blockTypeCount.get(id);
+        // Act based on subcraft or new parent from existing craft
+        processIsSubcraft(originCraft);
 
-        if (count == null) {
-            count = 0;
+        // Return early if failed
+        if (failed()) return;
+
+        // Set craft hitbox
+        craft.setInitialSize(hitBox.size());
+        craft.setHitBox(hitBox);
+
+        // Sort out waterline/phased block
+        processPhasedBlocks();
+
+        // Check if CraftType can have crew
+        if (craft.getType().canHaveCrew()) {
+            craft.addCrewMember(player.getUniqueId());
+            craft.setCommander(player.getUniqueId());
         }
 
-        blockTypeCount.put(id, count + 1);
+        // Check player is still online
+        isPlayerStillOnline();
+
+        // Return early if failed
+        if (failed()) return;
+
+        // Fire craft detection event - Event should notify player and log itself in the console
+        CraftDetectEvent event = new CraftDetectEvent(craft, player);
+        Sponge.getEventManager().post(event);
+
+        // Act on whether the event was cancelled or not
+        if (event.isCancelled()) {
+            craft.release(player);
+
+        } else if (!craft.isSubCraft()) {
+            // Add craft to CraftManager if it is not a Subcraft
+            CraftManager.getInstance().addCraft(craft);
+        }
+
+        // Set craft to not processing
+        craft.setProcessing(false);
     }
 
-    private boolean isAllowedBlock(BlockType test) {
+    private Craft getParentCraft() {
+        HashSet<Craft> intersectingCrafts = CraftManager.getInstance().getCraftsIntersectingWith(hitBox, world);
 
-        return craft.getType().getAllowedBlocks().contains(test);
+        if (!intersectingCrafts.isEmpty()) {
+            if (intersectingCrafts.size() > 1) {
+                fail("Intersecting with too many crafts!");
+                return null;
+            }
+
+            for (Craft testCraft : intersectingCrafts) {
+                if (testCraft.getType() == craft.getType() || testCraft.getHitBox().size() <= hitBox.size()) {
+                    if (testCraft.isCrewMember(craft.commandeeredBy())) {
+                        fail("You are already in the crew of this craft.");
+                    } else {
+                        fail("Craft is already being controlled by another player.");
+                    }
+                    break;
+                }
+
+                if (craft.getType().limitToParentHitBox()) {
+                    craft.setParentCraft(testCraft);
+                }
+
+                return testCraft;
+            }
+        }
+
+        return null;
     }
 
-    private boolean isForbiddenBlock(BlockType test) {
+    private void processIsSubcraft(Craft originCraft) {
+        if (originCraft == null && craft.getType().mustBeSubcraft()) {
+            fail("Craft must be part of another craft!");
+            return;
+        }
 
-        return craft.getType().getForbiddenBlocks().contains(test);
+        if (originCraft != null) {
+            if (!originCraft.isCrewMember(player.getUniqueId())) {
+                fail("You are not in the crew of the parent craft.");
+                return;
+            }
+
+            if (originCraft.isProcessing()) {
+                fail("Parent craft is busy!");
+            }
+
+            if (!craft.isSubCraft()) {
+                originCraft.setHitBox(new HashHitBox(CollectionUtils.filter(originCraft.getHitBox(), hitBox)));
+                originCraft.setInitialSize(originCraft.getInitialSize() - hitBox.size());
+            }
+        }
     }
 
-    private boolean isForbiddenSignString(String testString) {
-
-        return craft.getType().getForbiddenSignStrings().contains(testString);
-    }
-
-    public boolean failed() {
-        return failed;
-    }
-
-    public String getFailMessage() {
-        return failMessage;
-    }
-
-    public HashHitBox getHitBox() {
-        return hitBox;
+    private void processPhasedBlocks() {
+        final int waterLine = craft.getWaterLine();
+        if (!craft.getType().blockedByWater() && craft.getHitBox().getMinY() <= waterLine) {
+            for (Vector3i location : craft.getHitBox().boundingHitBox()) {
+                if (location.getY() <= waterLine) {
+                    craft.getPhasedBlocks().add(BlockTypes.WATER.getDefaultState().snapshotFor(new Location<>(craft.getWorld(), location)));
+                }
+            }
+        }
     }
 }

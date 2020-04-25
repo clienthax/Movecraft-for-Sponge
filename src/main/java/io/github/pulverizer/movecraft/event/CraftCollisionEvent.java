@@ -7,7 +7,6 @@ import org.spongepowered.api.event.cause.Cause;
 
 public class CraftCollisionEvent extends CraftEvent implements Cancellable {
     private final HashHitBox hitBox;
-    private boolean isCancelled = false;
 
     public CraftCollisionEvent(Craft craft, HashHitBox hitBox) {
         super(craft);
@@ -16,16 +15,6 @@ public class CraftCollisionEvent extends CraftEvent implements Cancellable {
 
     public HashHitBox getHitBox() {
         return hitBox;
-    }
-
-    @Override
-    public boolean isCancelled() {
-        return isCancelled;
-    }
-
-    @Override
-    public void setCancelled(boolean cancel) {
-        isCancelled = cancel;
     }
 
     @Override

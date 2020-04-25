@@ -18,6 +18,13 @@ import org.spongepowered.api.world.World;
 import java.util.HashMap;
 import java.util.HashSet;
 
+/**
+ * Manages block and tileEntity movement
+ *
+ * Last ported from WorldHandler on 8 Apr 2020
+ * @author BernardisGood
+ * @version 1.0 - 20 Apr 2020
+ */
 public class ChunkDataManager {
     private WorldServer worldServer;
     private final HashMap<Vector2i, Chunk> chunkMap = new HashMap<>();

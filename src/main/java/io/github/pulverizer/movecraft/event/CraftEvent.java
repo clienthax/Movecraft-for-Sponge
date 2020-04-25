@@ -1,6 +1,7 @@
 package io.github.pulverizer.movecraft.event;
 
 import io.github.pulverizer.movecraft.craft.Craft;
+import org.spongepowered.api.event.Cancellable;
 import org.spongepowered.api.event.impl.AbstractEvent;
 
 /**
@@ -8,9 +9,10 @@ import org.spongepowered.api.event.impl.AbstractEvent;
  * @see Craft
  */
 
-public abstract class CraftEvent extends AbstractEvent {
+public abstract class CraftEvent extends AbstractEvent implements Cancellable {
     protected final Craft craft;
     protected final boolean isAsync;
+    private boolean isCancelled = false;
 
     public CraftEvent(Craft craft) {
         this.isAsync = false;
@@ -29,4 +31,14 @@ public abstract class CraftEvent extends AbstractEvent {
     public final boolean isAsync(){
         return isAsync;
     }
+
+    public boolean isCancelled() {
+        return isCancelled;
+    }
+
+    public void setCancelled(boolean cancelled) {
+        isCancelled = cancelled;
+    }
+
+
 }

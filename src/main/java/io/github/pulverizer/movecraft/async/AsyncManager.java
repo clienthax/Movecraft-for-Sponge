@@ -162,7 +162,7 @@ public class AsyncManager implements Runnable {
         HashSet<Craft> crafts = Sets.newHashSet(CraftManager.getInstance());
         crafts.forEach(craft -> {
 
-            if (Sponge.getServer().getRunningTimeTicks() - craft.getLastCheckTick() <= Settings.SinkCheckTicks || craft.isProcessing()) {
+            if (Sponge.getServer().getRunningTimeTicks() - craft.getLastCheckTick() <= Settings.SinkCheckTicks) {
                 return;
             }
 
@@ -288,6 +288,7 @@ public class AsyncManager implements Runnable {
 
     public void run() {
 
+        //processSubcraftQueuedTasks();
         processCruise();
         detectSinking();
         processSinking();
