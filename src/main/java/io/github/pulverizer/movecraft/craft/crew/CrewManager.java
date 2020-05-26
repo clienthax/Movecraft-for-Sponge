@@ -14,7 +14,9 @@ public class CrewManager {
     private static CrewManager ourInstance;
     private final HashSet<CrewInvite> pendingInvites = new HashSet<>();
 
-    public static void initialize(){
+    private CrewManager() {}
+
+    private static void initialize(){
         ourInstance = new CrewManager();
 
         Task.builder()
@@ -25,6 +27,8 @@ public class CrewManager {
     }
 
     public static CrewManager getInstance() {
+        if (ourInstance == null) initialize();
+
         return ourInstance;
     }
 

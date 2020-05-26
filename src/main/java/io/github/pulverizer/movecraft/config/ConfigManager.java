@@ -14,6 +14,8 @@ import java.util.HashSet;
 
 public class ConfigManager {
 
+    private ConfigManager() {}
+
     public static ConfigurationLoader<ConfigurationNode> createConfigLoader(Path file) {
         return YAMLConfigurationLoader.builder().setPath(file).setDefaultOptions(ConfigurationOptions.defaults()).build();
     }

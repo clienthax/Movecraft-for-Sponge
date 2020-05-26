@@ -30,9 +30,11 @@ public class AsyncManager implements Runnable {
     private long lastContactCheck = 0;
 
     public static AsyncManager getInstance() {
+        if (ourInstance == null) initialize();
+
         return ourInstance;
     }
-    public static void initialize(){
+    private static void initialize() {
         ourInstance = new AsyncManager();
     }
 

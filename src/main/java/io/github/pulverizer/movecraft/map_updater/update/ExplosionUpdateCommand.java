@@ -1,4 +1,4 @@
-package io.github.pulverizer.movecraft.mapUpdater.update;
+package io.github.pulverizer.movecraft.map_updater.update;
 
 import com.flowpowered.math.vector.Vector3i;
 import org.spongepowered.api.Sponge;

@@ -16,7 +16,7 @@ import io.github.pulverizer.movecraft.async.AsyncManager;
 //import io.github.pulverizer.movecraft.commands.*;
 import io.github.pulverizer.movecraft.config.Settings;
 import io.github.pulverizer.movecraft.craft.CraftManager;
-import io.github.pulverizer.movecraft.mapUpdater.MapUpdateManager;
+import io.github.pulverizer.movecraft.map_updater.MapUpdateManager;
 import org.spongepowered.api.scheduler.Task;
 import org.spongepowered.api.service.sql.SqlService;
 
@@ -127,9 +127,6 @@ public class Movecraft {
      * <pre>
      * Listener for GameStartedServerEvent. Loads the Plugin's various content managers and databases.
      *
-     * CraftManager
-     * AsyncManager
-     * MapUpdateManager
      * Commander Sign Database
      * Crew Sign Database
      * </pre>
@@ -138,10 +135,6 @@ public class Movecraft {
     @Listener
     public void initializeManagers(GameStartedServerEvent event) {
 
-        CraftManager.initialize();
-        CrewManager.initialize();
-        AsyncManager.initialize();
-        MapUpdateManager.initialize();
         CommanderSign.initDatabase();
         if (Settings.EnableCrewSigns) {
             CrewSign.initDatabase();

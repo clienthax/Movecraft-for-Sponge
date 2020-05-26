@@ -62,7 +62,7 @@ public final class CraftSign {
                 return;
             }
 
-            final Craft craft = new Craft(type, player.getUniqueId(), loc);
+            final Craft craft = new Craft(type, player, loc);
 
             craft.setCruising(craft.getVerticalCruiseDirection(), cruiseDirection);
 
@@ -77,12 +77,12 @@ public final class CraftSign {
             final Craft oldCraft = CraftManager.getInstance().getCraftByPlayer(player.getUniqueId());
 
             if (oldCraft == null) {
-                new Craft(type, player.getUniqueId(), loc);
+                new Craft(type, player, loc);
 
-            } else if (oldCraft.isNotProcessing()) {
+            } else if (!oldCraft.isProcessing()) {
                 // TODO - do this via CraftManager after detection
                 //oldCraft.removeCrewMember(player.getUniqueId());
-                new Craft(type, player.getUniqueId(), loc);
+                new Craft(type, player, loc);
             }
         }
         event.setCancelled(true);

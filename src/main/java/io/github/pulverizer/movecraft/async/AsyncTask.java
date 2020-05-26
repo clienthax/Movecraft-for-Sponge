@@ -7,19 +7,19 @@ import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.scheduler.Task;
 import org.spongepowered.api.text.Text;
 
+import java.util.Optional;
+
 public abstract class AsyncTask {
     protected final Craft craft;
     protected final String type;
-    protected final Player player;
 
     // Task Failed?
     private boolean failed;
     private String failMessage;
 
-    public AsyncTask(Craft craft, String taskType, Player player) {
+    public AsyncTask(Craft craft, String taskType) {
         this.craft = craft;
         type = taskType;
-        this.player = player;
     }
 
     public void run() {
@@ -62,11 +62,13 @@ public abstract class AsyncTask {
 
     protected abstract void postProcess();
 
-    void fail(String message) {
+    protected abstract Optional<Player> getNotificationPlayer();
+
+    protected void fail(String message) {
         failed = true;
         failMessage = message;
 
-        player.sendMessage(Text.of(type + " Failed: " + message));
+        getNotificationPlayer().ifPresent(player -> player.sendMessage(Text.of(type + " Failed: " + message)));
 
         Movecraft.getInstance().getLogger().info("Craft " + type + " Failed: " + getFailMessage());
     }
@@ -79,7 +81,7 @@ public abstract class AsyncTask {
         return failMessage;
     }
 
-    protected Craft getCraft() {
+    public Craft getCraft() {
         return craft;
     }
 }

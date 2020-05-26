@@ -89,9 +89,17 @@ public class PlayerListener {
                         .canCauseFire(fireChargeCount > 0)
                         .build();
 
-                player.getInventory().query(QueryOperationTypes.ITEM_TYPE.of(ItemTypes.TNT), QueryOperationTypes.ITEM_TYPE.of(ItemTypes.TNT_MINECART)).transform(InventoryTransformations.REVERSE).poll((int) tntCount / 2);
-                player.getInventory().query(QueryOperationTypes.ITEM_TYPE.of(ItemTypes.FIRE_CHARGE)).transform(InventoryTransformations.REVERSE).poll((int) fireChargeCount / 2);
-                player.getInventory().query(QueryOperationTypes.ITEM_TYPE.of(ItemTypes.FIREWORK_CHARGE), QueryOperationTypes.ITEM_TYPE.of(ItemTypes.FIREWORKS), QueryOperationTypes.ITEM_TYPE.of(ItemTypes.GUNPOWDER)).transform(InventoryTransformations.REVERSE).poll((int) otherCount / 2);
+                if (tntCount > 0) {
+                    player.getInventory().query(QueryOperationTypes.ITEM_TYPE.of(ItemTypes.TNT), QueryOperationTypes.ITEM_TYPE.of(ItemTypes.TNT_MINECART)).transform(InventoryTransformations.REVERSE).poll((int) tntCount / 2);
+                }
+
+                if (fireChargeCount > 0 ) {
+                    player.getInventory().query(QueryOperationTypes.ITEM_TYPE.of(ItemTypes.FIRE_CHARGE)).transform(InventoryTransformations.REVERSE).poll((int) fireChargeCount / 2);
+                }
+
+                if (otherCount > 0) {
+                    player.getInventory().query(QueryOperationTypes.ITEM_TYPE.of(ItemTypes.FIREWORK_CHARGE), QueryOperationTypes.ITEM_TYPE.of(ItemTypes.FIREWORKS), QueryOperationTypes.ITEM_TYPE.of(ItemTypes.GUNPOWDER)).transform(InventoryTransformations.REVERSE).poll((int) otherCount / 2);
+                }
 
                 player.getWorld().triggerExplosion(explosion);
             }

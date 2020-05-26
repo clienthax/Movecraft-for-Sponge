@@ -109,7 +109,7 @@ public final class SubcraftRotateSign {
         }
 
         final Location<World> loc = event.getTargetBlock().getLocation().get();
-        final Craft subCraft = new Craft(type, player.getUniqueId(), loc);
+        final Craft subCraft = new Craft(type, player, loc);
         Vector3i startPoint = new Vector3i(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
 
         Task.builder()

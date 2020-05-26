@@ -31,7 +31,7 @@ public class CraftManager implements Iterable<Craft> {
     @Deprecated
     private final ConcurrentMap<Craft, Task> releaseEvents = new ConcurrentHashMap<>();
 
-    public static void initialize(){
+    private static void initialize(){
         ourInstance = new CraftManager();
     }
 
@@ -70,6 +70,8 @@ public class CraftManager implements Iterable<Craft> {
     }
 
     public static CraftManager getInstance() {
+        if (ourInstance == null) initialize();
+
         return ourInstance;
     }
 

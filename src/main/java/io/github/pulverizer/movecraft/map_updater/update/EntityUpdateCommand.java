@@ -1,7 +1,6 @@
-package io.github.pulverizer.movecraft.mapUpdater.update;
+package io.github.pulverizer.movecraft.map_updater.update;
 
 import com.flowpowered.math.vector.Vector3d;
-import io.github.pulverizer.movecraft.Movecraft;
 import io.github.pulverizer.movecraft.utils.WorldUtils;
 import org.spongepowered.api.entity.Entity;
 

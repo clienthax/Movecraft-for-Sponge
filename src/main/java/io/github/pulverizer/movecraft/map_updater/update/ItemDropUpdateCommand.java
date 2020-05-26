@@ -1,4 +1,4 @@
-package io.github.pulverizer.movecraft.mapUpdater.update;
+package io.github.pulverizer.movecraft.map_updater.update;
 
 import io.github.pulverizer.movecraft.Movecraft;
 import org.spongepowered.api.data.key.Keys;

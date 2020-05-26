@@ -43,10 +43,13 @@ public class DetectionTask extends AsyncTask {
     private String commanderSignUsername;
     private int commanderSignId;
 
+    protected Player player;
+
     public DetectionTask(Craft craft, Location<World> startLocation, Player player) {
-        super(craft, "Detection", player);
+        super(craft, "Detection");
         world = startLocation.getExtent();
         this.startLocation = startLocation.getBlockPosition();
+        this.player = player;
     }
 
     @Override
@@ -395,5 +398,10 @@ public class DetectionTask extends AsyncTask {
                 }
             }
         }
+    }
+
+    @Override
+    protected Optional<Player> getNotificationPlayer() {
+        return Optional.ofNullable(player);
     }
 }

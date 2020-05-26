@@ -6,13 +6,13 @@ import io.github.pulverizer.movecraft.Movecraft;
 import io.github.pulverizer.movecraft.enums.Rotation;
 import io.github.pulverizer.movecraft.craft.Craft;
 import io.github.pulverizer.movecraft.event.CraftRotateEvent;
-import io.github.pulverizer.movecraft.mapUpdater.MapUpdateManager;
+import io.github.pulverizer.movecraft.map_updater.MapUpdateManager;
 import io.github.pulverizer.movecraft.utils.*;
 import io.github.pulverizer.movecraft.config.Settings;
 import io.github.pulverizer.movecraft.craft.CraftManager;
-import io.github.pulverizer.movecraft.mapUpdater.update.CraftRotateCommand;
-import io.github.pulverizer.movecraft.mapUpdater.update.EntityUpdateCommand;
-import io.github.pulverizer.movecraft.mapUpdater.update.UpdateCommand;
+import io.github.pulverizer.movecraft.map_updater.update.CraftRotateCommand;
+import io.github.pulverizer.movecraft.map_updater.update.EntityUpdateCommand;
+import io.github.pulverizer.movecraft.map_updater.update.UpdateCommand;
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.block.BlockType;
 import org.spongepowered.api.block.BlockTypes;
@@ -23,11 +23,11 @@ import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.scheduler.Task;
 import org.spongepowered.api.text.Text;
 import org.spongepowered.api.util.AABB;
-import org.spongepowered.api.util.Direction;
 import org.spongepowered.api.world.Location;
 import org.spongepowered.api.world.World;
 
 import java.util.HashSet;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -36,8 +36,6 @@ public class RotationTask extends AsyncTask {
     private final Rotation rotation;
     private final World world;
     private final boolean isSubCraft;
-    private boolean failed = false;
-    private String failMessage;
     private final Set<UpdateCommand> updates = new HashSet<>();
 
     private final HashHitBox oldHitBox;
@@ -66,8 +64,7 @@ public class RotationTask extends AsyncTask {
             boolean fuelBurned = getCraft().useFuel(fuelBurnRate);
 
             if (!fuelBurned) {
-                failed = true;
-                failMessage = "Translation Failed - Craft out of fuel";
+                fail("Translation Failed - Craft out of fuel");
             }
         }
 
@@ -89,8 +86,7 @@ public class RotationTask extends AsyncTask {
             //prevent chests collision
             if ((oldMaterial.equals(BlockTypes.CHEST) || oldMaterial.equals(BlockTypes.TRAPPED_CHEST)) &&
                     !checkChests(oldMaterial, newLocation)) {
-                failed = true;
-                failMessage = String.format("Rotation Failed - Craft is obstructed" + " @ %d,%d,%d", newLocation.getX(), newLocation.getY(), newLocation.getZ());
+                fail(String.format("Rotation Failed - Craft is obstructed" + " @ %d,%d,%d", newLocation.getX(), newLocation.getY(), newLocation.getZ()));
                 break;
             }
 
@@ -101,13 +97,12 @@ public class RotationTask extends AsyncTask {
             }
 
             if (!oldHitBox.contains(newLocation)) {
-                failed = true;
-                failMessage = String.format("Rotation Failed - Craft is obstructed" + " @ %d,%d,%d", newLocation.getX(), newLocation.getY(), newLocation.getZ());
+                fail(String.format("Rotation Failed - Craft is obstructed" + " @ %d,%d,%d", newLocation.getX(), newLocation.getY(), newLocation.getZ()));
                 break;
             }
         }
 
-        if (failed) {
+        if (failed()) {
             if (this.isSubCraft && parentCraft != getCraft()) {
                 parentCraft.setProcessing(false);
             }
@@ -118,8 +113,7 @@ public class RotationTask extends AsyncTask {
         CraftRotateEvent event = new CraftRotateEvent(craft, oldHitBox, newHitBox);
         Sponge.getEventManager().post(event);
         if(event.isCancelled()){
-            failed = true;
-            failMessage = event.getFailMessage();
+            fail(event.getFailMessage());
             return;
         }
 
@@ -213,28 +207,13 @@ public class RotationTask extends AsyncTask {
     
     @Override
     public void postProcess() {
+        if (failed()) {
+            craft.setProcessing(false);
 
-        Player pilot = Sponge.getServer().getPlayer(craft.getPilot()).orElse(null);
+        } else {
 
-        // Check that the craft hasn't been sneakily unpiloted
-        if (pilot != null || getIsSubCraft()) {
-
-            if (failed()) {
-
-                // The craft translation failed, don't try to notify them if there is no pilot
-                if (pilot != null) {
-                    pilot.sendMessage(Text.of(getFailMessage()));
-                    craft.setProcessing(false);
-                } else {
-                    Movecraft.getInstance().getLogger().info("NULL Player Rotation Failed: " + getFailMessage());
-                }
-
-            } else {
-
-                MapUpdateManager.getInstance().scheduleUpdates(getUpdates());
-
-                craft.setHitBox(getNewHitBox());
-            }
+            MapUpdateManager.getInstance().scheduleUpdates(getUpdates());
+            craft.setHitBox(getNewHitBox());
         }
     }
 
@@ -245,6 +224,18 @@ public class RotationTask extends AsyncTask {
         }
         return output;
     }
+
+    @Override
+    protected Optional<Player> getNotificationPlayer() {
+        Optional<Player> player = Sponge.getServer().getPlayer(craft.getPilot());
+
+        if (!player.isPresent()) {
+            player = Sponge.getServer().getPlayer(craft.getCommander());
+        }
+
+        return player;
+    }
+
     public Vector3i getOriginPoint() {
         return originPoint;
     }

@@ -1,44 +1,53 @@
-package io.github.pulverizer.movecraft.mapUpdater.update;
+package io.github.pulverizer.movecraft.map_updater.update;
 
 import com.flowpowered.math.vector.Vector3i;
-import io.github.pulverizer.movecraft.*;
+import io.github.pulverizer.movecraft.Movecraft;
+import io.github.pulverizer.movecraft.world.ChunkDataManager;
 import io.github.pulverizer.movecraft.config.Settings;
 import io.github.pulverizer.movecraft.craft.Craft;
-import io.github.pulverizer.movecraft.craft.CraftManager;
-import io.github.pulverizer.movecraft.enums.Rotation;
 import io.github.pulverizer.movecraft.event.SignTranslateEvent;
-import io.github.pulverizer.movecraft.utils.*;
-import io.github.pulverizer.movecraft.world.ChunkDataManager;
+import io.github.pulverizer.movecraft.utils.CollectionUtils;
+import io.github.pulverizer.movecraft.utils.HashHitBox;
+import io.github.pulverizer.movecraft.utils.HitBox;
+import io.github.pulverizer.movecraft.utils.MutableHitBox;
+import io.github.pulverizer.movecraft.utils.SolidHitBox;
 import org.slf4j.Logger;
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.block.BlockSnapshot;
 import org.spongepowered.api.block.BlockType;
 import org.spongepowered.api.block.BlockTypes;
-import org.spongepowered.api.util.Direction;
 import org.spongepowered.api.world.BlockChangeFlags;
 import org.spongepowered.api.world.Location;
+import org.spongepowered.api.world.World;
 
-import java.util.*;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.Objects;
+import java.util.Queue;
+import java.util.Set;
 
-
-
-public class CraftRotateCommand extends UpdateCommand {
+public class CraftTranslateCommand extends UpdateCommand {
     private final Craft craft;
-    private final Rotation rotation;
-    private final Vector3i originLocation;
+    private final Vector3i displacement;
+    private final HashHitBox newHitBox;
+    private final World world;
 
-    public CraftRotateCommand(final Craft craft, final Vector3i originLocation, final Rotation rotation) {
+
+    public CraftTranslateCommand(Craft craft, Vector3i displacement, HashHitBox newHitBox){
         this.craft = craft;
-        this.rotation = rotation;
-        this.originLocation = originLocation;
+        this.displacement = displacement;
+        this.newHitBox = newHitBox;
+        this.world = craft.getWorld();
     }
 
     @Override
     public void doUpdate() {
+        //A craftTranslateCommand should only occur if the craft is moving to a valid position
+
         long time = System.currentTimeMillis();
 
         final Logger logger = Movecraft.getInstance().getLogger();
-        if (craft.getHitBox().isEmpty()) {
+        if(craft.getHitBox().isEmpty()){
             logger.warn("Attempted to move craft with empty HashHitBox!");
             craft.release(null);
             return;
@@ -55,23 +64,42 @@ public class CraftRotateCommand extends UpdateCommand {
             passthroughBlocks.add(BlockTypes.DOUBLE_PLANT);
         }
 
-        if (!passthroughBlocks.isEmpty()) {
+        if(passthroughBlocks.isEmpty()){
+
+            //add the craft
+            translateCraft();
+
+            // update the craft hitbox
+            craft.setHitBox(newHitBox);
+            craft.setLastMoveVector(displacement);
+
+            //trigger sign event
+            for (Vector3i location : craft.getHitBox()) {
+                if (world.getBlockType(location) == BlockTypes.WALL_SIGN || world.getBlockType(location) == BlockTypes.STANDING_SIGN) {
+                    Sponge.getEventManager().post(new SignTranslateEvent(location, craft));
+                }
+            }
+
+
+        } else {
+
             MutableHitBox originalLocations = new HashHitBox();
-            final Rotation counterRotation = rotation == Rotation.CLOCKWISE ? Rotation.ANTICLOCKWISE : Rotation.CLOCKWISE;
             for (Vector3i vector3i : craft.getHitBox()) {
-                originalLocations.add(MathUtils.rotateVec(counterRotation, vector3i.sub(originLocation)).add(originLocation));
+                originalLocations.add((vector3i).sub(displacement));
             }
 
             final HitBox to = CollectionUtils.filter(craft.getHitBox(), originalLocations);
-
             for (Vector3i location : to) {
                 BlockSnapshot material = craft.getWorld().createSnapshot(location);
                 if (passthroughBlocks.contains(material.getState().getType())) {
                     craft.getPhasedBlocks().add(material);
                 }
             }
+
+            //place phased blocks
             //The subtraction of the set of coordinates in the HitBox cube and the HitBox itself
             final HitBox invertedHitBox = CollectionUtils.filter(craft.getHitBox().boundingHitBox(), craft.getHitBox());
+
             //A set of locations that are confirmed to be "exterior" locations
             final MutableHitBox exterior = new HashHitBox();
             final MutableHitBox interior = new HashHitBox();
@@ -90,11 +118,13 @@ public class CraftRotateCommand extends UpdateCommand {
                     new SolidHitBox(new Vector3i(maxX, maxY, maxZ), new Vector3i(minX, maxY, maxZ)),
                     new SolidHitBox(new Vector3i(maxX, maxY, maxZ), new Vector3i(maxX, minY, maxZ)),
                     new SolidHitBox(new Vector3i(maxX, maxY, maxZ), new Vector3i(maxX, maxY, minZ))};
+
             //Valid exterior starts as the 6 surface planes of the HitBox with the locations that lie in the HitBox removed
             final Set<Vector3i> validExterior = new HashSet<>();
             for (HitBox hitBox : surfaces) {
                 validExterior.addAll(CollectionUtils.filter(hitBox, craft.getHitBox()).asSet());
             }
+
             //Check to see which locations in the from set are actually outside of the craft
             for (Vector3i location :validExterior ) {
                 if (craft.getHitBox().contains(location) || exterior.contains(location)) {
@@ -117,41 +147,46 @@ public class CraftRotateCommand extends UpdateCommand {
                 }
                 exterior.addAll(visited);
             }
+
             interior.addAll(CollectionUtils.filter(invertedHitBox, exterior));
 
             for (Vector3i location : CollectionUtils.filter(invertedHitBox, exterior)) {
-                BlockSnapshot block = craft.getWorld().createSnapshot(location);
-                if (!passthroughBlocks.contains(block.getState().getType())) {
-                    continue;
+                BlockSnapshot material = craft.getWorld().createSnapshot(location);
+                if (passthroughBlocks.contains(material.getState().getType())) {
+                    craft.getPhasedBlocks().add(material);
                 }
-                craft.getPhasedBlocks().add(block);
             }
 
             //add the craft
-            rotateCraft();
+            translateCraft();
+
+            // update the craft hitbox
+            craft.setHitBox(newHitBox);
+            craft.setLastMoveVector(displacement);
 
             //trigger sign event
             for (Vector3i location : craft.getHitBox()) {
-                BlockType blockType = craft.getWorld().getBlockType(location);
-                if (blockType == BlockTypes.WALL_SIGN || blockType == BlockTypes.STANDING_SIGN) {
-                    Sponge.getEventManager().post(new SignTranslateEvent(location, craft));
+                BlockSnapshot block = craft.getWorld().createSnapshot(location);
+                if (block.getState().getType() == BlockTypes.WALL_SIGN || block.getState().getType() == BlockTypes.STANDING_SIGN) {
+                    Sponge.getEventManager().post(new SignTranslateEvent(block.getPosition(), craft));
                 }
             }
 
             //place confirmed blocks if they have been un-phased
-            craft.getPhasedBlocks().forEach(block -> {
-                if (exterior.contains(block.getPosition())) {
+            for (BlockSnapshot block : craft.getPhasedBlocks()) {
+
+                if (exterior.contains(new Vector3i(block.getPosition().getX(), block.getPosition().getY(), block.getPosition().getZ()))) {
 
                     craft.getWorld().restoreSnapshot(block, true, BlockChangeFlags.NONE);
                     craft.getPhasedBlocks().remove(block);
                 }
 
-                if (originalLocations.contains(block.getPosition()) && !craft.getHitBox().inBounds(block.getPosition())) {
+                if (originalLocations.contains(new Vector3i(block.getPosition().getX(), block.getPosition().getY(), block.getPosition().getZ())) && !craft.getHitBox().inBounds(new Vector3i(block.getPosition().getX(), block.getPosition().getY(), block.getPosition().getZ()))) {
 
                     craft.getWorld().restoreSnapshot(block, true, BlockChangeFlags.NONE);
                     craft.getPhasedBlocks().remove(block);
                 }
-            });
+            }
 
             for (Vector3i location : interior) {
                 final BlockSnapshot material = craft.getWorld().createSnapshot(location);
@@ -161,58 +196,6 @@ public class CraftRotateCommand extends UpdateCommand {
 
                 }
             }
-        }else{
-            //add the craft
-            rotateCraft();
-            //trigger sign event
-            for (Vector3i location : craft.getHitBox()) {
-                BlockType blockType = craft.getWorld().getBlockType(location);
-                if (blockType == BlockTypes.WALL_SIGN || blockType == BlockTypes.STANDING_SIGN) {
-                    Sponge.getEventManager().post(new SignTranslateEvent(location, craft));
-                }
-            }
-        }
-
-        if (craft.isCruising()) {
-            if (rotation == Rotation.ANTICLOCKWISE) {
-
-                switch (getCraft().getHorizontalCruiseDirection()) {
-                    case NORTH:
-                        getCraft().setCruising(craft.getVerticalCruiseDirection(), Direction.WEST);
-                        break;
-
-                    case SOUTH:
-                        getCraft().setCruising(craft.getVerticalCruiseDirection(), Direction.EAST);
-                        break;
-
-                    case EAST:
-                        getCraft().setCruising(craft.getVerticalCruiseDirection(), Direction.NORTH);
-                        break;
-
-                    case WEST:
-                        getCraft().setCruising(craft.getVerticalCruiseDirection(), Direction.SOUTH);
-                        break;
-                }
-            } else if (rotation == Rotation.CLOCKWISE) {
-
-                switch (getCraft().getHorizontalCruiseDirection()) {
-                    case NORTH:
-                        getCraft().setCruising(craft.getVerticalCruiseDirection(), Direction.EAST);
-                        break;
-
-                    case SOUTH:
-                        getCraft().setCruising(craft.getVerticalCruiseDirection(), Direction.WEST);
-                        break;
-
-                    case EAST:
-                        getCraft().setCruising(craft.getVerticalCruiseDirection(), Direction.SOUTH);
-                        break;
-
-                    case WEST:
-                        getCraft().setCruising(craft.getVerticalCruiseDirection(), Direction.NORTH);
-                        break;
-                }
-            }
         }
 
         time = System.currentTimeMillis() - time;
@@ -220,35 +203,25 @@ public class CraftRotateCommand extends UpdateCommand {
         craft.updateLastMoveTick();
         craft.setProcessing(false);
 
-        if (Settings.Debug) logger.info("Total time: " + time + " ms. Moving with cooldown of " + craft.getTickCooldown() + ". Speed of: " + String.format("%.2f", craft.getActualSpeed()));
+        if(Settings.Debug) logger.info("Total time: " + time + " ms. Moving with cooldown of " + craft.getTickCooldown() + ". Speed of: " + String.format("%.2f", craft.getActualSpeed()));
 
         // Should not be counted in processing time
-        craft.updateSubcraftWithParentRotation(originLocation, rotation);
+        craft.updateSubcraftWithParentTranslation(displacement);
     }
 
-    private void rotateCraft() {
-        //TODO - hitbox should not be getting set before this method is called!
-
-        // Get old positions
-        HashSet<Vector3i> oldPositions = new HashSet<>();
-        Rotation counterRotation = rotation == Rotation.CLOCKWISE ? Rotation.ANTICLOCKWISE : Rotation.CLOCKWISE;
-        for (Vector3i newLocation : craft.getHitBox()) {
-            oldPositions.add(MathUtils.rotateVec(counterRotation, newLocation.sub(originLocation)).add(originLocation));
-        }
-
+    private void translateCraft() {
         // Set up the chunk data manager
-        ChunkDataManager chunkDataManager = new ChunkDataManager(craft.getWorld(), oldPositions);
+        ChunkDataManager chunkDataManager = new ChunkDataManager(craft.getWorld(), new HashSet<>(craft.getHitBox().asSet()));
 
-        // Get the tiles
-        chunkDataManager.fetchTilesAndRotate(rotation, originLocation);
-
-        // Get the blocks and rotate them
-        chunkDataManager.fetchBlocksAndRotate(rotation, originLocation);
+        // Get the tile entities
+        chunkDataManager.fetchTilesAndTranslate(displacement);
+        //get the blocks and translate the positions
+        chunkDataManager.fetchBlocksAndTranslate(displacement);
 
         // Create the new blocks
         chunkDataManager.setBlocks();
 
-        // Place the tile entities
+        // Place the tiles in the new positions
         chunkDataManager.placeTiles();
 
         // Destroy the leftovers
@@ -258,23 +231,22 @@ public class CraftRotateCommand extends UpdateCommand {
         chunkDataManager.processFireSpread();
     }
 
-    public Craft getCraft() {
+    public Craft getCraft(){
         return craft;
     }
 
     @Override
     public boolean equals(Object obj) {
-        if (!(obj instanceof CraftRotateCommand)) {
+        if(!(obj instanceof CraftTranslateCommand)){
             return false;
         }
-        CraftRotateCommand other = (CraftRotateCommand) obj;
+        CraftTranslateCommand other = (CraftTranslateCommand) obj;
         return other.craft.equals(this.craft) &&
-                other.rotation == this.rotation &&
-                other.originLocation.equals(this.originLocation);
+                other.displacement.equals(this.displacement);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(craft, rotation, originLocation);
+        return Objects.hash(craft, displacement);
     }
 }

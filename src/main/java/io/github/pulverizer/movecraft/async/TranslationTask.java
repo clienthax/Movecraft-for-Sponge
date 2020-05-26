@@ -7,38 +7,35 @@ import io.github.pulverizer.movecraft.config.Settings;
 import io.github.pulverizer.movecraft.craft.Craft;
 import io.github.pulverizer.movecraft.craft.CraftManager;
 import io.github.pulverizer.movecraft.event.CraftTranslateEvent;
-import io.github.pulverizer.movecraft.mapUpdater.MapUpdateManager;
-import io.github.pulverizer.movecraft.mapUpdater.update.*;
+import io.github.pulverizer.movecraft.map_updater.MapUpdateManager;
+import io.github.pulverizer.movecraft.map_updater.update.*;
 import io.github.pulverizer.movecraft.utils.HashHitBox;
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.block.BlockType;
 import org.spongepowered.api.block.BlockTypes;
-import org.spongepowered.api.effect.sound.SoundTypes;
 import org.spongepowered.api.entity.Entity;
 import org.spongepowered.api.entity.EntityTypes;
 import org.spongepowered.api.entity.Item;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.scheduler.Task;
-import org.spongepowered.api.text.Text;
 import org.spongepowered.api.util.AABB;
-import org.spongepowered.api.world.Location;
 import org.spongepowered.api.world.World;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class TranslationTask extends AsyncTask {
-    
     //TODO: Move to config.
     private static final ImmutableSet<BlockType> FALL_THROUGH_BLOCKS = ImmutableSet.of(BlockTypes.AIR, BlockTypes.FLOWING_WATER, BlockTypes.FLOWING_LAVA, BlockTypes.TALLGRASS, BlockTypes.YELLOW_FLOWER, BlockTypes.RED_FLOWER, BlockTypes.BROWN_MUSHROOM, BlockTypes.RED_MUSHROOM, BlockTypes.TORCH, BlockTypes.FIRE, BlockTypes.REDSTONE_WIRE, BlockTypes.WHEAT, BlockTypes.STANDING_SIGN, BlockTypes.LADDER, BlockTypes.WALL_SIGN, BlockTypes.LEVER, BlockTypes.LIGHT_WEIGHTED_PRESSURE_PLATE, BlockTypes.HEAVY_WEIGHTED_PRESSURE_PLATE, BlockTypes.STONE_PRESSURE_PLATE, BlockTypes.WOODEN_PRESSURE_PLATE, BlockTypes.UNLIT_REDSTONE_TORCH, BlockTypes.REDSTONE_TORCH, BlockTypes.STONE_BUTTON, BlockTypes.SNOW_LAYER, BlockTypes.REEDS, BlockTypes.FENCE, BlockTypes.ACACIA_FENCE, BlockTypes.BIRCH_FENCE, BlockTypes.DARK_OAK_FENCE, BlockTypes.JUNGLE_FENCE, BlockTypes.NETHER_BRICK_FENCE, BlockTypes.SPRUCE_FENCE, BlockTypes.UNPOWERED_REPEATER, BlockTypes.POWERED_REPEATER, BlockTypes.WATERLILY, BlockTypes.CARROTS, BlockTypes.POTATOES, BlockTypes.WOODEN_BUTTON, BlockTypes.CARPET);
 
-    private Vector3i moveVector;
+    private Vector3i displacement;
     private HashHitBox newHitBox;
     private final HashHitBox oldHitBox;
-    private boolean failed;
     private boolean collisionExplosion = false;
-    private String failMessage;
     private final Collection<UpdateCommand> updates = new HashSet<>();
     private World world;
 
@@ -47,211 +44,111 @@ public class TranslationTask extends AsyncTask {
     private final List<BlockType> harvesterBladeBlocks = craft.getType().getHarvesterBladeBlocks();
     private final HashHitBox collisionBox = new HashHitBox();
 
-    public TranslationTask(Craft craft, Vector3i moveVector) {
+    public TranslationTask(Craft craft, Vector3i displacement) {
         super(craft, "Translation");
         world = craft.getWorld();
-        this.moveVector = moveVector;
+        this.displacement = displacement;
         newHitBox = new HashHitBox();
         oldHitBox = new HashHitBox(craft.getHitBox());
     }
 
     @Override
     protected void execute() throws InterruptedException {
-
+        // Check can move
         if (oldHitBox.isEmpty() || craft.isDisabled())
             return;
 
+        // Check Craft height
         if (!checkCraftHeight()) {
             return;
         }
 
-        // check for fuel and burn some if needed.
+        // Use some fuel if needed
         double fuelBurnRate = getCraft().getType().getFuelBurnRate();
-        if (fuelBurnRate != 0.0 && !getCraft().isSinking()) {
-
-            boolean fuelBurned = getCraft().useFuel(fuelBurnRate);
-
-            if (!fuelBurned) {
+        if (fuelBurnRate > 0 && !getCraft().isSinking()) {
+            if (!getCraft().useFuel(fuelBurnRate)) {
                 fail("Translation Failed - Craft out of fuel");
                 return;
             }
         }
 
-        if(craftObstructed())
+        // Check if Craft is obstructed
+        if (craftObstructed())
             return;
 
-        //call event
+        // Call the Craft Translate Event
         CraftTranslateEvent event = new CraftTranslateEvent(craft, oldHitBox, newHitBox);
         Sponge.getEventManager().post(event);
-        if(event.isCancelled()){
+        if (event.isCancelled()) {
             this.fail(event.getFailMessage());
             return;
         }
 
-        //-------------------------------------//
-
-        if(craft.isSinking()){
-            for(Vector3i location : collisionBox){
-                if (craft.getType().getExplodeOnCrash() > 0.0F) {
-
-                    if (!world.getBlockType(location).equals(BlockTypes.AIR)  && ThreadLocalRandom.current().nextDouble(1) < .05) {
-                        updates.add(new ExplosionUpdateCommand( world, location, craft.getType().getExplodeOnCrash()));
-                        collisionExplosion=true;
-                    }
-                }
-
-                HashSet<Vector3i> toRemove = new HashSet<>();
-                Vector3i next = location;
-
-                do {
-                    toRemove.add(next);
-                    next = next.add(new Vector3i(0,1,0));
-                }while (newHitBox.contains(next));
-
-                newHitBox.removeAll(toRemove);
-            }
-
-        }else{
-            for(Vector3i location : collisionBox){
-                //TODO - Make arming time/distance a craft config setting
-                if (!(craft.getType().getCollisionExplosion() != 0.0F) || System.currentTimeMillis() - craft.commandeeredAt() <= 1000) {
-                    continue;
-                }
-                float explosionKey;
-                float explosionForce = craft.getType().getCollisionExplosion();
-                if (craft.getType().getFocusedExplosion()) {
-                    explosionForce *= oldHitBox.size();
-                }
-                //TODO: Account for underwater explosions
-                /*if (location.getY() < waterLine) { // underwater explosions require more force to do anything
-                    explosionForce += 25; //find the correct amount
-                }*/
-                explosionKey = explosionForce;
-                if (!world.getBlockType(location).equals(BlockTypes.AIR)) {
-                    updates.add(new ExplosionUpdateCommand(world, location, explosionKey));
-                    collisionExplosion = true;
-                }
-                if (craft.getType().getFocusedExplosion()) { // don't handle any further collisions if it is set to focusedexplosion
-                    break;
-                }
-            }
+        // Process Task based on if the Craft is sinking or not
+        if (craft.isSinking()) {
+            processSinking();
+        } else {
+            processNotSinking();
         }
 
-        if(!collisionBox.isEmpty() && craft.getType().getCruiseOnPilot()){
+        // Clean up torpedoes after explosion
+        // TODO - Move to correct location
+        //  What is the correct location?
+        if (!collisionBox.isEmpty() && craft.getType().getCruiseOnPilot()) {
             craft.release(null);
-            for(Vector3i location : oldHitBox){
+            for (Vector3i location : oldHitBox) {
                 updates.add(new BlockCreateCommand(craft.getWorld(), location, BlockTypes.AIR));
             }
             newHitBox = new HashHitBox();
         }
 
-        updates.add(new CraftTranslateCommand(craft, new Vector3i(moveVector.getX(), moveVector.getY(), moveVector.getZ()), getNewHitBox()));
+        // Add Craft Translation Map Update to list of updates
+        updates.add(new CraftTranslateCommand(craft, new Vector3i(displacement.getX(), displacement.getY(), displacement.getZ()), newHitBox));
 
-        //prevents torpedo and rocket pilots
-        if (craft.getType().getMoveEntities() && !craft.isSinking()) {
+        // Move Entities
+        moveEntities();
 
-            if (Settings.Debug)
-                Movecraft.getInstance().getLogger().info("Craft moves Entities.");
-
-            AtomicBoolean processedEntities = new AtomicBoolean(false);
-
-            Task.builder()
-                    .execute(() -> {
-                        for(Entity entity : craft.getWorld().getIntersectingEntities(new AABB(oldHitBox.getMinX() - 0.5, oldHitBox.getMinY() - 0.5, oldHitBox.getMinZ() - 0.5, oldHitBox.getMaxX() + 1.5, oldHitBox.getMaxY() + 1.5, oldHitBox.getMaxZ()+1.5))){
-
-                            if (entity.getType() == EntityTypes.PLAYER || entity.getType() == EntityTypes.PRIMED_TNT || entity.getType() == EntityTypes.ITEM || !craft.getType().onlyMovePlayers()) {
-                                EntityUpdateCommand eUp = new EntityUpdateCommand(entity, entity.getLocation().getPosition().add(moveVector.getX(), moveVector.getY(), moveVector.getZ()), 0);
-                                updates.add(eUp);
-
-                                if (Settings.Debug) {
-                                    Movecraft.getInstance().getLogger().info("Submitting Entity Update: " + entity.getType().getName());
-                                    if (entity instanceof Item)
-                                        Movecraft.getInstance().getLogger().info("Item Type: " + ((Item) entity).getItemType().getName());
-
-                                }
-                            }
-                        }
-
-                        processedEntities.set(true);
-                    })
-                    .submit(Movecraft.getInstance());
-
-
-
-            synchronized (this) {
-                while (!processedEntities.get()) this.wait(1);
-            }
-
-        } else {
-            //add releaseTask without playermove to manager
-            if (!craft.getType().getCruiseOnPilot() && !craft.isSinking())  // not necessary to release cruiseonpilot crafts, because they will already be released
-                CraftManager.getInstance().addReleaseTask(craft);
-        }
+        // Harvest Blocks
         //TODO: Re-add!
         //captureYield(harvestedBlocks);
-    }
-    
-    @Override
-    public void postProcess() {
-
-        Player pilot = Sponge.getServer().getPlayer(craft.getPilot()).orElse(null);
-        boolean sentMapUpdate = false;
-
-        // Check that the craft hasn't been sneakily unpiloted
-        // if ( p != null ) { cruiseOnPilot crafts don't have player
-        // pilots
-
-        if (failed()) {
-            // The craft translation failed
-            if (pilot != null && !craft.isSinking()) {
-                pilot.sendMessage(Text.of(getFailMessage()));
-            }
-
-            if (isCollisionExplosion()) {
-                //craft.setHitBox(getNewHitBox());
-                MapUpdateManager.getInstance().scheduleUpdates(getUpdates());
-                CraftManager.getInstance().addReleaseTask(craft);
-
-            }
-
-            craft.setProcessing(false);
-
-        } else {
-            // The craft is clear to move, perform the block updates
-            MapUpdateManager.getInstance().scheduleUpdates(getUpdates());
-        }
     }
 
     private boolean checkCraftHeight() {
 
+        // Get current min and max Y
         final int minY = oldHitBox.getMinY();
         final int maxY = oldHitBox.getMaxY();
 
-        //Check if the craft is too high
-        if (moveVector.getY() > -1 && craft.getMaxHeightLimit() < craft.getHitBox().getMaxY()){
-            moveVector = new Vector3i(moveVector.getX(), -1, moveVector.getZ());
-        }else if(craft.getType().getMaxHeightAboveGround() > 0){
+        // Check if the craft is too high
+        if (displacement.getY() > -1) {
+            if (craft.getMaxHeightLimit() < maxY) {
+                displacement = new Vector3i(displacement.getX(), -1, displacement.getZ());
 
-            final Vector3i middle = oldHitBox.getMidPoint().add(moveVector);
-            int testY = minY;
+            } else if (craft.getType().getMaxHeightAboveGround() > 0) {
 
-            while (testY > 0){
-                testY -= 1;
+                final Vector3i middle = oldHitBox.getMidPoint().add(displacement);
+                int testY = minY;
 
-                if (craft.getWorld().getBlockType(middle.getX(), testY, middle.getZ()) != BlockTypes.AIR)
-                    break;
-            }
+                while (testY > 0) {
+                    testY -= 1;
 
-            if (moveVector.getY() > -1 && minY - testY > craft.getType().getMaxHeightAboveGround()) {
-                moveVector = new Vector3i(moveVector.getX(), -1, moveVector.getZ());
+                    if (craft.getWorld().getBlockType(middle.getX(), testY, middle.getZ()) != BlockTypes.AIR)
+                        break;
+                }
+
+                if (minY - testY > craft.getType().getMaxHeightAboveGround()) {
+                    displacement = new Vector3i(displacement.getX(), -1, displacement.getZ());
+                }
             }
         }
 
-        //Fail the movement if the craft is too high
-        if (moveVector.getY() > 0 && maxY + moveVector.getY() > craft.getMaxHeightLimit()) {
+        // Fail the movement if the craft is going to be too high
+        if (displacement.getY() > 0 && maxY + displacement.getY() > craft.getMaxHeightLimit()) {
             fail("Translation Failed - Craft hit height limit.");
             return false;
-        } else if (minY + moveVector.getY() < craft.getType().getMinHeightLimit() && moveVector.getY() < 0 && !craft.isSinking()) {
+
+            // Or too low
+        } else if (displacement.getY() < 0 && minY + displacement.getY() < craft.getType().getMinHeightLimit() && !craft.isSinking()) {
             fail("Translation Failed - Craft hit minimum height limit.");
             return false;
         }
@@ -259,14 +156,16 @@ public class TranslationTask extends AsyncTask {
         return true;
     }
 
+    // TODO - Review code
     private boolean craftObstructed() {
-        for(Vector3i oldLocation : oldHitBox){
-            final Vector3i newLocation = oldLocation.add(moveVector.getX(),moveVector.getY(),moveVector.getZ());
+        for (Vector3i oldLocation : oldHitBox) {
+            final Vector3i newLocation = oldLocation.add(displacement.getX(), displacement.getY(), displacement.getZ());
             //If the new location already exists in the old hitbox than this is unnecessary because a craft can't hit itself.
-            if(oldHitBox.contains(newLocation)){
+            if (oldHitBox.contains(newLocation)) {
                 newHitBox.add(newLocation);
                 continue;
             }
+
             final BlockType testMaterial = craft.getWorld().getBlockType(newLocation);
 
             if ((testMaterial.equals(BlockTypes.CHEST) || testMaterial.equals(BlockTypes.TRAPPED_CHEST)) && checkChests(testMaterial, newLocation)) {
@@ -279,7 +178,7 @@ public class TranslationTask extends AsyncTask {
             if (craft.isSinking()) {
                 blockObstructed = !FALL_THROUGH_BLOCKS.contains(testMaterial);
             } else {
-                blockObstructed = !craft.getType().getPassthroughBlocks().contains(testMaterial) && !testMaterial.equals(BlockTypes.AIR);
+                blockObstructed = !testMaterial.equals(BlockTypes.AIR) && !craft.getType().getPassthroughBlocks().contains(testMaterial);
             }
 
             boolean ignoreBlock = false;
@@ -312,31 +211,8 @@ public class TranslationTask extends AsyncTask {
         return false;
     }
 
-    void fail(String message) {
-        failed=true;
-        failMessage=message;
-        Player craftPilot = Sponge.getServer().getPlayer(craft.getPilot()).orElse(null);
-        if (craftPilot != null) {
-            craftPilot.sendMessage(Text.of(failMessage));
-            Location<World> location = craftPilot.getLocation();
-            if (!craft.isDisabled()) {
-                craft.getWorld().playSound(SoundTypes.BLOCK_ANVIL_LAND, location.getPosition(), 1.0f, 0.25f);
-                //craft.setCurTickCooldown(craft.getType().getCruiseTickCooldown());
-            } else {
-                craft.getWorld().playSound(SoundTypes.ENTITY_IRONGOLEM_DEATH, location.getPosition(), 5.0f, 5.0f);
-                //craft.setCurTickCooldown(craft.getType().getCruiseTickCooldown());
-            }
-        }
-    }
-
-    private static final Vector3i[] SHIFTS = {
-            new Vector3i(1,0,0),
-            new Vector3i(-1,0,0),
-            new Vector3i(0,0,1),
-            new Vector3i(0,0,-1)};
-
     private boolean checkChests(BlockType mBlock, Vector3i newLoc) {
-        for(Vector3i shift : SHIFTS){
+        for (Vector3i shift : SHIFTS) {
             Vector3i aroundNewLoc = newLoc.add(shift);
             BlockType testMaterial = craft.getWorld().getBlockType(aroundNewLoc.getX(), aroundNewLoc.getY(), aroundNewLoc.getZ());
             if (testMaterial.equals(mBlock) && !oldHitBox.contains(aroundNewLoc)) {
@@ -346,7 +222,144 @@ public class TranslationTask extends AsyncTask {
         return false;
     }
 
-    //TODO: Reactivate code once possible to get a block's potential drops.
+    private static final Vector3i[] SHIFTS = {
+            new Vector3i(1, 0, 0),
+            new Vector3i(-1, 0, 0),
+            new Vector3i(0, 0, 1),
+            new Vector3i(0, 0, -1)};
+
+    private void processSinking() {
+        for (Vector3i location : collisionBox) {
+            if (craft.getType().getExplodeOnCrash() > 0.0F
+                    && !world.getBlockType(location).equals(BlockTypes.AIR)
+                    && ThreadLocalRandom.current().nextDouble(1) < .05) {
+
+                updates.add(new ExplosionUpdateCommand(world, location, craft.getType().getExplodeOnCrash()));
+                collisionExplosion = true;
+            }
+
+            HashSet<Vector3i> toRemove = new HashSet<>();
+            Vector3i next = location;
+
+            do {
+                toRemove.add(next);
+                next = next.add(new Vector3i(0, 1, 0));
+            } while (newHitBox.contains(next));
+
+            newHitBox.removeAll(toRemove);
+        }
+    }
+
+    private void processNotSinking() {
+        //TODO - Make arming time a craft config setting
+        //  Use number of moves instead? - System time doesn't work so well if the server is lagging
+        if (craft.getType().getCollisionExplosion() > 0.0F && System.currentTimeMillis() - craft.commandeeredAt() >= 1000) {
+
+            for (Vector3i location : collisionBox) {
+
+                float explosionKey;
+                float explosionForce = craft.getType().getCollisionExplosion();
+
+                if (craft.getType().getFocusedExplosion()) {
+                    explosionForce *= oldHitBox.size();
+                }
+
+                //TODO: Account for underwater explosions
+            /*if (location.getY() < waterLine) { // underwater explosions require more force to do anything
+                explosionForce += 25; //find the correct amount
+            }*/
+
+                explosionKey = explosionForce;
+
+                if (!world.getBlockType(location).equals(BlockTypes.AIR)) {
+                    updates.add(new ExplosionUpdateCommand(world, location, explosionKey));
+                    collisionExplosion = true;
+                }
+
+                if (craft.getType().getFocusedExplosion()) { // don't handle any further collisions if it is set to focusedexplosion
+                    break;
+                }
+            }
+        }
+    }
+
+    private void moveEntities() throws InterruptedException {
+        if (craft.getType().getMoveEntities() && !craft.isSinking()) {
+
+            AtomicBoolean processedEntities = new AtomicBoolean(false);
+
+            Task.builder()
+                    .execute(() -> {
+                        for (Entity entity : craft.getWorld().getIntersectingEntities(new AABB(oldHitBox.getMinX() - 0.5, oldHitBox.getMinY() - 0.5, oldHitBox.getMinZ() - 0.5, oldHitBox.getMaxX() + 1.5, oldHitBox.getMaxY() + 1.5, oldHitBox.getMaxZ() + 1.5))) {
+
+                            if (entity.getType() == EntityTypes.PLAYER || entity.getType() == EntityTypes.PRIMED_TNT || entity.getType() == EntityTypes.ITEM || !craft.getType().onlyMovePlayers()) {
+                                EntityUpdateCommand eUp = new EntityUpdateCommand(entity, entity.getLocation().getPosition().add(displacement.getX(), displacement.getY(), displacement.getZ()), 0);
+                                updates.add(eUp);
+
+                                if (Settings.Debug) {
+                                    StringBuilder debug = new StringBuilder()
+                                            .append("Submitting Entity Update: ")
+                                            .append(entity.getType().getName());
+
+                                    if (entity instanceof Item) {
+                                        debug.append(" - Item Type: ")
+                                                .append(((Item) entity).getItemType().getName());
+                                    }
+
+                                    Movecraft.getInstance().getLogger().info(debug.toString());
+                                }
+                            }
+                        }
+
+                        processedEntities.set(true);
+                    })
+                    .submit(Movecraft.getInstance());
+
+
+            synchronized (this) {
+                while (!processedEntities.get()) this.wait(1);
+            }
+
+        } else {
+            // Handle auto Craft release
+            //add releaseTask without playermove to manager
+            if (!craft.getType().getCruiseOnPilot() && !craft.isSinking())  // not necessary to release cruiseonpilot crafts, because they will already be released
+                CraftManager.getInstance().addReleaseTask(craft);
+        }
+    }
+
+    @Override
+    public void postProcess() {
+        // Check if task failed
+        if (failed()) {
+
+            // Check for collision explosion
+            if (collisionExplosion) {
+                MapUpdateManager.getInstance().scheduleUpdates(updates);
+                CraftManager.getInstance().addReleaseTask(craft);
+            }
+
+            // Set craft processing to false
+            craft.setProcessing(false);
+
+            // Schedule map updates
+        } else {
+            MapUpdateManager.getInstance().scheduleUpdates(updates);
+        }
+    }
+
+    @Override
+    protected Optional<Player> getNotificationPlayer() {
+        Optional<Player> player = Sponge.getServer().getPlayer(craft.getPilot());
+
+        if (!player.isPresent()) {
+            player = Sponge.getServer().getPlayer(craft.getCommander());
+        }
+
+        return player;
+    }
+
+    //TODO: Reactivate and review code once possible to get a block's potential drops.
     /*
     private void captureYield(List<Vector3i> harvestedBlocks) {
         if (harvestedBlocks.isEmpty()) {
@@ -424,8 +437,8 @@ public class TranslationTask extends AsyncTask {
         return updates;
     }
 
-    public com.flowpowered.math.vector.Vector3i getMoveVector() {
-        return moveVector;
+    public Vector3i getDisplacement() {
+        return displacement;
     }
 
     public boolean isCollisionExplosion() {

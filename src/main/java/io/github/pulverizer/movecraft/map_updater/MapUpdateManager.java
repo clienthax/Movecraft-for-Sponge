@@ -1,7 +1,7 @@
-package io.github.pulverizer.movecraft.mapUpdater;
+package io.github.pulverizer.movecraft.map_updater;
 
 import io.github.pulverizer.movecraft.config.Settings;
-import io.github.pulverizer.movecraft.mapUpdater.update.UpdateCommand;
+import io.github.pulverizer.movecraft.map_updater.update.UpdateCommand;
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.text.Text;
 
@@ -13,12 +13,14 @@ public class MapUpdateManager implements Runnable {
 
     private final Queue<UpdateCommand> updates = new ConcurrentLinkedQueue<>();
 
-    private MapUpdateManager() { }
+    private MapUpdateManager() {}
 
     public static MapUpdateManager getInstance() {
+        if (ourInstance == null) initialize();
+
         return ourInstance;
     }
-    public static void initialize(){
+    private static void initialize(){
         ourInstance = new MapUpdateManager();
     }
 
