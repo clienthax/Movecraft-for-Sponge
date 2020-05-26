@@ -25,11 +25,13 @@ public class CraftRotateCommand extends UpdateCommand {
     private final Craft craft;
     private final Rotation rotation;
     private final Vector3i originLocation;
+    private final HashHitBox newHitBox;
 
-    public CraftRotateCommand(final Craft craft, final Vector3i originLocation, final Rotation rotation) {
+    public CraftRotateCommand(final Craft craft, final Vector3i originLocation, final Rotation rotation, final HashHitBox newHitBox) {
         this.craft = craft;
         this.rotation = rotation;
         this.originLocation = originLocation;
+        this.newHitBox = newHitBox;
     }
 
     @Override
@@ -55,13 +57,9 @@ public class CraftRotateCommand extends UpdateCommand {
         }
 
         if (!passthroughBlocks.isEmpty()) {
-            MutableHitBox originalLocations = new HashHitBox();
-            final Rotation counterRotation = rotation == Rotation.CLOCKWISE ? Rotation.ANTICLOCKWISE : Rotation.CLOCKWISE;
-            for (Vector3i vector3i : craft.getHitBox()) {
-                originalLocations.add(MathUtils.rotateVec(counterRotation, vector3i.sub(originLocation)).add(originLocation));
-            }
+            MutableHitBox originalLocations = craft.getHitBox();
 
-            final HitBox to = CollectionUtils.filter(craft.getHitBox(), originalLocations);
+            final HitBox to = CollectionUtils.filter(newHitBox, originalLocations);
 
             for (Vector3i location : to) {
                 BlockSnapshot material = craft.getWorld().createSnapshot(location);
@@ -70,18 +68,18 @@ public class CraftRotateCommand extends UpdateCommand {
                 }
             }
             //The subtraction of the set of coordinates in the HitBox cube and the HitBox itself
-            final HitBox invertedHitBox = CollectionUtils.filter(craft.getHitBox().boundingHitBox(), craft.getHitBox());
+            final HitBox invertedHitBox = CollectionUtils.filter(newHitBox.boundingHitBox(), newHitBox);
             //A set of locations that are confirmed to be "exterior" locations
             final MutableHitBox exterior = new HashHitBox();
             final MutableHitBox interior = new HashHitBox();
 
             //place phased blocks
-            final int minX = craft.getHitBox().getMinX();
-            final int maxX = craft.getHitBox().getMaxX();
-            final int minY = craft.getHitBox().getMinY();
-            final int maxY = craft.getHitBox().getMaxY();
-            final int minZ = craft.getHitBox().getMinZ();
-            final int maxZ = craft.getHitBox().getMaxZ();
+            final int minX = newHitBox.getMinX();
+            final int maxX = newHitBox.getMaxX();
+            final int minY = newHitBox.getMinY();
+            final int maxY = newHitBox.getMaxY();
+            final int minZ = newHitBox.getMinZ();
+            final int maxZ = newHitBox.getMaxZ();
             final HitBox[] surfaces = {
                     new SolidHitBox(new Vector3i(minX, minY, minZ), new Vector3i(minX, maxY, maxZ)),
                     new SolidHitBox(new Vector3i(minX, minY, minZ), new Vector3i(maxX, minY, maxZ)),
@@ -92,11 +90,11 @@ public class CraftRotateCommand extends UpdateCommand {
             //Valid exterior starts as the 6 surface planes of the HitBox with the locations that lie in the HitBox removed
             final Set<Vector3i> validExterior = new HashSet<>();
             for (HitBox hitBox : surfaces) {
-                validExterior.addAll(CollectionUtils.filter(hitBox, craft.getHitBox()).asSet());
+                validExterior.addAll(CollectionUtils.filter(hitBox, newHitBox).asSet());
             }
             //Check to see which locations in the from set are actually outside of the craft
             for (Vector3i location :validExterior ) {
-                if (craft.getHitBox().contains(location) || exterior.contains(location)) {
+                if (newHitBox.contains(location) || exterior.contains(location)) {
                     continue;
                 }
                 //use a modified BFS for multiple origin elements
@@ -128,6 +126,7 @@ public class CraftRotateCommand extends UpdateCommand {
 
             //add the craft
             rotateCraft();
+            craft.setHitBox(newHitBox);
 
             //trigger sign event
             for (Vector3i location : craft.getHitBox()) {
@@ -163,6 +162,8 @@ public class CraftRotateCommand extends UpdateCommand {
         }else{
             //add the craft
             rotateCraft();
+            craft.setHitBox(newHitBox);
+
             //trigger sign event
             for (Vector3i location : craft.getHitBox()) {
                 BlockType blockType = craft.getWorld().getBlockType(location);
@@ -226,17 +227,8 @@ public class CraftRotateCommand extends UpdateCommand {
     }
 
     private void rotateCraft() {
-        //TODO - hitbox should not be getting set before this method is called!
-
-        // Get old positions
-        HashSet<Vector3i> oldPositions = new HashSet<>();
-        Rotation counterRotation = rotation == Rotation.CLOCKWISE ? Rotation.ANTICLOCKWISE : Rotation.CLOCKWISE;
-        for (Vector3i newLocation : craft.getHitBox()) {
-            oldPositions.add(MathUtils.rotateVec(counterRotation, newLocation.sub(originLocation)).add(originLocation));
-        }
-
         // Set up the chunk data manager
-        ChunkDataManager chunkDataManager = new ChunkDataManager(craft.getWorld(), oldPositions);
+        ChunkDataManager chunkDataManager = new ChunkDataManager(craft.getWorld(), new HashSet<>(craft.getHitBox().asSet()));
 
         // Get the tiles
         chunkDataManager.fetchTilesAndRotate(rotation, originLocation);

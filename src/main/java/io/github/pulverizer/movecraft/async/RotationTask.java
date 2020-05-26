@@ -35,7 +35,6 @@ public class RotationTask extends AsyncTask {
     private final Vector3i originPoint;
     private final Rotation rotation;
     private final World world;
-    private final boolean isSubCraft;
     private final Set<UpdateCommand> updates = new HashSet<>();
 
     private final HashHitBox oldHitBox;
@@ -46,7 +45,6 @@ public class RotationTask extends AsyncTask {
         this.originPoint = originPoint;
         this.rotation = rotation;
         this.world = world;
-        this.isSubCraft = craft.isSubCraft();
         this.newHitBox = new HashHitBox();
         this.oldHitBox = new HashHitBox(craft.getHitBox());
     }
@@ -54,62 +52,29 @@ public class RotationTask extends AsyncTask {
     @Override
     protected void execute() throws InterruptedException {
 
+        // Check if task is valid
         if (oldHitBox.isEmpty() || craft.isDisabled())
             return;
 
-        // check for fuel, use some if needed
+        // Use some fuel if needed
         double fuelBurnRate = getCraft().getType().getFuelBurnRate();
-        if (fuelBurnRate != 0.0 && !getCraft().isSinking()) {
-
-            boolean fuelBurned = getCraft().useFuel(fuelBurnRate);
-
-            if (!fuelBurned) {
-                fail("Translation Failed - Craft out of fuel");
+        if (fuelBurnRate > 0 && !getCraft().isSinking()) {
+            if (!getCraft().useFuel(fuelBurnRate)) {
+                fail("Craft out of fuel");
+                return;
             }
         }
 
-        // if a subcraft, find the parent craft. If not a subcraft, it is it's own parent
-        Set<Craft> craftsInWorld = CraftManager.getInstance().getCraftsInWorld(getCraft().getWorld());
-        Craft parentCraft = getCraft();
-        for (Craft craft : craftsInWorld) {
-            if ( craft != getCraft() && craft.getHitBox().intersects(oldHitBox)) {
-                parentCraft = craft;
-                break;
-            }
-        }
+        // Check for obstruction
+        checkCraftObstructed();
 
-        for(Vector3i originalLocation : oldHitBox){
-            Vector3i newLocation = MathUtils.rotateVec(rotation,originalLocation.sub(originPoint)).add(originPoint);
-            newHitBox.add(newLocation);
-
-            BlockType oldMaterial = world.getBlockType(originalLocation);
-            //prevent chests collision
-            if ((oldMaterial.equals(BlockTypes.CHEST) || oldMaterial.equals(BlockTypes.TRAPPED_CHEST)) &&
-                    !checkChests(oldMaterial, newLocation)) {
-                fail(String.format("Rotation Failed - Craft is obstructed" + " @ %d,%d,%d", newLocation.getX(), newLocation.getY(), newLocation.getZ()));
-                break;
-            }
-
-
-            BlockType newMaterial = world.getBlockType(newLocation);
-            if ((newMaterial == BlockTypes.AIR) || (newMaterial == BlockTypes.PISTON_EXTENSION) || craft.getType().getPassthroughBlocks().contains(newMaterial)) {
-                continue;
-            }
-
-            if (!oldHitBox.contains(newLocation)) {
-                fail(String.format("Rotation Failed - Craft is obstructed" + " @ %d,%d,%d", newLocation.getX(), newLocation.getY(), newLocation.getZ()));
-                break;
-            }
-        }
-
+        // Check if failed
         if (failed()) {
-            if (this.isSubCraft && parentCraft != getCraft()) {
-                parentCraft.setProcessing(false);
-            }
+            craft.setProcessing(false);
             return;
         }
 
-        //call event
+        // Call event
         CraftRotateEvent event = new CraftRotateEvent(craft, oldHitBox, newHitBox);
         Sponge.getEventManager().post(event);
         if(event.isCancelled()){
@@ -117,9 +82,45 @@ public class RotationTask extends AsyncTask {
             return;
         }
 
+        // Add rotation to updates
+        updates.add(new CraftRotateCommand(getCraft(), originPoint, rotation, newHitBox));
 
-        updates.add(new CraftRotateCommand(getCraft(),originPoint, rotation));
         //add entities in the craft
+        moveEntities();
+
+        // if you rotated a subcraft, update the parent with the new blocks
+        if (craft.isSubCraft()) {
+            // also find the furthest extent from center and notify the player of the new direction
+            int farthestX = 0;
+            int farthestZ = 0;
+            for (Vector3i loc : newHitBox) {
+                if (Math.abs(loc.getX() - originPoint.getX()) > Math.abs(farthestX))
+                    farthestX = loc.getX() - originPoint.getX();
+                if (Math.abs(loc.getZ() - originPoint.getZ()) > Math.abs(farthestZ))
+                    farthestZ = loc.getZ() - originPoint.getZ();
+            }
+
+            Player pilot = getNotificationPlayer().orElse(null);
+
+            if (pilot != null) {
+                if (Math.abs(farthestX) > Math.abs(farthestZ)) {
+                    if (farthestX > 0) {
+                        pilot.sendMessage(Text.of("The farthest extent now faces East"));
+                    } else {
+                        pilot.sendMessage(Text.of("The farthest extent now faces West"));
+                    }
+                } else {
+                    if (farthestZ > 0) {
+                        pilot.sendMessage(Text.of("The farthest extent now faces South"));
+                    } else {
+                        pilot.sendMessage(Text.of("The farthest extent now faces North"));
+                    }
+                }
+            }
+        }
+    }
+
+    private void moveEntities() throws InterruptedException {
         final Vector3d tOP = originPoint.toDouble().add(0.5, 0, 0.5);
 
         //prevents torpedo and rocket passengers
@@ -161,50 +162,33 @@ public class RotationTask extends AsyncTask {
                 while (!processedEntities.get()) this.wait(1);
             }
         }
+    }
 
-        // if you rotated a subcraft, update the parent with the new blocks
-        if (this.isSubCraft) {
-            // also find the furthest extent from center and notify the player of the new direction
-            int farthestX = 0;
-            int farthestZ = 0;
-            for (Vector3i loc : newHitBox) {
-                if (Math.abs(loc.getX() - originPoint.getX()) > Math.abs(farthestX))
-                    farthestX = loc.getX() - originPoint.getX();
-                if (Math.abs(loc.getZ() - originPoint.getZ()) > Math.abs(farthestZ))
-                    farthestZ = loc.getZ() - originPoint.getZ();
+    private void checkCraftObstructed() {
+        for(Vector3i originalLocation : oldHitBox){
+            Vector3i newLocation = MathUtils.rotateVec(rotation,originalLocation.sub(originPoint)).add(originPoint);
+            newHitBox.add(newLocation);
+
+            if (oldHitBox.contains(newLocation)) {
+                continue;
             }
 
-            Player pilot = Sponge.getServer().getPlayer(getCraft().getPilot()).orElse(null);
-
-            if (pilot != null) {
-                if (Math.abs(farthestX) > Math.abs(farthestZ)) {
-                    if (farthestX > 0) {
-                        pilot.sendMessage(Text.of("The farthest extent now faces East"));
-                    } else {
-                        pilot.sendMessage(Text.of("The farthest extent now faces West"));
-                    }
-                } else {
-                    if (farthestZ > 0) {
-                        pilot.sendMessage(Text.of("The farthest extent now faces South"));
-                    } else {
-                        pilot.sendMessage(Text.of("The farthest extent now faces North"));
-                    }
-                }
+            //prevent chests collision
+            BlockType oldMaterial = world.getBlockType(originalLocation);
+            if ((oldMaterial.equals(BlockTypes.CHEST) || oldMaterial.equals(BlockTypes.TRAPPED_CHEST)) && !checkChests(oldMaterial, newLocation)) {
+                fail(String.format("Craft is obstructed by chest" + " @ %d,%d,%d", newLocation.getX(), newLocation.getY(), newLocation.getZ()));
+                break;
             }
 
-            craftsInWorld = CraftManager.getInstance().getCraftsInWorld(getCraft().getWorld());
-            for (Craft craft : craftsInWorld) {
-                if (newHitBox.intersects(craft.getHitBox()) && craft != getCraft()) {
-                    //newHitBox.addAll(CollectionUtils.filter(craft.getHitBox(),newHitBox));
-                    //craft.setHitBox(newHitBox);
-                    craft.getHitBox().removeAll(oldHitBox);
-                    craft.getHitBox().addAll(newHitBox);
-                    break;
-                }
+
+            BlockType newMaterial = world.getBlockType(newLocation);
+            if (newMaterial != BlockTypes.AIR && !craft.getType().getPassthroughBlocks().contains(newMaterial)) {
+                fail(String.format("Craft is obstructed" + " @ %d,%d,%d", newLocation.getX(), newLocation.getY(), newLocation.getZ()));
+                break;
             }
         }
     }
-    
+
     @Override
     public void postProcess() {
         if (failed()) {
@@ -212,21 +196,23 @@ public class RotationTask extends AsyncTask {
 
         } else {
 
-            MapUpdateManager.getInstance().scheduleUpdates(getUpdates());
-            craft.setHitBox(getNewHitBox());
+            MapUpdateManager.getInstance().scheduleUpdates(updates);
         }
     }
 
+    // TODO - Why does this method exist?
+    //  Also it isn't correct!
     private static HitBox rotateHitBox(HitBox hitBox, Vector3i originPoint, Rotation rotation){
         MutableHitBox output = new HashHitBox();
         for(Vector3i location : hitBox){
-            output.add(MathUtils.rotateVec(rotation,originPoint.sub(originPoint)).add(originPoint));
+            output.add(MathUtils.rotateVec(rotation, originPoint.sub(originPoint)).add(originPoint));
         }
         return output;
     }
 
     @Override
     protected Optional<Player> getNotificationPlayer() {
+        // TODO - What about remote sign usage???
         Optional<Player> player = Sponge.getServer().getPlayer(craft.getPilot());
 
         if (!player.isPresent()) {
@@ -249,41 +235,27 @@ public class RotationTask extends AsyncTask {
     }
 
     public boolean getIsSubCraft() {
-        return isSubCraft;
+        return craft.isSubCraft();
     }
 
     private boolean checkChests(BlockType mBlock, Vector3i newLoc) {
-        BlockType testMaterial;
-        Vector3i aroundNewLoc;
-
-        aroundNewLoc = newLoc.add(1, 0, 0);
-        testMaterial = craft.getWorld().getBlockType(aroundNewLoc.getX(), aroundNewLoc.getY(), aroundNewLoc.getZ());
-        if (testMaterial.equals(mBlock)) {
-            if (!oldHitBox.contains(aroundNewLoc)) {
+        for (Vector3i shift : SHIFTS) {
+            Vector3i aroundNewLoc = newLoc.add(shift);
+            BlockType testMaterial = craft.getWorld().getBlockType(aroundNewLoc.getX(), aroundNewLoc.getY(), aroundNewLoc.getZ());
+            if (testMaterial.equals(mBlock) && !oldHitBox.contains(aroundNewLoc)) {
                 return false;
             }
         }
 
-        aroundNewLoc = newLoc.add(-1, 0, 0);
-        testMaterial = craft.getWorld().getBlockType(aroundNewLoc.getX(), aroundNewLoc.getY(), aroundNewLoc.getZ());
-        if (testMaterial.equals(mBlock)) {
-            if (!oldHitBox.contains(aroundNewLoc)) {
-                return false;
-            }
-        }
-
-        aroundNewLoc = newLoc.add(0, 0, 1);
-        testMaterial = craft.getWorld().getBlockType(aroundNewLoc.getX(), aroundNewLoc.getY(), aroundNewLoc.getZ());
-        if (testMaterial.equals(mBlock)) {
-            if (!oldHitBox.contains(aroundNewLoc)) {
-                return false;
-            }
-        }
-
-        aroundNewLoc = newLoc.add(0, 0, -1);
-        testMaterial = craft.getWorld().getBlockType(aroundNewLoc.getX(), aroundNewLoc.getY(), aroundNewLoc.getZ());
-        return !testMaterial.equals(mBlock) || oldHitBox.contains(aroundNewLoc);
+        return true;
     }
+
+    private static final Vector3i[] SHIFTS = {
+            new Vector3i(1, 0, 0),
+            new Vector3i(-1, 0, 0),
+            new Vector3i(0, 0, 1),
+            new Vector3i(0, 0, -1)
+    };
 
     public HashHitBox getNewHitBox() {
         return newHitBox;

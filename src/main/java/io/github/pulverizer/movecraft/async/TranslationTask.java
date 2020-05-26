@@ -67,7 +67,7 @@ public class TranslationTask extends AsyncTask {
         double fuelBurnRate = getCraft().getType().getFuelBurnRate();
         if (fuelBurnRate > 0 && !getCraft().isSinking()) {
             if (!getCraft().useFuel(fuelBurnRate)) {
-                fail("Translation Failed - Craft out of fuel");
+                fail("Craft out of fuel");
                 return;
             }
         }
@@ -103,7 +103,7 @@ public class TranslationTask extends AsyncTask {
         }
 
         // Add Craft Translation Map Update to list of updates
-        updates.add(new CraftTranslateCommand(craft, new Vector3i(displacement.getX(), displacement.getY(), displacement.getZ()), newHitBox));
+        updates.add(new CraftTranslateCommand(craft, displacement, newHitBox));
 
         // Move Entities
         moveEntities();
@@ -168,8 +168,9 @@ public class TranslationTask extends AsyncTask {
 
             final BlockType testMaterial = craft.getWorld().getBlockType(newLocation);
 
-            if ((testMaterial.equals(BlockTypes.CHEST) || testMaterial.equals(BlockTypes.TRAPPED_CHEST)) && checkChests(testMaterial, newLocation)) {
-                //prevent chests collision
+            //prevent chests collision
+            BlockType oldMaterial = world.getBlockType(oldLocation);
+            if ((oldMaterial.equals(BlockTypes.CHEST) || oldMaterial.equals(BlockTypes.TRAPPED_CHEST)) && checkChests(oldMaterial, newLocation)) {
                 fail(String.format("Translation Failed - Craft is obstructed" + " @ %d,%d,%d,%s", newLocation.getX(), newLocation.getY(), newLocation.getZ(), craft.getWorld().getBlockType(newLocation).toString()));
                 return true;
             }
@@ -226,7 +227,8 @@ public class TranslationTask extends AsyncTask {
             new Vector3i(1, 0, 0),
             new Vector3i(-1, 0, 0),
             new Vector3i(0, 0, 1),
-            new Vector3i(0, 0, -1)};
+            new Vector3i(0, 0, -1)
+    };
 
     private void processSinking() {
         for (Vector3i location : collisionBox) {
@@ -350,6 +352,7 @@ public class TranslationTask extends AsyncTask {
 
     @Override
     protected Optional<Player> getNotificationPlayer() {
+        // TODO - What about remote sign usage???
         Optional<Player> player = Sponge.getServer().getPlayer(craft.getPilot());
 
         if (!player.isPresent()) {

@@ -215,7 +215,27 @@ public class Craft {
     }
 
     public void setHitBox(HashHitBox newHitBox) {
+        // Update parent hitboxes
+        if (isSubCraft()) {
+            getParentCrafts().forEach(craft -> {
+                craft.getHitBox().removeAll(hitBox);
+                craft.getHitBox().addAll(newHitBox);
+            });
+        }
+
+        // Update own hitbox
         hitBox = newHitBox;
+    }
+
+    private HashSet<Craft> getParentCrafts() {
+        HashSet<Craft> parents = new HashSet<>();
+
+        if (parentCraft != null) {
+            parents.add(parentCraft);
+            parents.addAll(parentCraft.getParentCrafts());
+        }
+
+        return parents;
     }
 
     public HashHitBox getCollapsedHitBox() {

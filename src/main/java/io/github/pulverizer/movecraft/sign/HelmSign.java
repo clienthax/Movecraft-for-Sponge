@@ -63,8 +63,10 @@ public final class HelmSign {
 
         Craft craft = CraftManager.getInstance().getCraftByPlayer(player.getUniqueId());
 
-        if (craft == null)
+        if (craft == null || player.getUniqueId() != craft.getPilot()) {
+            player.sendMessage(Text.of("You are not piloting a craft."));
             return;
+        }
 
         if (!player.hasPermission("movecraft." + craft.getType().getName().toLowerCase() + ".movement.rotate") && (craft.getType().requiresSpecificPerms() || !player.hasPermission("movecraft.movement.rotate"))) {
             player.sendMessage(Text.of("Insufficient Permissions"));
