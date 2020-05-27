@@ -453,7 +453,7 @@ final public class CraftType {
     }
 
     public boolean limitToParentHitBox() {
-        return false;
+        return true;
     }
 
     public boolean allowLoaders() {

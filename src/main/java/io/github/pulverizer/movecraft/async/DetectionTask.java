@@ -308,7 +308,7 @@ public class DetectionTask extends AsyncTask {
         processPhasedBlocks();
 
         // Check if CraftType can have crew
-        if (craft.getType().canHaveCrew()) {
+        if (!craft.isSubCraft() && craft.getType().canHaveCrew()) {
             craft.addCrewMember(player.getUniqueId());
             craft.setCommander(player.getUniqueId());
         }
@@ -378,7 +378,7 @@ public class DetectionTask extends AsyncTask {
                 return;
             }
 
-            if (originCraft.isProcessing()) {
+            if (!craft.isSubCraft() && originCraft.isProcessing()) {
                 fail("Parent craft is busy!");
             }
 
