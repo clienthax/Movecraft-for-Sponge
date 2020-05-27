@@ -327,7 +327,7 @@ public class DetectionTask extends AsyncTask {
         if (event.isCancelled()) {
             craft.release(player);
 
-        } else if (!craft.isSubCraft()) {
+        } else {
             // Add craft to CraftManager if it is not a Subcraft
             CraftManager.getInstance().addCraft(craft);
         }
@@ -356,7 +356,7 @@ public class DetectionTask extends AsyncTask {
                 }
 
                 if (craft.getType().limitToParentHitBox()) {
-                    testCraft.addSubcraft(craft);
+                    craft.setIsSubCraft();
                 }
 
                 return testCraft;

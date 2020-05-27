@@ -11,9 +11,7 @@ import io.github.pulverizer.movecraft.config.CraftType;
 import io.github.pulverizer.movecraft.enums.DirectControlMode;
 import io.github.pulverizer.movecraft.enums.Rotation;
 import io.github.pulverizer.movecraft.event.CraftSinkEvent;
-import io.github.pulverizer.movecraft.event.SignTranslateEvent;
 import io.github.pulverizer.movecraft.utils.HashHitBox;
-import io.github.pulverizer.movecraft.utils.MathUtils;
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.block.BlockSnapshot;
 import org.spongepowered.api.block.BlockType;
@@ -45,7 +43,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  *
  * Last ported from Craft and ICraft on 18 Apr 2020
  * @author BernardisGood
- * @version 1.0 - 23 Apr 2020
+ * @version 1.1 - 27 May 2020
  */
 public class Craft {
 
@@ -56,7 +54,6 @@ public class Craft {
     private int initialSize;
     private final long commandeeredAt;
     private final int maxHeightLimit;
-    private Craft parentCraft;
 
 
     // State
@@ -72,7 +69,7 @@ public class Craft {
     private World world; //TODO - Make cross-dimension travel possible
     private boolean sinking = false;
     private boolean disabled = false;
-    private final HashSet<Craft> subcrafts = new HashSet<>(); //TODO - Use Implementation
+    private boolean isSubCraft = false;
 
 
     // Crew
@@ -101,11 +98,10 @@ public class Craft {
     private long lastRotateTime = 0;
     private int lastMoveTick;
     private float speedBlockEffect = 1;
-    private AsyncTask queuedTask = null; //TODO - Currently ignored - need to use it in AsyncManager before processing cruising
 
 
     // Direct Control
-    //TODO - Use Implementation
+    //TODO - Use Implementation A
     private DirectControlMode directControl = DirectControlMode.OFF;
     private Vector3d pilotOffset = new Vector3d(0, 0, 0);
 
@@ -159,10 +155,6 @@ public class Craft {
         return maxHeightLimit;
     }
 
-    public boolean isSubCraft() {
-        return parentCraft != null;
-    }
-
 
     // State
 
@@ -176,33 +168,16 @@ public class Craft {
 
     @Deprecated
     public boolean isNotProcessing() {
-        return !(isParentProcessing() || areSubcraftsProcessing());
+        return !processing.get();
     }
 
     public boolean isProcessing() {
-        return isParentProcessing() || areSubcraftsProcessing();
+        return processing.get();
     }
 
     public void setProcessing(boolean isProcessing) {
         processingStartTime = Sponge.getServer().getRunningTimeTicks();
         processing.set(isProcessing);
-    }
-
-    private boolean isParentProcessing() {
-        if (processing.get() || !isSubCraft()) {
-            return processing.get();
-        }
-
-        return parentCraft.isParentProcessing();
-    }
-
-    private boolean areSubcraftsProcessing() {
-        for (Craft subcraft : subcrafts) {
-            if (subcraft.processing.get() || subcraft.areSubcraftsProcessing())
-                return true;
-        }
-
-        return false;
     }
 
     public int getProcessingStartTime() {
@@ -214,27 +189,7 @@ public class Craft {
     }
 
     public void setHitBox(HashHitBox newHitBox) {
-        // Update parent hitboxes
-        if (isSubCraft()) {
-            getParentCrafts().forEach(craft -> {
-                craft.getHitBox().removeAll(hitBox);
-                craft.getHitBox().addAll(newHitBox);
-            });
-        }
-
-        // Update own hitbox
         hitBox = newHitBox;
-    }
-
-    private HashSet<Craft> getParentCrafts() {
-        HashSet<Craft> parents = new HashSet<>();
-
-        if (parentCraft != null) {
-            parents.add(parentCraft);
-            parents.addAll(parentCraft.getParentCrafts());
-        }
-
-        return parents;
     }
 
     public HashHitBox getCollapsedHitBox() {
@@ -361,7 +316,7 @@ public class Craft {
                         double movePercent = type.getMoveBlocks().get(blockTypes).get(0);
                         double disablePercent = movePercent * type.getSinkPercent() / 100.0;
 
-                        if (percent < disablePercent && !isDisabled() && isNotProcessing()) {
+                        if (percent < disablePercent && !isDisabled() && !processing.get()) {
                             disable();
                             if (pilot != null) {
                                 Location<World> loc = Sponge.getServer().getPlayer(pilot).get().getLocation();
@@ -414,22 +369,18 @@ public class Craft {
         // notify the crew
         notifyCrew("Craft is sinking!");
 
-        if (isSubCraft()) {
-            release(null);
-        } else {
-            // and change the craft's state
-            sinking = true;
+        // and change the craft's state
+        sinking = true;
 
-            // And log it in the console
-            Movecraft.getInstance().getLogger().info("Craft " + id + " is sinking: \r" +
-                    "Originally commandeered by " + Sponge.getServer().getPlayer(commandeeredBy).orElse(null) + " at " + commandeeredAt + " ticks \r" +
-                    "Currently commanded by " + Sponge.getServer().getPlayer(commander).orElse(null) + "\r" +
-                    "Currently piloted by " + Sponge.getServer().getPlayer(pilot).orElse(null) + "\r" +
-                    "\r" +
-                    "Craft type: " + type.getName() + "\r" +
-                    "Size " + hitBox.size() + " of original " + initialSize + "\r" +
-                    "Position: " + hitBox.getMidPoint());
-        }
+        // And log it in the console
+        Movecraft.getInstance().getLogger().info("Craft " + id + " is sinking: \r" +
+                "Originally commandeered by " + Sponge.getServer().getPlayer(commandeeredBy).orElse(null) + " at " + commandeeredAt + " ticks \r" +
+                "Currently commanded by " + Sponge.getServer().getPlayer(commander).orElse(null) + "\r" +
+                "Currently piloted by " + Sponge.getServer().getPlayer(pilot).orElse(null) + "\r" +
+                "\r" +
+                "Craft type: " + type.getName() + "\r" +
+                "Size " + hitBox.size() + " of original " + initialSize + "\r" +
+                "Position: " + hitBox.getMidPoint());
     }
 
     public boolean isDisabled() {
@@ -444,6 +395,14 @@ public class Craft {
     public void enable() {
         //TODO - Create an event for this
         disabled = false;
+    }
+
+    public void setIsSubCraft() {
+        isSubCraft = true;
+    }
+
+    public boolean isSubCraft() {
+        return isSubCraft;
     }
 
 
@@ -805,7 +764,7 @@ public class Craft {
         verticalCruiseDirection = vertical;
 
         // Change signs aboard the craft to reflect new cruising state
-        if (isNotProcessing()) {
+        if (!isProcessing()) {
             resetSigns();
         }
     }
@@ -860,7 +819,6 @@ public class Craft {
         }
     }
 
-    //TODO - Add code to handle SubCrafts
     public void translate(Vector3i displacement) {
         // check to see if the craft is trying to move in a direction not permitted by the type
         if (!this.getType().allowHorizontalMovement() && !sinking) {
@@ -885,57 +843,7 @@ public class Craft {
 
         if (!isProcessing()) {
             submitTask(task);
-        } else if (!processing.get() && isSubCraft()) {
-            queuedTask = task;
         }
-    }
-
-    public void updateSubcraftWithParentTranslation(final Vector3i displacement) {
-        subcrafts.forEach(subcraft -> subcraft.translateHitBoxOnly(displacement));
-    }
-
-    private void translateHitBoxOnly(final Vector3i displacement) {
-        setProcessing(true);
-        HashHitBox newHitBox = new HashHitBox();
-
-        hitBox.forEach(position -> {
-            Vector3i newPosition = position.add(displacement);
-
-            newHitBox.add(newPosition);
-
-            if (world.getBlockType(newPosition) == BlockTypes.WALL_SIGN || world.getBlockType(newPosition) == BlockTypes.STANDING_SIGN) {
-                Sponge.getEventManager().post(new SignTranslateEvent(position, this));
-            }
-        });
-
-        setHitBox(hitBox);
-
-        subcrafts.forEach(subcraft -> subcraft.translateHitBoxOnly(displacement));
-        setProcessing(false);
-    }
-
-    public void updateSubcraftWithParentRotation(final Vector3i originPoint, final Rotation rotation) {
-        subcrafts.forEach(subcraft -> subcraft.rotateHitBoxOnly(originPoint, rotation));
-    }
-
-    private void rotateHitBoxOnly(final Vector3i originPoint, final Rotation rotation) {
-        setProcessing(true);
-        HashHitBox newHitBox = new HashHitBox();
-
-        hitBox.forEach(position -> {
-            Vector3i newPosition = MathUtils.rotateVec(rotation, position.sub(originPoint)).add(originPoint);
-
-            newHitBox.add(newPosition);
-
-            if (world.getBlockType(newPosition) == BlockTypes.WALL_SIGN || world.getBlockType(newPosition) == BlockTypes.STANDING_SIGN) {
-                Sponge.getEventManager().post(new SignTranslateEvent(position, this));
-            }
-        });
-
-        setHitBox(hitBox);
-
-        subcrafts.forEach(subcraft -> subcraft.rotateHitBoxOnly(originPoint, rotation));
-        setProcessing(false);
     }
 
     public void rotate(Vector3i originPoint, Rotation rotation) {
@@ -950,8 +858,6 @@ public class Craft {
 
         if (!isProcessing()) {
             submitTask(task);
-        } else if (!processing.get() && isSubCraft()) {
-            queuedTask = task;
         }
     }
 
@@ -1016,20 +922,11 @@ public class Craft {
 
 
     // MISC
-    public Craft getRootParentCraft() {
-        if (isSubCraft()) {
-            return parentCraft.getRootParentCraft();
-        }
-
-        return this;
-    }
 
     public HashSet<Craft> getContacts() {
         HashSet<Craft> contacts = new HashSet<>();
 
         if (type.getSpottingMultiplier() > 0) {
-
-            Craft rootParentCraft = getRootParentCraft();
 
             float viewRange = hitBox.size() * type.getSpottingMultiplier();
 
@@ -1053,7 +950,7 @@ public class Craft {
 
                         float distanceSquared = contactMiddle.toFloat().distanceSquared(middle.toFloat());
 
-                        if (!rootParentCraft.getHitBox().intersects(contact.getHitBox()) && distanceSquared <= viewRangeSquared) {
+                        if (!hitBox.intersects(contact.getHitBox()) && distanceSquared <= viewRangeSquared) {
                             //TODO - implement Underwater Detection Multiplier
                             float contactDetectability = (float) (contact.getHitBox().size() * contact.getType().getDetectionMultiplier());
                             float detectableSizeAtDistanceSquared = hitBox.size() - ((distanceSquared / viewRangeSquared) * hitBox.size());
@@ -1065,11 +962,6 @@ public class Craft {
                     }
                 }
             }
-        }
-
-        for (Craft subcraft : subcrafts) {
-            if (subcraft.getType().informParentOfContacts())
-                contacts.addAll(subcraft.getContacts());
         }
 
         return contacts;
@@ -1151,21 +1043,6 @@ public class Craft {
         return waterLine;
     }
 
-    private void setParentCraft(Craft parentCraft) {
-        this.parentCraft = parentCraft;
-    }
-
-    public void addSubcraft(Craft craft) {
-        subcrafts.add(craft);
-        craft.setParentCraft(this);
-
-        // TODO - Redirect to correct subcraft parent of new subcraft
-    }
-
-    public void removeSubcraft(Craft craft) {
-        subcrafts.remove(craft);
-    }
-
     public void release(Player player) {
         if (player == null) {
             player = Sponge.getServer().getPlayer(commander).orElse(null);
@@ -1175,28 +1052,5 @@ public class Craft {
         notifyCrew("Your craft has been released.");
 
         removeCrew();
-        for (Craft subcraft : subcrafts) {
-            subcraft.release(player);
-        }
-
-        if (isSubCraft()) {
-            parentCraft.removeSubcraft(this);
-        }
-    }
-
-    public boolean hasQueuedTask() {
-        return queuedTask != null;
-    }
-
-    public void doQueuedTask() {
-        submitTask(queuedTask);
-        queuedTask = null;
-    }
-
-    public HashSet<Craft> getAllSubcrafts() {
-        HashSet<Craft> crafts = new HashSet<>(subcrafts);
-        subcrafts.forEach(subcraft -> crafts.addAll(subcraft.getAllSubcrafts()));
-
-        return crafts;
     }
 }
