@@ -27,7 +27,6 @@ import org.spongepowered.api.effect.sound.SoundTypes;
 import org.spongepowered.api.entity.explosive.PrimedTNT;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.entity.projectile.explosive.fireball.SmallFireball;
-import org.spongepowered.api.event.filter.data.Has;
 import org.spongepowered.api.item.ItemType;
 import org.spongepowered.api.item.inventory.Inventory;
 import org.spongepowered.api.item.inventory.query.QueryOperationTypes;
@@ -1152,14 +1151,15 @@ public class Craft {
         return waterLine;
     }
 
-    public void setParentCraft(Craft parentCraft) {
+    private void setParentCraft(Craft parentCraft) {
         this.parentCraft = parentCraft;
-
-        parentCraft.addSubcraft(this);
     }
 
-    private void addSubcraft(Craft craft) {
+    public void addSubcraft(Craft craft) {
         subcrafts.add(craft);
+        craft.setParentCraft(this);
+
+        // TODO - Redirect to correct subcraft parent of new subcraft
     }
 
     public void removeSubcraft(Craft craft) {

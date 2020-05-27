@@ -5,6 +5,7 @@ import com.google.common.collect.Sets;
 import io.github.pulverizer.movecraft.config.Settings;
 import io.github.pulverizer.movecraft.craft.Craft;
 import io.github.pulverizer.movecraft.craft.CraftManager;
+import io.github.pulverizer.movecraft.enums.DirectControlMode;
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.block.BlockType;
 import org.spongepowered.api.block.BlockTypes;
@@ -78,7 +79,8 @@ public class AsyncManager implements Runnable {
             boolean bankLeft = false;
             boolean bankRight = false;
             boolean dive = false;
-            if (craft.isUnderDirectControl()) {
+            if (craft.getDirectControlMode().equals(DirectControlMode.B)) {
+
                 Player pilot = Sponge.getServer().getPlayer(craft.getPilot()).get();
                 if (pilot.get(Keys.IS_SNEAKING).get())
                     dive = true;
@@ -95,7 +97,7 @@ public class AsyncManager implements Runnable {
             // ascend
             if (craft.getVerticalCruiseDirection() == Direction.UP) {
                 if (craft.getHorizontalCruiseDirection() != Direction.NONE) {
-                    dy = (1 + craft.getType().getVertCruiseSkipBlocks()) / 2;
+                    dy = (1 + craft.getType().getVertCruiseSkipBlocks()) >> 1;
                 } else {
                     dy = 1 + craft.getType().getVertCruiseSkipBlocks();
                 }
@@ -103,7 +105,7 @@ public class AsyncManager implements Runnable {
             // descend
             if (craft.getVerticalCruiseDirection() == Direction.DOWN) {
                 if (craft.getHorizontalCruiseDirection() != Direction.NONE) {
-                    dy = (-1 - craft.getType().getVertCruiseSkipBlocks()) / 2;
+                    dy = (-1 - craft.getType().getVertCruiseSkipBlocks()) >> 1;
                 } else {
                     dy = -1 - craft.getType().getVertCruiseSkipBlocks();
                 }
@@ -113,49 +115,61 @@ public class AsyncManager implements Runnable {
                     dy = -1;
                 }
             }
-            // ship faces west
-            if (craft.getHorizontalCruiseDirection() == Direction.WEST) {
-                dx = 1 + craft.getType().getCruiseSkipBlocks();
-                if (bankRight) {
-                    dz = (-1 - craft.getType().getCruiseSkipBlocks()) >> 1;
-                }
-                if (bankLeft) {
-                    dz = (1 + craft.getType().getCruiseSkipBlocks()) >> 1;
-                }
+
+            switch (craft.getHorizontalCruiseDirection()) {
+                case WEST:
+                    dx = 1 + craft.getType().getCruiseSkipBlocks();
+                    if (bankRight) {
+                        dz = (-1 - craft.getType().getCruiseSkipBlocks()) >> 1;
+                    }
+
+                    if (bankLeft) {
+                        dz = (1 + craft.getType().getCruiseSkipBlocks()) >> 1;
+                    }
+
+                    break;
+
+                case EAST:
+                    dx = -1 - craft.getType().getCruiseSkipBlocks();
+                    if (bankRight) {
+                        dz = (1 + craft.getType().getCruiseSkipBlocks()) >> 1;
+                    }
+
+                    if (bankLeft) {
+                        dz = (-1 - craft.getType().getCruiseSkipBlocks()) >> 1;
+                    }
+
+                    break;
+
+                case NORTH:
+                    dz = 1 + craft.getType().getCruiseSkipBlocks();
+                    if (bankRight) {
+                        dx = (-1 - craft.getType().getCruiseSkipBlocks()) >> 1;
+                    }
+
+                    if (bankLeft) {
+                        dx = (1 + craft.getType().getCruiseSkipBlocks()) >> 1;
+                    }
+
+                    break;
+
+                case SOUTH:
+                    dz = -1 - craft.getType().getCruiseSkipBlocks();
+                    if (bankRight) {
+                        dx = (1 + craft.getType().getCruiseSkipBlocks()) >> 1;
+                    }
+
+                    if (bankLeft) {
+                        dx = (-1 - craft.getType().getCruiseSkipBlocks()) >> 1;
+                    }
+
+                    break;
             }
-            // ship faces east
-            if (craft.getHorizontalCruiseDirection() == Direction.EAST) {
-                dx = -1 - craft.getType().getCruiseSkipBlocks();
-                if (bankLeft) {
-                    dz = (-1 - craft.getType().getCruiseSkipBlocks()) >> 1;
-                }
-                if (bankRight) {
-                    dz = (1 + craft.getType().getCruiseSkipBlocks()) >> 1;
-                }
-            }
-            // ship faces north
-            if (craft.getHorizontalCruiseDirection() == Direction.NORTH) {
-                dz = 1 + craft.getType().getCruiseSkipBlocks();
-                if (bankRight) {
-                    dx = (-1 - craft.getType().getCruiseSkipBlocks()) >> 1;
-                }
-                if (bankLeft) {
-                    dx = (1 + craft.getType().getCruiseSkipBlocks()) >> 1;
-                }
-            }
-            // ship faces south
-            if (craft.getHorizontalCruiseDirection() == Direction.SOUTH) {
-                dz = -1 - craft.getType().getCruiseSkipBlocks();
-                if (bankLeft) {
-                    dx = (-1 - craft.getType().getCruiseSkipBlocks()) >> 1;
-                }
-                if (bankRight) {
-                    dx = (1 + craft.getType().getCruiseSkipBlocks()) >> 1;
-                }
-            }
+
             if (craft.getType().getCruiseOnPilot()) {
                 dy = craft.getType().getCruiseOnPilotVertMove();
             }
+
             craft.translate(new Vector3i(dx, dy, dz));
         }
     }

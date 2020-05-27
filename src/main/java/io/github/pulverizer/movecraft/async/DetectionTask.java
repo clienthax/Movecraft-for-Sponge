@@ -356,7 +356,7 @@ public class DetectionTask extends AsyncTask {
                 }
 
                 if (craft.getType().limitToParentHitBox()) {
-                    craft.setParentCraft(testCraft);
+                    testCraft.addSubcraft(craft);
                 }
 
                 return testCraft;

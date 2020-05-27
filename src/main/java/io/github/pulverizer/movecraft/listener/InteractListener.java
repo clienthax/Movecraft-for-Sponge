@@ -130,29 +130,31 @@ public final class InteractListener {
                     dy = -1;
 
                 craft.translate(new Vector3i(0, dy, 0));
-                return;
+
+            } else {
+
+                // Player is onboard craft and right clicking
+                float rotation = (float) Math.PI * (float) player.getRotation().getY() / 180f;
+
+                float nx = -(float) Math.sin(rotation);
+                float nz = (float) Math.cos(rotation);
+
+                int dx = (Math.abs(nx) >= 0.5 ? 1 : 0) * (int) Math.signum(nx);
+                int dz = (Math.abs(nz) > 0.5 ? 1 : 0) * (int) Math.signum(nz);
+                int dy;
+
+                float p = (float) player.getRotation().getX();
+
+                dy = -(Math.abs(p) >= 25 ? 1 : 0) * (int) Math.signum(p);
+
+                if (Math.abs(player.getRotation().getX()) >= 75) {
+                    dx = 0;
+                    dz = 0;
+                }
+
+                craft.translate(new Vector3i(dx, dy, dz));
             }
 
-            // Player is onboard craft and right clicking
-            float rotation = (float) Math.PI * (float) player.getRotation().getY() / 180f;
-
-            float nx = -(float) Math.sin(rotation);
-            float nz = (float) Math.cos(rotation);
-
-            int dx = (Math.abs(nx) >= 0.5 ? 1 : 0) * (int) Math.signum(nx);
-            int dz = (Math.abs(nz) > 0.5 ? 1 : 0) * (int) Math.signum(nz);
-            int dy;
-
-            float p = (float) player.getRotation().getX();
-
-            dy = -(Math.abs(p) >= 25 ? 1 : 0) * (int) Math.signum(p);
-
-            if (Math.abs(player.getRotation().getX()) >= 75) {
-                dx = 0;
-                dz = 0;
-            }
-
-            craft.translate(new Vector3i(dx, dy, dz));
             return;
         }
 
@@ -178,7 +180,7 @@ public final class InteractListener {
             }
 
             craft.setDirectControl(mode);
-            player.sendMessage(Text.of("Entering Direct Control Mode" + mode));
+            player.sendMessage(Text.of("Entering Direct Control Mode " + mode));
             event.setCancelled(true);
         }
 
