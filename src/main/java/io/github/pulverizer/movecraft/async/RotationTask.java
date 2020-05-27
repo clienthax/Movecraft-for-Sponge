@@ -109,7 +109,7 @@ public class RotationTask extends AsyncTask {
                     } else {
                         pilot.sendMessage(Text.of("The farthest extent now faces West"));
                     }
-                } else {
+                } else if (Math.abs(farthestX) < Math.abs(farthestZ)) {
                     if (farthestZ > 0) {
                         pilot.sendMessage(Text.of("The farthest extent now faces South"));
                     } else {
