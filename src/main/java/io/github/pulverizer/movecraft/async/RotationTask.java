@@ -221,14 +221,7 @@ public class RotationTask extends AsyncTask {
 
     @Override
     protected Optional<Player> getNotificationPlayer() {
-        // TODO - What about remote sign usage???
-        Optional<Player> player = Sponge.getServer().getPlayer(craft.getPilot());
-
-        if (!player.isPresent()) {
-            player = Sponge.getServer().getPlayer(craft.getCommander());
-        }
-
-        return player;
+        return craft.getNotificationPlayer();
     }
 
     public Vector3i getOriginPoint() {

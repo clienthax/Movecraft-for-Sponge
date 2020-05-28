@@ -135,8 +135,9 @@ public final class CommanderSign {
         if (blockSnapshot.getState().getType() != BlockTypes.STANDING_SIGN && blockSnapshot.getState().getType() != BlockTypes.WALL_SIGN)
             return;
 
-        if (!blockSnapshot.getLocation().isPresent() || !blockSnapshot.getLocation().get().getTileEntity().isPresent())
+        if (!blockSnapshot.getLocation().isPresent() || !blockSnapshot.getLocation().get().getTileEntity().isPresent()) {
             return;
+        }
 
         ListValue<Text> signText = ((Sign) blockSnapshot.getLocation().get().getTileEntity().get()).lines();
 

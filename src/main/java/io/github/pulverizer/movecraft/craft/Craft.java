@@ -1053,4 +1053,18 @@ public class Craft {
 
         removeCrew();
     }
+
+    public Optional<Player> getNotificationPlayer() {
+        Optional<Player> player = Sponge.getServer().getPlayer(pilot);
+
+        if (!player.isPresent()) {
+            player = Sponge.getServer().getPlayer(commander);
+        }
+
+        if (!player.isPresent()) {
+            player = Sponge.getServer().getPlayer(commandeeredBy);
+        }
+
+        return player;
+    }
 }

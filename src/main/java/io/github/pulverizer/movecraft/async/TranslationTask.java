@@ -352,14 +352,7 @@ public class TranslationTask extends AsyncTask {
 
     @Override
     protected Optional<Player> getNotificationPlayer() {
-        // TODO - What about remote sign usage???
-        Optional<Player> player = Sponge.getServer().getPlayer(craft.getPilot());
-
-        if (!player.isPresent()) {
-            player = Sponge.getServer().getPlayer(craft.getCommander());
-        }
-
-        return player;
+        return craft.getNotificationPlayer();
     }
 
     //TODO: Reactivate and review code once possible to get a block's potential drops.
