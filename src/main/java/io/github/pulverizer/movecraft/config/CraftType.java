@@ -15,7 +15,6 @@ import java.util.*;
 
 final public class CraftType {
     private final boolean requireWaterContact;
-    private final boolean tryNudge;
     private final boolean canCruise;
     private final boolean canTeleport;
     private final boolean canStaticMove;
@@ -48,7 +47,6 @@ final public class CraftType {
     private final int cruiseSkipBlocks;
     private final int vertCruiseSkipBlocks;
     private final int cruiseTickCooldown;
-    private final int staticWaterLevel;
     private final int sinkRateTicks;
     private final int smokeOnSink;
     private final int tickCooldown;
@@ -75,6 +73,12 @@ final public class CraftType {
     private final Map<Set<BlockType>, List<Double>> exposedSpeedBlocks;
     private final boolean ignoreMapUpdateTime;
     private final float targetMoveTime;
+    private final float spottingMultiplier;
+    private final boolean limitToParentHitBox;
+    private final boolean allowLoaders;
+    private final boolean allowRepairmen;
+    private final boolean canHaveCrew;
+    private final int cruiseOnPilotMaxMoves;
 
     public CraftType(File file) throws NullPointerException, IOException, ObjectMappingException {
 
@@ -106,7 +110,6 @@ final public class CraftType {
         forbiddenSignStrings = configNode.getNode("forbiddenSignStrings").getValue(new TypeToken<Set<String>>() {}, new HashSet<>());
 
         requireWaterContact = configNode.getNode("requireWaterContact").getBoolean(false);
-        tryNudge = configNode.getNode("tryNudge").getBoolean(false);
         tickCooldown = (int) Math.ceil(20 / configNode.getNode("speed").getDouble());
         cruiseTickCooldown = (int) Math.ceil(20 / configNode.getNode("cruiseSpeed").getDouble());
 
@@ -130,7 +133,6 @@ final public class CraftType {
         halfSpeedUnderwater = configNode.getNode("halfSpeedUnderwater").getBoolean(false);
         focusedExplosion = configNode.getNode("focusedExplosion").getBoolean(false);
         mustBeSubcraft = configNode.getNode("mustBeSubcraft").getBoolean(false);
-        staticWaterLevel = configNode.getNode("staticWaterLevel").getInt(0);
         fuelBurnRate = configNode.getNode("fuelBurnRate").getDouble(0);
         sinkPercent = configNode.getNode("sinkPercent").getDouble(0);
         overallSinkPercent = configNode.getNode("overallSinkPercent").getDouble(0);
@@ -164,6 +166,12 @@ final public class CraftType {
         exposedSpeedBlocks = configNode.getNode("exposedSpeedBlocks").getValue(new TypeToken<Map<Set<BlockType>, List<Double>>>() {}, new HashMap<>());
         ignoreMapUpdateTime = configNode.getNode("ignoreMapUpdateTime").getBoolean(false);
         targetMoveTime = configNode.getNode("targetMoveTime").getFloat((float) maxSize / 1000);
+        spottingMultiplier = configNode.getNode("spottingMultiplier").getFloat(0.5f);
+        limitToParentHitBox = configNode.getNode("limitToParentHitBox").getBoolean(false);
+        allowLoaders = configNode.getNode("allowLoaders").getBoolean(true);
+        allowRepairmen = configNode.getNode("allowRepairmen").getBoolean(true);
+        canHaveCrew = configNode.getNode("canHaveCrew").getBoolean(true);
+        cruiseOnPilotMaxMoves = configNode.getNode("cruiseOnPilotMaxMoves").getInt(300);
 
         // Save config file
         //TODO - When I've got it to stop destroying tidy configs
@@ -224,7 +232,7 @@ final public class CraftType {
     //TODO - Remove this temp method
     @Deprecated
     public boolean blockedByWater() {
-        return passthroughBlocks.contains(BlockTypes.WATER) && passthroughBlocks.contains(BlockTypes.FLOWING_WATER);
+        return !passthroughBlocks.contains(BlockTypes.WATER) || !passthroughBlocks.contains(BlockTypes.FLOWING_WATER);
     }
 
     public boolean getRequireWaterContact() {
@@ -245,10 +253,6 @@ final public class CraftType {
 
     public int maxStaticMove() {
         return maxStaticMove;
-    }
-
-    public int getStaticWaterLevel() {
-        return staticWaterLevel;
     }
 
     public boolean getCanTeleport() {
@@ -327,6 +331,7 @@ final public class CraftType {
         return explodeOnCrash;
     }
 
+    // TODO - Implement Usage
     public int getSmokeOnSink() {
         return smokeOnSink;
     }
@@ -355,10 +360,6 @@ final public class CraftType {
         return mustBeSubcraft;
     }
 
-    public boolean isTryNudge() {
-        return tryNudge;
-    }
-
     public Map<List<BlockType>, List<Double>> getFlyBlocks() {
         return flyBlocks;
     }
@@ -379,6 +380,7 @@ final public class CraftType {
         return maxHeightAboveGround;
     }
 
+    // TODO - Implement Usage
     public boolean getCanHover() {
         return canHover;
     }
@@ -387,6 +389,7 @@ final public class CraftType {
         return canDirectControl;
     }
 
+    // TODO - Implement Usage
     public int getHoverLimit() {
         return hoverLimit;
     }
@@ -403,6 +406,7 @@ final public class CraftType {
         return furnaceBlocks;
     }
 
+    // TODO - Implement Usage
     public boolean getCanHoverOverWater() {
         return canHoverOverWater;
     }
@@ -411,6 +415,7 @@ final public class CraftType {
         return moveEntities;
     }
 
+    // TODO - Implement Usage
     public boolean getUseGravity() {
         return useGravity;
     }
@@ -431,6 +436,7 @@ final public class CraftType {
         return speedBlocks;
     }
 
+    // TODO - Implement Usage
     public Map<Set<BlockType>, List<Double>> getExposedSpeedBlocks() {
         return exposedSpeedBlocks;
     }
@@ -443,33 +449,32 @@ final public class CraftType {
         return targetMoveTime;
     }
 
-    //TODO - Implement Correctly
     public float getSpottingMultiplier() {
-        return 0.05f;
-    }
-
-    public boolean informParentOfContacts() {
-        return true;
+        return spottingMultiplier;
     }
 
     public boolean limitToParentHitBox() {
-        return true;
+        return limitToParentHitBox;
     }
 
     public boolean allowLoaders() {
-        return true;
+        return allowLoaders;
     }
 
     public boolean allowRepairmen() {
-        return true;
+        return allowRepairmen;
+    }
+
+    public boolean canHaveCrew() {
+        return canHaveCrew;
+    }
+
+    public int getCruiseOnPilotMaxMoves() {
+        return cruiseOnPilotMaxMoves;
     }
 
     @Override
     public int hashCode() {
         return name.hashCode();
-    }
-
-    public boolean canHaveCrew() {
-        return true;
     }
 }

@@ -75,6 +75,10 @@ public class AsyncManager implements Runnable {
                 continue;
             }
 
+            if (craft.getType().getCruiseOnPilot() && craft.getType().getCruiseOnPilotMaxMoves() > 0 && craft.getType().getCruiseOnPilotMaxMoves() <= craft.getNumberOfMoves()) {
+                craft.sink();
+            }
+
             // check direct controls to modify movement
             boolean bankLeft = false;
             boolean bankRight = false;

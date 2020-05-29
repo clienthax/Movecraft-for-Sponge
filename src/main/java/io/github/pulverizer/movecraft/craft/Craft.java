@@ -908,7 +908,7 @@ public class Craft {
         return directControl;
     }
     public void addPilotMovement(Vector3d movement) {
-        pilotOffset = new Vector3d((pilotOffset.getX() + movement.getX()) / 2, movement.getY(), (pilotOffset.getZ() + movement.getZ()) / 2);
+        pilotOffset = new Vector3d((pilotOffset.getX() + movement.getX()) / 2, 0, (pilotOffset.getZ() + movement.getZ()) / 2);
     }
 
     public Vector3d getPilotOffset() {

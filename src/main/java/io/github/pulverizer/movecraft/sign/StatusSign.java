@@ -181,7 +181,8 @@ public final class StatusSign {
         int fuelRange = (int) Math.floor((fuel * (1 + craft.getType().getCruiseSkipBlocks())) / craft.getType().getFuelBurnRate());
         TextColor fuelColor;
 
-        //TODO: Add to config per craft
+        //TODO: Add default to craft config
+        //  Add new sign type "Fuel Range:" which allows the player to set it per craft
         if(fuelRange > 10000) {
             fuelColor = TextColors.GREEN;
         } else if(fuelRange > 2500) {

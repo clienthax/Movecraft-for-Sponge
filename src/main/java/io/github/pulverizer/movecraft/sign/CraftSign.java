@@ -66,13 +66,6 @@ public final class CraftSign {
 
             craft.setCruising(craft.getVerticalCruiseDirection(), cruiseDirection);
 
-            //TODO: Move to Detection Task
-            // And add fly time config options to CraftType
-            Task.builder()
-                    .execute(() -> craft.release(player))
-                    .delayTicks(20*15)
-                    .submit(Movecraft.getInstance());
-
         } else {
             final Craft oldCraft = CraftManager.getInstance().getCraftByPlayer(player.getUniqueId());
 

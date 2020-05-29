@@ -115,9 +115,9 @@ public class PlayerListener {
             return;
         }
 
-        /*if (craft.getPilot().equals(player.getUniqueId())) {
-            // TODO - Direct Control Mode A code
-        }*/
+        if (craft.getPilot().equals(player.getUniqueId())) {
+            craft.addPilotMovement(event.getToTransform().getPosition().sub(event.getFromTransform().getPosition()));
+        }
 
         if(MathUtils.locationNearHitBox(craft.getHitBox(), player.getPosition(), 2)){
             timeToReleaseAfter.remove(craft);
