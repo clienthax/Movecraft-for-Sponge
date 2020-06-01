@@ -13,12 +13,15 @@ import io.github.pulverizer.movecraft.utils.HashHitBox;
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.block.BlockType;
 import org.spongepowered.api.block.BlockTypes;
+import org.spongepowered.api.effect.particle.ParticleType;
+import org.spongepowered.api.effect.particle.ParticleTypes;
 import org.spongepowered.api.entity.Entity;
 import org.spongepowered.api.entity.EntityTypes;
 import org.spongepowered.api.entity.Item;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.scheduler.Task;
 import org.spongepowered.api.util.AABB;
+import org.spongepowered.api.world.Location;
 import org.spongepowered.api.world.World;
 
 import java.util.Collection;
@@ -121,7 +124,7 @@ public class TranslationTask extends AsyncTask {
 
         // Check if the craft is too high
         if (displacement.getY() > -1) {
-            if (craft.getMaxHeightLimit() < maxY) {
+            if (craft.getMaxHeightLimit() < maxY || (displacement.getY() == 0 && craft.getType().getUseGravity())) {
                 displacement = new Vector3i(displacement.getX(), -1, displacement.getZ());
 
             } else if (craft.getType().getMaxHeightAboveGround() > 0) {
@@ -132,7 +135,8 @@ public class TranslationTask extends AsyncTask {
                 while (testY > 0) {
                     testY -= 1;
 
-                    if (craft.getWorld().getBlockType(middle.getX(), testY, middle.getZ()) != BlockTypes.AIR)
+                    // TODO - Probably won't work in newer versions with kelp, etc
+                    if (craft.getWorld().getBlockType(middle.getX(), testY, middle.getZ()) != BlockTypes.AIR && (!craft.getType().getCanHoverOverWater() || craft.getWorld().getBlockType(middle.getX(), testY, middle.getZ()) != BlockTypes.WATER))
                         break;
                 }
 
@@ -249,6 +253,14 @@ public class TranslationTask extends AsyncTask {
             } while (newHitBox.contains(next));
 
             newHitBox.removeAll(toRemove);
+        }
+
+        if (craft.getType().getSmokeOnSink() > 0) {
+            for (Vector3i location : newHitBox) {
+                if (ThreadLocalRandom.current().nextInt(craft.getType().getSmokeOnSink()) < 1) {
+                    updates.add(new ParticleUpdateCommand(new Location<>(world, location), ParticleTypes.LARGE_SMOKE, craft.getType().getSmokeOnSinkQuantity()));
+                }
+            }
         }
     }
 

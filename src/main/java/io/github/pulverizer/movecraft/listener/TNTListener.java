@@ -51,43 +51,24 @@ public class TNTListener {
 
     private final HashMap<Explosion, HashSet<Explosion>> ammoDetonation = new HashMap<>();
 
-    public TNTListener() {
-        Task.builder()
-                .intervalTicks(1)
-                .execute(this::processContactExplosives)
-                .submit(Movecraft.getInstance());
-    }
-
-    private void processContactExplosives() {
-
-        Sponge.getServer().getWorlds().forEach(world ->
-                world.getEntities(entity -> entity instanceof PrimedTNT).forEach(entity -> {
-
-                    PrimedTNT primedTNT = (PrimedTNT) entity;
-                    //Contact Explosives
-
-                    double velocity = primedTNT.getVelocity().lengthSquared();
-
-                    if (!TNTTracking.containsKey(primedTNT) && velocity > 0.35) {
-                        TNTTracking.put(primedTNT, velocity);
-
-                    } else if (TNTTracking.containsKey(primedTNT)) {
-                        if (velocity < TNTTracking.get(primedTNT) / 10) {
-                            primedTNT.detonate();
-                            TNTTracking.remove(primedTNT);
-                            TNTTracers.remove(primedTNT);
-
-                        } else {
-                            TNTTracking.put(primedTNT, velocity);
-                        }
-                    }
-                }));
-    }
-
     @Listener
     public void tntTracking(MoveEntityEvent event, @Getter("getTargetEntity") PrimedTNT primedTNT) {
 
         double velocity = primedTNT.getVelocity().lengthSquared();
+
+        if (!TNTTracking.containsKey(primedTNT) && velocity > 0.35) {
+            TNTTracking.put(primedTNT, velocity);
+
+        } else if (TNTTracking.containsKey(primedTNT)) {
+            if (velocity < TNTTracking.get(primedTNT) / 10) {
+                primedTNT.detonate();
+                TNTTracking.remove(primedTNT);
+                TNTTracers.remove(primedTNT);
+
+            } else {
+                TNTTracking.put(primedTNT, velocity);
+            }
+        }
 
         //Cannon Directors
         //TODO - Check that craft type allows cannon directors
@@ -217,6 +198,7 @@ public class TNTListener {
 
         int tntFound = 1;
 
+        // TODO - What about close multi-barrels? ~Time
         Collection<Entity> entities = event.getTargetWorld().getNearbyEntities(tntLoc.getPosition(), 3);
 
         if (Settings.Debug)

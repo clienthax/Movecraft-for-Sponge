@@ -46,10 +46,11 @@ final public class CraftType {
     private final int maxStaticMove;
     private final int cruiseSkipBlocks;
     private final int vertCruiseSkipBlocks;
-    private final int cruiseTickCooldown;
+    private final double cruiseTickCooldown;
     private final int sinkRateTicks;
     private final int smokeOnSink;
-    private final int tickCooldown;
+    private final int smokeOnSinkQuantity;
+    private final double tickCooldown;
     private final int hoverLimit;
     private final double fuelBurnRate;
     private final double sinkPercent;
@@ -110,8 +111,8 @@ final public class CraftType {
         forbiddenSignStrings = configNode.getNode("forbiddenSignStrings").getValue(new TypeToken<Set<String>>() {}, new HashSet<>());
 
         requireWaterContact = configNode.getNode("requireWaterContact").getBoolean(false);
-        tickCooldown = (int) Math.ceil(20 / configNode.getNode("speed").getDouble());
-        cruiseTickCooldown = (int) Math.ceil(20 / configNode.getNode("cruiseSpeed").getDouble());
+        tickCooldown = configNode.getNode("speed").getDouble();
+        cruiseTickCooldown = configNode.getNode("cruiseSpeed").getDouble();
 
         flyBlocks = blockTypeMapListFromNode(configNode.getNode("flyblocks").getValue(new TypeToken<Map<List<BlockType>, List<String>>>() {}, new HashMap<>()));
         moveBlocks = blockTypeMapListFromNode(configNode.getNode("moveBlocks").getValue(new TypeToken<Map<List<BlockType>, List<String>>>() {}, new HashMap<>()));
@@ -142,6 +143,7 @@ final public class CraftType {
         sinkRateTicks = configNode.getNode("sinkTickRate").getInt(0);
         keepMovingOnSink = configNode.getNode("keepMovingOnSink").getBoolean(false);
         smokeOnSink = configNode.getNode("smokeOnSink").getInt(0);
+        smokeOnSinkQuantity = configNode.getNode("smokeOnSinkQuantity").getInt(1);
         explodeOnCrash = configNode.getNode("explodeOnCrash").getFloat(0);
         collisionExplosion = configNode.getNode("collisionExplosion").getFloat(0);
         minHeightLimit = configNode.getNode("minHeightLimit").getInt(0);
@@ -165,7 +167,7 @@ final public class CraftType {
         speedBlocks = configNode.getNode("speedBlocks").getValue(new TypeToken<Map<Set<BlockType>, Double>>() {}, new HashMap<>());
         exposedSpeedBlocks = configNode.getNode("exposedSpeedBlocks").getValue(new TypeToken<Map<Set<BlockType>, List<Double>>>() {}, new HashMap<>());
         ignoreMapUpdateTime = configNode.getNode("ignoreMapUpdateTime").getBoolean(false);
-        targetMoveTime = configNode.getNode("targetMoveTime").getFloat((float) maxSize / 1000);
+        targetMoveTime = configNode.getNode("targetMoveTime").getFloat(((float) maxSize) / 1000f);
         spottingMultiplier = configNode.getNode("spottingMultiplier").getFloat(0.5f);
         limitToParentHitBox = configNode.getNode("limitToParentHitBox").getBoolean(false);
         allowLoaders = configNode.getNode("allowLoaders").getBoolean(true);
@@ -331,7 +333,6 @@ final public class CraftType {
         return explodeOnCrash;
     }
 
-    // TODO - Implement Usage
     public int getSmokeOnSink() {
         return smokeOnSink;
     }
@@ -341,11 +342,11 @@ final public class CraftType {
     }
 
     public int getTickCooldown() {
-        return tickCooldown;
+        return (int) Math.ceil(20 / tickCooldown);
     }
 
     public int getCruiseTickCooldown() {
-        return cruiseTickCooldown == 0 ? tickCooldown : cruiseTickCooldown;
+        return cruiseTickCooldown == 0 ? getTickCooldown() : (int) Math.ceil(20 / cruiseTickCooldown);
     }
 
     public boolean getHalfSpeedUnderwater() {
@@ -380,18 +381,8 @@ final public class CraftType {
         return maxHeightAboveGround;
     }
 
-    // TODO - Implement Usage
-    public boolean getCanHover() {
-        return canHover;
-    }
-
     public boolean getCanDirectControl() {
         return canDirectControl;
-    }
-
-    // TODO - Implement Usage
-    public int getHoverLimit() {
-        return hoverLimit;
     }
 
     public List<BlockType> getHarvestBlocks() {
@@ -406,7 +397,6 @@ final public class CraftType {
         return furnaceBlocks;
     }
 
-    // TODO - Implement Usage
     public boolean getCanHoverOverWater() {
         return canHoverOverWater;
     }
@@ -415,7 +405,6 @@ final public class CraftType {
         return moveEntities;
     }
 
-    // TODO - Implement Usage
     public boolean getUseGravity() {
         return useGravity;
     }
@@ -476,5 +465,9 @@ final public class CraftType {
     @Override
     public int hashCode() {
         return name.hashCode();
+    }
+
+    public int getSmokeOnSinkQuantity() {
+        return smokeOnSinkQuantity;
     }
 }

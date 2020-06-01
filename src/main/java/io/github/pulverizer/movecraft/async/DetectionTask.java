@@ -378,7 +378,7 @@ public class DetectionTask extends AsyncTask {
                 return;
             }
 
-            if (!craft.isSubCraft() && originCraft.isProcessing()) {
+            if (originCraft.isProcessing()) {
                 fail("Parent craft is busy!");
             }
 

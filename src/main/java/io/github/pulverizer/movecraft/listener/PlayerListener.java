@@ -115,7 +115,7 @@ public class PlayerListener {
             return;
         }
 
-        if (craft.getPilot().equals(player.getUniqueId())) {
+        if (craft.getPilot() != null && craft.getPilot().equals(player.getUniqueId())) {
             craft.addPilotMovement(event.getToTransform().getPosition().sub(event.getFromTransform().getPosition()));
         }
 

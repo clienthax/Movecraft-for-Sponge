@@ -2,6 +2,7 @@ package io.github.pulverizer.movecraft.map_updater.update;
 
 import io.github.pulverizer.movecraft.config.Settings;
 import org.spongepowered.api.effect.particle.ParticleEffect;
+import org.spongepowered.api.effect.particle.ParticleType;
 import org.spongepowered.api.effect.particle.ParticleTypes;
 import org.spongepowered.api.entity.Entity;
 import org.spongepowered.api.entity.living.player.Player;
@@ -12,25 +13,24 @@ import java.util.Random;
 
 public class ParticleUpdateCommand extends UpdateCommand {
     private final Location<World> location;
-    private final int smokeStrength;
+    private final ParticleType particleType;
+    private final int quantity;
     private final Random rand = new Random();
 
-    public ParticleUpdateCommand(Location<World> location, int smokeStrength) {
+    public ParticleUpdateCommand(Location<World> location, ParticleType particleType, int quantity) {
         this.location = location;
-        this.smokeStrength = smokeStrength;
+        this.particleType = particleType;
+        this.quantity = quantity;
     }
 
     @Override
     public void doUpdate() {
-        // put in smoke or effects
-        if (smokeStrength == 1) {
+        // put in smoke
+        location.getExtent().spawnParticles(ParticleEffect.builder().type(particleType).quantity(quantity).build(), location.getPosition());
 
-            location.getExtent().spawnParticles(ParticleEffect.builder().type(ParticleTypes.SMOKE).build(), location.getPosition());
-
-        }
-        if (Settings.SilhouetteViewDistance > 0) {
-            sendSilhouetteToPlayers();
-        }
+        //if (Settings.SilhouetteViewDistance > 0) {
+        //    sendSilhouetteToPlayers();
+        //}
 
     }
 

@@ -52,7 +52,7 @@ public class Craft {
     private final UUID id = UUID.randomUUID();
     private final UUID commandeeredBy;
     private int initialSize;
-    private final long commandeeredAt;
+    private final long commandeeredAt = System.currentTimeMillis();
     private final int maxHeightLimit;
 
 
@@ -96,7 +96,7 @@ public class Craft {
     // Init with value > 0 or else getTickCooldown() will silently fail
     private float meanMoveTime = 1;
     private long lastRotateTime = 0;
-    private int lastMoveTick;
+    private int lastMoveTick = Sponge.getServer().getRunningTimeTicks() - 100;
     private float speedBlockEffect = 1;
 
 
@@ -117,8 +117,6 @@ public class Craft {
         this.type = type;
         world = startLocation.getExtent();
 
-        lastMoveTick = Sponge.getServer().getRunningTimeTicks() - 100;
-        commandeeredAt = System.currentTimeMillis();
         commandeeredBy = player.getUniqueId();
         maxHeightLimit = Math.min(type.getMaxHeightLimit(), world.getDimension().getBuildHeight() - 1);
 
