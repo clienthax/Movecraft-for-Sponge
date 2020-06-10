@@ -30,7 +30,7 @@ public class ExplosionUpdateCommand extends UpdateCommand {
 
     @Override
     public void doUpdate() {
-        Sponge.getServer().getWorld("world").get().triggerExplosion(this.createExplosion(explosionLocation.add(.5,.5,.5), explosionStrength));
+        explosionLocation.getExtent().triggerExplosion(this.createExplosion(explosionLocation.add(.5,.5,.5), explosionStrength));
     }
 
     private Explosion createExplosion(Location<World> loc, float explosionPower) {

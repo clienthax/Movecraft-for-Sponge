@@ -1,12 +1,16 @@
 package io.github.pulverizer.movecraft.sign;
 
+import io.github.pulverizer.movecraft.Movecraft;
 import io.github.pulverizer.movecraft.config.Settings;
 import io.github.pulverizer.movecraft.enums.Rotation;
 import io.github.pulverizer.movecraft.craft.Craft;
+import io.github.pulverizer.movecraft.utils.BlockSnapshotSignDataUtil;
 import io.github.pulverizer.movecraft.utils.MathUtils;
 import io.github.pulverizer.movecraft.craft.CraftManager;
 import org.spongepowered.api.block.BlockSnapshot;
 import org.spongepowered.api.block.tileentity.Sign;
+import org.spongepowered.api.data.manipulator.immutable.tileentity.ImmutableSignData;
+import org.spongepowered.api.data.value.immutable.ImmutableListValue;
 import org.spongepowered.api.data.value.mutable.ListValue;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.event.block.InteractBlockEvent;
@@ -49,15 +53,12 @@ public final class HelmSign {
             return;
         }
 
-        if (!block.getLocation().isPresent() || !block.getLocation().get().getTileEntity().isPresent())
+        if (!block.getLocation().isPresent())
             return;
 
-        Sign sign = (Sign) block.getLocation().get().getTileEntity().get();
-        ListValue<Text> lines = sign.lines();
-
-        if (!lines.get(0).toPlain().equalsIgnoreCase("\\  ||  /") ||
-                !lines.get(1).toPlain().equalsIgnoreCase("==      ==") ||
-                !lines.get(2).toPlain().equalsIgnoreCase("/  ||  \\")) {
+        if (!BlockSnapshotSignDataUtil.getTextLine(block, 1).get().equalsIgnoreCase("\\\\  ||  /") ||
+                !BlockSnapshotSignDataUtil.getTextLine(block, 2).get().equalsIgnoreCase("\\u003d\\u003d      \\u003d\\u003d") || // \\u003d is =
+                !BlockSnapshotSignDataUtil.getTextLine(block, 3).get().equalsIgnoreCase("/  ||  \\\\")) {
             return;
         }
 
@@ -80,7 +81,7 @@ public final class HelmSign {
         if (craft.getType().rotateAtMidpoint()) {
             craft.rotate(craft.getHitBox().getMidPoint(), rotation);
         } else {
-            craft.rotate(sign.getLocation().getBlockPosition(), rotation);
+            craft.rotate(block.getLocation().get().getBlockPosition(), rotation);
         }
 
         event.setCancelled(true);

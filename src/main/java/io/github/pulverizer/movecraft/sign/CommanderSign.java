@@ -2,10 +2,13 @@ package io.github.pulverizer.movecraft.sign;
 
 import io.github.pulverizer.movecraft.Movecraft;
 import io.github.pulverizer.movecraft.config.Settings;
+import io.github.pulverizer.movecraft.utils.BlockSnapshotSignDataUtil;
 import org.spongepowered.api.block.BlockSnapshot;
 import org.spongepowered.api.block.BlockTypes;
 import org.spongepowered.api.block.tileentity.Sign;
 import org.spongepowered.api.data.Transaction;
+import org.spongepowered.api.data.manipulator.immutable.tileentity.ImmutableSignData;
+import org.spongepowered.api.data.value.immutable.ImmutableListValue;
 import org.spongepowered.api.data.value.mutable.ListValue;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.event.block.ChangeBlockEvent;
@@ -127,7 +130,6 @@ public final class CommanderSign {
         player.sendMessage(Text.of("There was an error. Please try placing the sign again. If this continues, please contact a Server Admin."));
     }
 
-    //TODO: TileEntity missing if attached surface is broken, otherwise is okay?
     public static void onSignBreak(ChangeBlockEvent.Break event, Transaction<BlockSnapshot> transaction) {
 
         BlockSnapshot blockSnapshot = transaction.getOriginal();
@@ -135,19 +137,11 @@ public final class CommanderSign {
         if (blockSnapshot.getState().getType() != BlockTypes.STANDING_SIGN && blockSnapshot.getState().getType() != BlockTypes.WALL_SIGN)
             return;
 
-        if (!blockSnapshot.getLocation().isPresent() || !blockSnapshot.getLocation().get().getTileEntity().isPresent()) {
-            return;
-        }
-
-        ListValue<Text> signText = ((Sign) blockSnapshot.getLocation().get().getTileEntity().get()).lines();
-
-        String string = signText.get(0).toPlain();
-
-        if (!string.equalsIgnoreCase(HEADER))
+        if (!BlockSnapshotSignDataUtil.getTextLine(blockSnapshot, 1).get().equalsIgnoreCase(HEADER))
             return;
 
-        String username = signText.get(1).toPlain();
-        int id = Integer.parseInt(signText.get(2).toPlain());
+        String username = BlockSnapshotSignDataUtil.getTextLine(blockSnapshot, 2).get();
+        int id = Integer.parseInt(BlockSnapshotSignDataUtil.getTextLine(blockSnapshot, 3).get());
 
         if (!removeFromDatabase(username, id))
             transaction.setValid(false);

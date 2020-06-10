@@ -60,18 +60,11 @@ public class AsyncManager implements Runnable {
 
     private void processCruise() {
         for (Craft craft : CraftManager.getInstance()) {
-            if (craft == null || craft.isProcessing() || !craft.isCruising()) {
+            if (craft == null || craft.isProcessing() || !craft.isCruising() || craft.isSinking()) {
                 continue;
             }
 
-            long ticksElapsed = Sponge.getServer().getRunningTimeTicks() - craft.getLastMoveTick();
-            World world = craft.getWorld();
-            // if the craft should go slower underwater, make time pass more slowly there
-            //TODO: Replace world.getSeaLevel() with something better
-            if (craft.getType().getHalfSpeedUnderwater() && craft.getHitBox().getMinY() < world.getSeaLevel())
-                ticksElapsed >>= 1;
-
-            if (ticksElapsed < craft.getTickCooldown()) {
+            if (!craft.hasCooldownExpired()) {
                 continue;
             }
 
@@ -115,7 +108,7 @@ public class AsyncManager implements Runnable {
                 }
             } else if (dive) {
                 dy = -((craft.getType().getCruiseSkipBlocks() + 1) >> 1);
-                if (craft.getHitBox().getMinY() <= world.getSeaLevel()) {
+                if (craft.getHitBox().getMinY() <= craft.getWorld().getSeaLevel()) {
                     dy = -1;
                 }
             }

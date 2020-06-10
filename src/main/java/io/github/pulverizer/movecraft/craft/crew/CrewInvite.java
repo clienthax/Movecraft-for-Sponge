@@ -3,39 +3,40 @@ package io.github.pulverizer.movecraft.craft.crew;
 import io.github.pulverizer.movecraft.craft.Craft;
 import io.github.pulverizer.movecraft.craft.CraftManager;
 import org.spongepowered.api.Sponge;
+import org.spongepowered.api.entity.living.player.Player;
 
 import java.util.UUID;
 
 public class CrewInvite {
     private UUID invitedPlayer;
-    private String invitedBy;
+    private UUID invitedBy;
     private UUID craftUUID;
     private String message;
     private int tickSent;
 
-    public CrewInvite(UUID invitedPlayer, String invitedBy, Craft craft) {
+    public CrewInvite(UUID invitedPlayer, Player invitedBy, Craft craft) {
         this.invitedPlayer = invitedPlayer;
-        this.invitedBy = invitedBy;
+        this.invitedBy = invitedBy.getUniqueId();
         craftUUID = craft.getId();
 
         tickSent = Sponge.getServer().getRunningTimeTicks();
-        message = String.format("You have been invited by %s to serve under them aboard their %s.", invitedBy, craft.getType().getName());
+        message = String.format("You have been invited by %s to serve under them aboard their %s.", invitedBy.getName(), craft.getType().getName());
     }
 
-    public CrewInvite(UUID invitedPlayer, String invitedBy, Craft craft, String craftName) {
+    public CrewInvite(UUID invitedPlayer, Player invitedBy, Craft craft, String craftName) {
         this.invitedPlayer = invitedPlayer;
-        this.invitedBy = invitedBy;
+        this.invitedBy = invitedBy.getUniqueId();
         craftUUID = craft.getId();
 
         tickSent = Sponge.getServer().getRunningTimeTicks();
-        message = String.format("You have been invited by %s to serve under them aboard their %s, the %s.", invitedBy, craft.getType().getName(), craftName);
+        message = String.format("You have been invited by %s to serve under them aboard their %s, the %s.", invitedBy.getName(), craft.getType().getName(), craftName);
     }
 
     public UUID getInvitedPlayerUUID() {
         return invitedPlayer;
     }
 
-    public String getInvitedBy() {
+    public UUID getInvitedBy() {
         return invitedBy;
     }
 

@@ -4,9 +4,12 @@ import io.github.pulverizer.movecraft.Movecraft;
 import io.github.pulverizer.movecraft.craft.Craft;
 import io.github.pulverizer.movecraft.config.CraftType;
 import io.github.pulverizer.movecraft.craft.CraftManager;
+import io.github.pulverizer.movecraft.utils.BlockSnapshotSignDataUtil;
 import org.spongepowered.api.block.BlockSnapshot;
 import org.spongepowered.api.block.tileentity.Sign;
 import org.spongepowered.api.data.key.Keys;
+import org.spongepowered.api.data.manipulator.immutable.tileentity.ImmutableSignData;
+import org.spongepowered.api.data.value.immutable.ImmutableListValue;
 import org.spongepowered.api.data.value.mutable.ListValue;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.event.block.InteractBlockEvent;
@@ -35,17 +38,17 @@ public final class CraftSign {
 
     public static void onSignClick(InteractBlockEvent.Secondary.MainHand event, Player player, BlockSnapshot block) {
 
-        if (!block.getLocation().isPresent() || !block.getLocation().get().getTileEntity().isPresent())
+        if (!block.getLocation().isPresent())
             return;
 
-        ListValue<Text> lines = ((Sign) block.getLocation().get().getTileEntity().get()).lines();
+        String craftTypeString = BlockSnapshotSignDataUtil.getTextLine(block, 1).get();
 
-        CraftType type = CraftManager.getInstance().getCraftTypeFromString(lines.get(0).toPlain());
+        CraftType type = CraftManager.getInstance().getCraftTypeFromString(craftTypeString);
         if (type == null)
             return;
 
         // Valid sign, check player has command permission
-        if (!player.hasPermission("movecraft." + lines.get(0).toPlain() + ".crew.command") && (type.requiresSpecificPerms() || !player.hasPermission("movecraft.crew.command"))) {
+        if (!player.hasPermission("movecraft." + craftTypeString + ".crew.command") && (type.requiresSpecificPerms() || !player.hasPermission("movecraft.crew.command"))) {
             player.sendMessage(Text.of("Insufficient Permissions"));
             return;
         }

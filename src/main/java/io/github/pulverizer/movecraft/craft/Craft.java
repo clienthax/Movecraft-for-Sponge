@@ -101,9 +101,7 @@ public class Craft {
 
 
     // Direct Control
-    //TODO - Use Implementation A
     private DirectControlMode directControl = DirectControlMode.OFF;
-    private Vector3d pilotOffset = new Vector3d(0, 0, 0);
 
 
     /**
@@ -192,10 +190,6 @@ public class Craft {
 
     public HashHitBox getCollapsedHitBox() {
         return collapsedHitBox;
-    }
-
-    public void setCollapsedHitBox(HashHitBox hitBox) {
-        collapsedHitBox = hitBox;
     }
 
     public int getSize() {
@@ -495,6 +489,10 @@ public class Craft {
         return player;
     }
 
+    public Set<UUID> getAADirectors() {
+        return Collections.unmodifiableSet(aaDirectors);
+    }
+
     public boolean isCannonDirector(UUID player) {
         return cannonDirectors.contains(player);
     }
@@ -535,6 +533,10 @@ public class Craft {
         return player;
     }
 
+    public Set<UUID> getCannonDirectors() {
+        return Collections.unmodifiableSet(cannonDirectors);
+    }
+
     public boolean isLoader(UUID player) {
         return loaders.contains(player);
     }
@@ -550,6 +552,10 @@ public class Craft {
         return false;
     }
 
+    public Set<UUID> getLoaders() {
+        return Collections.unmodifiableSet(loaders);
+    }
+
     public boolean isRepairman(UUID player) {
         return repairmen.contains(player);
     }
@@ -563,6 +569,10 @@ public class Craft {
         }
 
         return false;
+    }
+
+    public Set<UUID> getRepairmen() {
+        return Collections.unmodifiableSet(repairmen);
     }
 
     public boolean crewIsEmpty() {
@@ -892,10 +902,6 @@ public class Craft {
 
     public void setDirectControl(DirectControlMode mode) {
         directControl = mode;
-
-        if (mode == DirectControlMode.OFF) {
-            resetPilotOffset();
-        }
     }
 
     public boolean isUnderDirectControl() {
@@ -904,17 +910,6 @@ public class Craft {
 
     public DirectControlMode getDirectControlMode() {
         return directControl;
-    }
-    public void addPilotMovement(Vector3d movement) {
-        pilotOffset = new Vector3d((pilotOffset.getX() + movement.getX()) / 2, 0, (pilotOffset.getZ() + movement.getZ()) / 2);
-    }
-
-    public Vector3d getPilotOffset() {
-        return pilotOffset;
-    }
-
-    public void resetPilotOffset() {
-        pilotOffset = Vector3d.ZERO;
     }
 
 
@@ -1064,5 +1059,14 @@ public class Craft {
         }
 
         return player;
+    }
+
+    public boolean hasCooldownExpired() {
+        long ticksElapsed = Sponge.getServer().getRunningTimeTicks() - lastMoveTick;
+        //TODO: Replace world.getSeaLevel() with something better
+        if (type.getHalfSpeedUnderwater() && hitBox.getMinY() < world.getSeaLevel())
+            ticksElapsed >>= 1;
+
+        return getTickCooldown() < ticksElapsed;
     }
 }

@@ -106,8 +106,8 @@ public class Settings {
             Settings.DisableShadowBlocks = new HashSet<>();
         }
 
-        Settings.InviteTimeout = mainConfigNode.getNode("InviteTimeout").getInt(30*20);
-        Settings.AmmoDetonationMultiplier = mainConfigNode.getNode("AmmoDetonationMultiplier").getInt(1);
+        Settings.InviteTimeout = mainConfigNode.getNode("InviteTimeout").getInt(60*20); // default = 1 minute
+        Settings.AmmoDetonationMultiplier = mainConfigNode.getNode("AmmoDetonationMultiplier").getInt(0);
 
 
         /* TODO: Re-enable this?

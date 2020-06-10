@@ -1,16 +1,10 @@
 package io.github.pulverizer.movecraft.sign;
 
-import com.flowpowered.math.vector.Vector3i;
-import io.github.pulverizer.movecraft.craft.Craft;
-import io.github.pulverizer.movecraft.craft.CraftManager;
 import io.github.pulverizer.movecraft.craft.crew.CrewManager;
-import io.github.pulverizer.movecraft.utils.MathUtils;
+import io.github.pulverizer.movecraft.utils.BlockSnapshotSignDataUtil;
 import org.spongepowered.api.block.BlockSnapshot;
-import org.spongepowered.api.block.tileentity.Sign;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.event.block.InteractBlockEvent;
-import org.spongepowered.api.text.Text;
-import org.spongepowered.api.world.World;
 
 /**
  * Permissions checked
@@ -24,11 +18,7 @@ public class PilotSign {
 
     public static void onSignClick(InteractBlockEvent event, Player player, BlockSnapshot block) {
 
-        if (!block.getLocation().isPresent() || !block.getLocation().get().getTileEntity().isPresent())
-            return;
-
-        Sign sign = (Sign) block.getLocation().get().getTileEntity().get();
-        if (!sign.lines().get(0).toPlain().equalsIgnoreCase(HEADER)) {
+        if (!BlockSnapshotSignDataUtil.getTextLine(block, 1).get().equalsIgnoreCase(HEADER)) {
             return;
         }
 

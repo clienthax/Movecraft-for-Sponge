@@ -2,15 +2,21 @@ package io.github.pulverizer.movecraft.sign;
 
 import com.flowpowered.math.vector.Vector3i;
 import io.github.pulverizer.movecraft.config.Settings;
+import io.github.pulverizer.movecraft.utils.BlockSnapshotSignDataUtil;
 import io.github.pulverizer.movecraft.utils.MathUtils;
 import io.github.pulverizer.movecraft.craft.Craft;
 import io.github.pulverizer.movecraft.craft.CraftManager;
 
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.block.BlockSnapshot;
+import org.spongepowered.api.block.BlockType;
 import org.spongepowered.api.block.BlockTypes;
 import org.spongepowered.api.block.tileentity.Sign;
+import org.spongepowered.api.block.tileentity.TileEntity;
+import org.spongepowered.api.data.key.Keys;
+import org.spongepowered.api.data.manipulator.immutable.tileentity.ImmutableSignData;
 import org.spongepowered.api.data.type.HandTypes;
+import org.spongepowered.api.data.value.immutable.ImmutableListValue;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.event.SpongeEventFactory;
 import org.spongepowered.api.event.block.InteractBlockEvent;
@@ -20,6 +26,8 @@ import org.spongepowered.api.util.Tristate;
 import org.spongepowered.api.world.World;
 
 import java.util.LinkedList;
+import java.util.List;
+import java.util.Optional;
 
 /**
  * Permissions checked
@@ -42,13 +50,13 @@ public final class RemoteSign {
     public static void onSignClick(InteractBlockEvent event, Player player, BlockSnapshot block) {
 
 
-        if (!block.getLocation().isPresent() || !block.getLocation().get().getTileEntity().isPresent())
+        if (!block.getLocation().isPresent())
             return;
 
-        Sign sign = (Sign) block.getLocation().get().getTileEntity().get();
-        if (!sign.lines().get(0).toPlain().equalsIgnoreCase(HEADER)) {
+        if (!BlockSnapshotSignDataUtil.getTextLine(block, 1).get().equalsIgnoreCase(HEADER)) {
             return;
         }
+
         Craft foundCraft = null;
         World blockWorld = block.getLocation().get().getExtent();
         for (Craft tcraft : CraftManager.getInstance().getCraftsInWorld(blockWorld)) {
@@ -75,7 +83,7 @@ public final class RemoteSign {
             return;
         }
 
-        String targetText = sign.lines().get(1).toPlain();
+        String targetText = BlockSnapshotSignDataUtil.getTextLine(block, 2).get();
 
         if (targetText.equalsIgnoreCase("")) {
             if (player != null) {
@@ -98,35 +106,45 @@ public final class RemoteSign {
 
         LinkedList<Vector3i> foundLocations = new LinkedList<>();
         for (Vector3i tloc : foundCraft.getHitBox()) {
-            BlockSnapshot targetBlock = blockWorld.createSnapshot(tloc.getX(), tloc.getY(), tloc.getZ());
-            if (!targetBlock.getState().getType().equals(BlockTypes.STANDING_SIGN) && !targetBlock.getState().getType().equals(BlockTypes.WALL_SIGN)) {
+            BlockType blockType = blockWorld.getBlockType(tloc.getX(), tloc.getY(), tloc.getZ());
+            if (!blockType.equals(BlockTypes.STANDING_SIGN) && !blockType.equals(BlockTypes.WALL_SIGN)) {
                 continue;
             }
 
-            if (!targetBlock.getLocation().isPresent() || !targetBlock.getLocation().get().getTileEntity().isPresent())
-                continue;
+            Optional<TileEntity> tileEntity = blockWorld.getTileEntity(tloc.getX(), tloc.getY(), tloc.getZ());
 
-            Sign targetSign = (Sign) targetBlock.getLocation().get().getTileEntity().get();
+            if (!tileEntity.isPresent()) {
+                continue;
+            }
 
-            if (targetSign.lines().get(0).toPlain().equalsIgnoreCase(HEADER)) {
+            Optional<List<Text>> optionalLines = tileEntity.get().get(Keys.SIGN_LINES);
+
+            if (!optionalLines.isPresent()) {
                 continue;
             }
-            if (targetSign.lines().get(0).toPlain().equalsIgnoreCase(targetText)) {
+
+            List<Text> lines = optionalLines.get();
+
+            if (lines.get(0).toPlain().equalsIgnoreCase(HEADER)) {
+                continue;
+            }
+            if (lines.get(0).toPlain().equalsIgnoreCase(targetText)) {
                 foundLocations.add(tloc);
                 continue;
             }
-            if (targetSign.lines().get(1).toPlain().equalsIgnoreCase(targetText)) {
+            if (lines.get(1).toPlain().equalsIgnoreCase(targetText)) {
                 foundLocations.add(tloc);
                 continue;
             }
-            if (targetSign.lines().get(2).toPlain().equalsIgnoreCase(targetText)) {
+            if (lines.get(2).toPlain().equalsIgnoreCase(targetText)) {
                 foundLocations.add(tloc);
                 continue;
             }
-            if (targetSign.lines().get(3).toPlain().equalsIgnoreCase(targetText)) {
+            if (lines.get(3).toPlain().equalsIgnoreCase(targetText)) {
                 foundLocations.add(tloc);
             }
         }
+
         if (foundLocations.isEmpty()) {
             player.sendMessage(Text.of("ERROR: Could not find target sign!"));
             return;

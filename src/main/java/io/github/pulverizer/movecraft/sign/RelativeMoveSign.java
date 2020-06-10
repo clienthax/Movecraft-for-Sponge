@@ -4,9 +4,12 @@ import com.flowpowered.math.vector.Vector3i;
 import io.github.pulverizer.movecraft.config.Settings;
 import io.github.pulverizer.movecraft.craft.Craft;
 import io.github.pulverizer.movecraft.craft.CraftManager;
+import io.github.pulverizer.movecraft.utils.BlockSnapshotSignDataUtil;
 import org.spongepowered.api.block.BlockSnapshot;
 import org.spongepowered.api.block.tileentity.Sign;
 import org.spongepowered.api.data.key.Keys;
+import org.spongepowered.api.data.manipulator.immutable.tileentity.ImmutableSignData;
+import org.spongepowered.api.data.value.immutable.ImmutableListValue;
 import org.spongepowered.api.data.value.mutable.ListValue;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.event.block.InteractBlockEvent;
@@ -34,13 +37,10 @@ public final class RelativeMoveSign {
 
     public static void onSignClick(InteractBlockEvent.Secondary.MainHand event, Player player, BlockSnapshot block) {
 
-        if (!block.getLocation().isPresent() || !block.getLocation().get().getTileEntity().isPresent())
+        if (!block.getLocation().isPresent())
             return;
 
-        Sign sign = (Sign) block.getLocation().get().getTileEntity().get();
-        ListValue<Text> lines = sign.lines();
-
-        if (!lines.get(0).toPlain().equalsIgnoreCase(HEADER)) {
+        if (!BlockSnapshotSignDataUtil.getTextLine(block, 1).get().equalsIgnoreCase(HEADER)) {
             return;
         }
 
@@ -60,7 +60,7 @@ public final class RelativeMoveSign {
             return;
         }
 
-        String[] numbers = lines.get(1).toPlain().split(",");
+        String[] numbers = BlockSnapshotSignDataUtil.getTextLine(block, 2).get().split(",");
         int dLeftRight = Integer.parseInt(numbers[0]);
         // negative = left,
         // positive = right

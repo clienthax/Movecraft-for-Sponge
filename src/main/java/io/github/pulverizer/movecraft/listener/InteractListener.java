@@ -94,23 +94,19 @@ public final class InteractListener {
 
         Craft craft = CraftManager.getInstance().getCraftByPlayer(player.getUniqueId());
         // if not in command of craft, don't process pilot tool clicks
-        if (craft == null || player.getUniqueId() != craft.getPilot()) {
-            player.sendMessage(Text.of("You are not piloting a craft."));
+        if (craft == null) {
+            return;
+        }
+
+        if (player.getUniqueId() != craft.getPilot()) {
+            player.sendMessage(Text.of("You are not the pilot of the craft."));
             return;
         }
 
         if (event instanceof InteractItemEvent.Secondary) {
             event.setCancelled(true);
 
-            long ticksElapsed = Sponge.getServer().getRunningTimeTicks() - craft.getLastMoveTick();
-
-            // if the craft should go slower underwater, make time pass more slowly there
-            //TODO - Use something other than sea level
-            if (craft.getType().getHalfSpeedUnderwater() && craft.getHitBox().getMinY() < craft.getWorld().getSeaLevel())
-                ticksElapsed = ticksElapsed >> 1;
-
-
-            if (Math.abs(ticksElapsed) < craft.getTickCooldown())
+            if (!craft.hasCooldownExpired())
                 return;
 
 

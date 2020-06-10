@@ -149,27 +149,29 @@ public class BlockListener {
         }
     }
 
-    //TODO: Test this
-/*
     // prevent pistons from moving on processing crafts
-    // else if - piston extends - add locations to hitbox
-    // else if - piston retracts - remove locations from hitbox
+    // TODO
+    //  else if - piston extends - add locations to hitbox
+    //  else if - piston retracts - remove locations from hitbox
     @Listener(order = FIRST)
-    public void onPistonEvent(ChangeBlockEvent.Post event) {
-        BlockSnapshot block = event.getContext().get(EventContextKeys.PISTON_EXTEND);
+    public void onPistonEvent(ChangeBlockEvent.Pre event) {
+        if (event.getContext().containsKey(EventContextKeys.PISTON_EXTEND) || event.getContext().containsKey(EventContextKeys.PISTON_RETRACT)) {
 
-        if (block.getState().getType() != BlockTypes.PISTON && block.getState().getType() != BlockTypes.STICKY_PISTON)
-        CraftManager.getInstance().getCraftsInWorld(block.getLocation().get().getExtent());
-        for (Craft craft : CraftManager.getInstance().getCraftsInWorld(block.getLocation().get().getExtent())) {
-            Vector3i loc = block.getLocation().get().getBlockPosition();
-            if (craft.getHitBox().contains(loc) && !craft.isNotProcessing()) {
-                event.setCancelled(true);
-                return;
+            for (Location<World> worldLocation : event.getLocations()) {
+
+                HashSet<Craft> crafts = CraftManager.getInstance().getCraftsFromLocation(worldLocation);
+
+                for (Craft craft : crafts) {
+                    if (craft.isProcessing()) {
+                        event.setCancelled(true);
+                        return;
+                    }
+                }
             }
         }
     }
-*/
-    //TODO: Reimplement these listeners
+
+    //TODO: Is this listener needed?
 
     // Should not need this due to blocks still ticking?
 

@@ -1,16 +1,22 @@
 package io.github.pulverizer.movecraft.listener;
 
+import com.flowpowered.math.vector.Vector3d;
+import com.flowpowered.math.vector.Vector3i;
 import io.github.pulverizer.movecraft.Movecraft;
+import io.github.pulverizer.movecraft.enums.DirectControlMode;
 import io.github.pulverizer.movecraft.utils.MathUtils;
 import io.github.pulverizer.movecraft.craft.Craft;
 import io.github.pulverizer.movecraft.config.Settings;
 import io.github.pulverizer.movecraft.craft.CraftManager;
 import org.spongepowered.api.Sponge;
+import org.spongepowered.api.data.key.Keys;
 import org.spongepowered.api.entity.EntityTypes;
 import org.spongepowered.api.entity.explosive.Explosive;
 import org.spongepowered.api.entity.explosive.PrimedTNT;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.event.Listener;
+import org.spongepowered.api.event.cause.EventContextKey;
+import org.spongepowered.api.event.cause.EventContextKeys;
 import org.spongepowered.api.event.cause.entity.damage.DamageTypes;
 import org.spongepowered.api.event.cause.entity.damage.source.DamageSource;
 import org.spongepowered.api.event.entity.DamageEntityEvent;
@@ -18,6 +24,7 @@ import org.spongepowered.api.event.entity.DestructEntityEvent;
 import org.spongepowered.api.event.entity.MoveEntityEvent;
 import org.spongepowered.api.event.filter.Getter;
 import org.spongepowered.api.event.filter.cause.Root;
+import org.spongepowered.api.event.filter.type.Exclude;
 import org.spongepowered.api.event.network.ClientConnectionEvent;
 import org.spongepowered.api.item.ItemTypes;
 import org.spongepowered.api.item.inventory.Inventory;
@@ -115,8 +122,32 @@ public class PlayerListener {
             return;
         }
 
-        if (craft.getPilot() != null && craft.getPilot().equals(player.getUniqueId())) {
-            craft.addPilotMovement(event.getToTransform().getPosition().sub(event.getFromTransform().getPosition()));
+        if (!(event instanceof MoveEntityEvent.Teleport)
+                && craft.getDirectControlMode() == DirectControlMode.A
+                && craft.getPilot() != null
+                && craft.getPilot().equals(player.getUniqueId())) {
+
+            event.setCancelled(true);
+
+            if (!craft.hasCooldownExpired()) {
+                return;
+            }
+
+            Vector3d playerDisplacement = event.getToTransform().getPosition().sub(event.getFromTransform().getPosition());
+
+            if (playerDisplacement.getY() > 0) {
+                playerDisplacement = new Vector3d(playerDisplacement.getX(), 1, playerDisplacement.getZ());
+            }
+
+            if (player.get(Keys.IS_SNEAKING).get()) {
+                playerDisplacement = new Vector3d(playerDisplacement.getX(), -1, playerDisplacement.getZ());
+            }
+
+            playerDisplacement = playerDisplacement.normalize();
+            playerDisplacement = playerDisplacement.mul(craft.getType().getCruiseSkipBlocks());
+
+            craft.translate(playerDisplacement.toInt());
+            return;
         }
 
         if(MathUtils.locationNearHitBox(craft.getHitBox(), player.getPosition(), 2)){
