@@ -1,7 +1,6 @@
 package io.github.pulverizer.movecraft.listener;
 
 import com.flowpowered.math.vector.Vector3i;
-import io.github.pulverizer.movecraft.Movecraft;
 import io.github.pulverizer.movecraft.config.Settings;
 import io.github.pulverizer.movecraft.craft.Craft;
 import io.github.pulverizer.movecraft.craft.CraftManager;
@@ -9,33 +8,18 @@ import io.github.pulverizer.movecraft.sign.CommanderSign;
 import io.github.pulverizer.movecraft.sign.CrewSign;
 import io.github.pulverizer.movecraft.utils.CollectionUtils;
 import org.spongepowered.api.block.BlockSnapshot;
-import org.spongepowered.api.block.tileentity.TileEntity;
-import org.spongepowered.api.block.tileentity.carrier.TileEntityCarrier;
 import org.spongepowered.api.data.Transaction;
 import org.spongepowered.api.data.property.block.MatterProperty;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.event.Listener;
-import org.spongepowered.api.event.Order;
 import org.spongepowered.api.event.block.ChangeBlockEvent;
 import org.spongepowered.api.event.cause.EventContextKeys;
-import org.spongepowered.api.event.cause.entity.damage.DamageTypes;
-import org.spongepowered.api.event.cause.entity.damage.source.DamageSource;
-import org.spongepowered.api.event.entity.DamageEntityEvent;
-import org.spongepowered.api.event.filter.Getter;
 import org.spongepowered.api.event.filter.cause.Root;
-import org.spongepowered.api.event.world.ExplosionEvent;
-import org.spongepowered.api.item.ItemTypes;
-import org.spongepowered.api.item.inventory.Inventory;
-import org.spongepowered.api.item.inventory.query.QueryOperationTypes;
 import org.spongepowered.api.text.Text;
 import org.spongepowered.api.world.Location;
 import org.spongepowered.api.world.World;
-import org.spongepowered.api.world.explosion.Explosion;
 
 import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.Random;
 
 import static org.spongepowered.api.event.Order.FIRST;
 import static org.spongepowered.api.event.Order.LAST;

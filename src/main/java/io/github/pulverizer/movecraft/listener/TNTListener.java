@@ -197,6 +197,9 @@ public class TNTListener {
     @Listener
     public void tntBlastCondenser(ExplosionEvent.Pre event) {
 
+        if (Settings.Debug)
+            Movecraft.getInstance().getLogger().info("Was BOOM: " + event.getExplosion().getRadius());
+
         if (!event.getExplosion().getSourceExplosive().isPresent() || !(event.getExplosion().getSourceExplosive().get() instanceof PrimedTNT))
             return;
 
@@ -261,10 +264,11 @@ public class TNTListener {
         for (int i = 0; i < num16explosions; i++) {
 
             if (Settings.Debug)
-                Movecraft.getInstance().getLogger().info("BOOM: 16");
+                Movecraft.getInstance().getLogger().info("Should BOOM: 16");
 
              explosion = Explosion.builder()
                      .from(event.getExplosion())
+                     .sourceExplosive(null)
                      .location(explosionLocation)
                      .radius(16)
                      .knockback(16)
@@ -276,7 +280,7 @@ public class TNTListener {
         }
 
         if (Settings.Debug)
-            Movecraft.getInstance().getLogger().info("BOOM: " + tntFound);
+            Movecraft.getInstance().getLogger().info("Did BOOM: " + tntFound);
 
         explosion = Explosion.builder()
                 .from(event.getExplosion())

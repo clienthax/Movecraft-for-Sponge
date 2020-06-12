@@ -64,9 +64,9 @@ public class CrewManager {
         CrewInvite invite;
 
         if (craft.getName() != null && !craft.getName().isEmpty()) {
-            invite = new CrewInvite(invited.getUniqueId(), sender.getUniqueId(), craft, craft.getName());
+            invite = new CrewInvite(invited.getUniqueId(), sender, craft, craft.getName());
         } else {
-            invite = new CrewInvite(invited.getUniqueId(), sender.getUniqueId(), craft);
+            invite = new CrewInvite(invited.getUniqueId(), sender, craft);
         }
 
         sender.sendMessage(Text.of(String.format("You have invited %s to your crew.", invited.getName())));

@@ -2,6 +2,7 @@ package io.github.pulverizer.movecraft;
 
 import com.google.inject.Inject;
 import io.github.pulverizer.movecraft.commands.CraftReportCommand;
+import io.github.pulverizer.movecraft.commands.CraftTypesCommand;
 import io.github.pulverizer.movecraft.commands.CrewCommand;
 import io.github.pulverizer.movecraft.config.ConfigManager;
 import io.github.pulverizer.movecraft.craft.crew.CrewManager;
@@ -113,6 +114,7 @@ public class Movecraft {
 
         CraftReportCommand.register();
         CrewCommand.register();
+        CraftTypesCommand.register();
 
 
         Sponge.getEventManager().registerListeners(this, new InteractListener());
