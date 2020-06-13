@@ -12,6 +12,7 @@ buildscript {
 
     dependencies {
         classpath 'net.minecraftforge.gradle:ForgeGradle:2.3-SNAPSHOT'
+        classpath 'org.spongepowered:mixingradle:0.6-SNAPSHOT'
     }
 }
 
@@ -20,12 +21,21 @@ plugins {
     id 'net.minecrell.vanillagradle.server' version '2.2-6'
 }
 
+apply plugin: 'org.spongepowered.mixin'
+
+sourceSets {
+    main {
+        ext.refMap = "mixins.movecraft.refmap.json"
+    }
+}
+
 repositories {
     mavenLocal()
 }
 
 dependencies {
     compile 'org.spongepowered:spongeapi:7.3.0-SNAPSHOT'
+    compile 'org.spongepowered:mixin:0.8'
 }
 
 minecraft {
@@ -35,6 +45,11 @@ minecraft {
 
 jar {
     manifest{
-        attributes('FMLAT': 'movecraft_at.cfg')
+        attributes(
+                'FMLAT': 'movecraft_at.cfg',
+                'TweakClass': 'org.spongepowered.asm.launch.MixinTweaker',
+                'MixinConfigs': 'mixins.movecraft.json',
+                'FMLCorePluginContainsFMLMod': 'true'
+        )
     }
 }

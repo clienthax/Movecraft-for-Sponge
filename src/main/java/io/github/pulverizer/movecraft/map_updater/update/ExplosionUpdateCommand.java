@@ -35,6 +35,7 @@ public class ExplosionUpdateCommand extends UpdateCommand {
 
     private Explosion createExplosion(Location<World> loc, float explosionPower) {
 
+        // TODO - make defaults
         return Explosion.builder()
                 .location(loc)
                 .shouldBreakBlocks(true)
@@ -42,6 +43,9 @@ public class ExplosionUpdateCommand extends UpdateCommand {
                 .shouldPlaySmoke(true)
                 .radius(explosionPower)
                 .canCauseFire(false)
+                .randomness(0.5f)
+                .knockback(explosionPower)
+                .resolution((int) (explosionPower * 2))
                 .build();
     }
 
